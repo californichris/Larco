@@ -287,7 +287,10 @@ function checkDate(tips, field, fieldDesc) {
 
     var date = null;
     if (field.hasClass('hasDatepicker')) {
-        date = $(field).datepicker("getDate").toString();
+        date = $.datepicker.formatDate($(field).datepicker('option', 'dateFormat'), $(field).datepicker("getDate"));
+        if (date != field.val()) {
+            date = new Date(field.val()).toString();
+        }
     } else {
         date = new Date(field.val()).toString();
     }
@@ -2010,6 +2013,12 @@ $.widget("bs.Page", {
             }
 
             $.page.loadSelectMenu(dialog, selectMenu);
+
+            var field = controlFields.selectMenuFields[s];
+            var readonly = this._getFieldProp(field, 'readonly');
+            if (readonly && (readonly == 'true' || readonly == true)) {
+                $('#' + field.FieldName, dialog).selectmenu('disable');
+            }
         }
 
         for (var m = 0; m < controlFields.multiSelectFields.length; m++) {
@@ -2251,7 +2260,7 @@ $.widget("bs.Page", {
             elements.append('>')
             elements.append(this._getFieldHTML(field, controlFields)).append('</td>');
 
-            if (count % tab.Cols == 0 || count >= length) {
+            if (count % tab.Cols == 0 || f >= length - 1) {
                 html.append('<tr>').append(labels.toString()).append('</tr>');
                 html.append('<tr>').append(elements.toString()).append('</tr>');
 
