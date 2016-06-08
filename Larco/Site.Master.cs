@@ -3,8 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Web;
+using System.Web.Script.Serialization;
 using System.Web.UI;
 using System.Web.UI.WebControls;
+using BS.Common.Dao;
+using BS.Common.Entities;
 using BS.Common.Utils;
 namespace Larco
 {
@@ -12,6 +15,7 @@ namespace Larco
     {
         protected void Page_Load(object sender, EventArgs e)
         {
+            LoggerHelper.Info("Site.Master Page_Load Start.");
             if (!IsPostBack)
             {
                 string loginName = GetUserLogin();
@@ -21,12 +25,127 @@ namespace Larco
                 {
                     StringBuilder menuGlobals = new StringBuilder();
                     menuGlobals.Append("\n<script type='text/javascript'>\n");
-                    menuGlobals.Append("var LOGIN_NAME = '").Append(loginName).Append("';\n");
+                    menuGlobals.Append("const LOGIN_NAME = '").Append(loginName).Append("';\n");
+                    Entity user = GetUser(loginName);
+                    if (user != null)
+                    {
+                        menuGlobals.Append("const USER_NAME = '").Append(user.GetProperty("UserName")).Append("';\n");
+                    }
+
                     menuGlobals.Append("</script>");
 
                     Page.ClientScript.RegisterClientScriptBlock(this.GetType(), "menuGlobals", menuGlobals.ToString());
                 }
             }
+            LoggerHelper.Info("Site.Master Page_Load End.");
+        }
+
+        private Entity GetUser(string userName)
+        {
+            Entity user = null;
+            if (Session["CurrentUser"] == null)
+            {
+                BS.Common.Entities.Page.Page usersPage = DAOFactory.Instance.GetPageInfoDAO().GetPageConfig("", "Users");
+                Entity entity = EntityUtils.CreateEntity(usersPage);
+                entity.SetProperty("UserLogin", userName);
+
+                IList<Entity> list = DAOFactory.Instance.GetCatalogDAO().FindEntities(entity);
+                if (list.Count == 1)
+                {
+                    Session["CurrentUser"] = list[0];
+                }
+
+                user = (Entity)Session["CurrentUser"];
+                Session["CurrentUserName"] = user.GetProperty("UserName");
+            }
+            
+            return user;
+        }
+
+        //TODO: Move security methods to a class and use the system cache instead of the session so it can be refreshed when necessary.
+        private string SerializeModules(IList<Entity> roleMods)
+        {
+            JavaScriptSerializer ser = new JavaScriptSerializer();
+            ser.MaxJsonLength = int.MaxValue;
+            StringBuilder modules = new StringBuilder();
+
+            foreach (Entity ent in roleMods)
+            {
+                modules.Append(ser.Serialize(ent.GetProperties())).Append(",");
+            }
+
+            if (modules.Length > 0)
+            {
+                modules.Remove(modules.Length - 1, 1);
+            }
+
+            return modules.ToString();
+        }
+
+        private Entity GetModule(IList<Entity> modules)
+        {
+            string reqPath = Request.Path;
+            string path = reqPath.Replace(Request.ApplicationPath + "/", "");
+            return ((List<Entity>)modules).Find(x => x.GetProperty("URL") == path);
+        }
+
+        private string GetRequestPage()
+        {
+            string reqPath = Request.Path;
+            reqPath = reqPath.ToUpper().Replace(Request.ApplicationPath.ToUpper() + "/", "");
+
+            return reqPath.ToLower();
+        }
+
+        private bool UserHavePermissions(IList<Entity> userModules)
+        {
+            return UserHavePermissions(GetRequestPage(), userModules);
+        }
+
+        private bool UserHavePermissions(string path, IList<Entity> userModules)
+        {
+            if (path == "InvalidAccess.aspx") return true;
+
+            foreach (Entity userMod in userModules)
+            {
+                if (path.Equals(userMod.GetProperty("URL"), StringComparison.InvariantCultureIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private IList<Entity> GetUserModules(Entity user)
+        {
+            LoggerHelper.Debug("Getting user roles.");
+            if (Session["CurrentUserModules"] == null)
+            {
+                BS.Common.Entities.Page.Page userRolePage = DAOFactory.Instance.GetPageInfoDAO().GetPageConfig("", "UserRoles");
+                Entity userRoleEntity = EntityUtils.CreateEntity(userRolePage);
+                userRoleEntity.SetProperty("UserId", user.GetProperty("UserId"));
+                IList<Entity> roles = DAOFactory.Instance.GetCatalogDAO().GetEntities(userRoleEntity);
+
+                string _userRoles = "";
+                foreach (Entity role in roles)
+                {
+                    _userRoles += role.GetProperty("RoleId");
+                    
+                }
+                LoggerHelper.Debug("User roles are " + _userRoles);
+                BS.Common.Entities.Page.Page pageRoleMods = DAOFactory.Instance.GetPageInfoDAO().GetPageConfig("", "RoleModules");
+
+                Entity roleModEntity = EntityUtils.CreateEntity(pageRoleMods);
+                roleModEntity.SetProperty("RoleId", "LIST_" + _userRoles);
+                IList<Entity> roleMods = DAOFactory.Instance.GetCatalogDAO().FindEntities(roleModEntity);
+
+                //TODO: sort by moduleId then removed duplicates
+
+                Session["CurrentUserModules"] = roleMods;
+            }
+
+            return (IList<Entity>) Session["CurrentUserModules"];
         }
 
         private string GetUserLogin()
@@ -39,13 +158,12 @@ namespace Larco
                     string[] name = { "" };
                     if (!string.IsNullOrEmpty(System.Web.HttpContext.Current.User.Identity.Name))
                     {
-                        name = System.Web.HttpContext.Current.User.Identity.Name.Split('\\');
                         loginName = System.Web.HttpContext.Current.User.Identity.Name;
                     }
 
                     LoggerHelper.Debug("loginName before split = " + loginName);
 
-                    if (name.Length >= 1)
+                    if (name.Length > 1)
                     {
                         loginName = name[1];
                     }

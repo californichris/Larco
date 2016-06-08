@@ -6,7 +6,7 @@
     <title>EPE Framework</title>
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />    
     <link href="<%= Page.ResolveUrl("~/Images/favicon.ico") %>" type="image/x-icon" rel="shortcut icon"/>
-    <%: Styles.Render("~/Styles/site_master_css", "~/Styles/cupertino/jquery_css") %>
+    <%: Styles.Render("~/Styles/site_master_css", "~/Styles/blitzer/jquery_css") %>
     <%: Scripts.Render("~/Scripts/site_master_js") %>    
     <script type="text/javascript">
         var AJAX_CONTROLER_URL = '<%= ResolveUrl("~/AjaxController.ashx") %>';
@@ -14,11 +14,6 @@
         var APP_PATH = "<%= Request.ApplicationPath %>";
         var APP_HOST = "<%= Request.Url.Host %>";
         $(document).ready(function () {
-            if (APP_HOST.toLowerCase() == 'localhost') {
-                $('#environment').text('Development Environment');
-            } else if (APP_HOST.toLowerCase() == 'dtapp1') {
-                $('#environment').text('Test Environment');
-            }
 
             $('#menu').addClass('ui-corner-all').menu({ position: { at: 'left bottom+2' }, my: 'left bottom' }, { icons: { submenu: 'ui-icon-triangle-1-s' } });
             $('#menu .ui-menu-item').addClass('ui-corner-all');
@@ -36,21 +31,14 @@
             <table cellpadding="0" cellspacing="0" width="100%">
                 <tr>
                     <td>
-                        <div class="title bold">EPE Framework Demo Template</div>
+                        <div class="title bold">Larco</div>
                     </td>
                     <td>
                         <table cellpadding="0" cellspacing="0" width="100%">
                             <tr>
                                 <td>
                                     <div class="loginDisplay">
-                                        <asp:LoginView ID="HeadLoginView" runat="server" EnableViewState="false">
-                                            <AnonymousTemplate></AnonymousTemplate>
-                                            <LoggedInTemplate>
-                                                Welcome <span class="bold">
-                                                    <asp:LoginName ID="HeadLoginName" runat="server" />
-                                                </span>
-                                            </LoggedInTemplate>
-                                        </asp:LoginView>
+                                        Bienvenido <span class="bold"><%= HttpContext.Current.Session["CurrentUserName"] %> </span> (<asp:LoginName ID="HeadLoginName" runat="server" />)
                                     </div>
                                 </td>
                             </tr>
@@ -58,12 +46,11 @@
                                 <td align="right" style="padding-right: 6px;">
                                     <span id="environment"></span>
                                 </td>
-
                             </tr>
                         </table>
                     </td>
                     <td rowspan="2" width="125px">
-                        <img alt="" src="<%= Page.ResolveUrl("~/Images/epelogo120x102.png") %>" />
+                        <img alt="" src="<%= Page.ResolveUrl("~/Images/larco120x100.jpg") %>" />
                     </td>
                 </tr>
                 <tr>
@@ -83,7 +70,8 @@
                                         <a href="<%= Request.ApplicationPath %>/Admin/RefreshCache.aspx">Refresh Cache</a>
                                     </li>
                                 </ul>
-                            </li>      
+                            </li>
+                            <li><a href="<%= Request.ApplicationPath %>/Logout.aspx">Log out</a></li>      
                         </ul>
                         </div>
                     </td>

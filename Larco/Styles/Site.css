@@ -142,7 +142,7 @@ first child of the left and right table columns */
     display: block;
     text-align: right;
     padding: 5px;
-    
+    font-weight:normal;
     /*color: White;*/
 }
 

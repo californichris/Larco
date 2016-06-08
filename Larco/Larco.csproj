@@ -92,13 +92,15 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Admin\RefreshCache.aspx" />
+    <Content Include="Catalogos\MenuEditor.aspx" />
     <Content Include="Default.aspx" />
     <Content Include="Global.asax" />
     <Content Include="Images\checkbox.gif" />
     <Content Include="Images\database.png" />
-    <Content Include="Images\epelogo120x102.png" />
     <Content Include="Images\favicon.ico" />
     <Content Include="Images\hidden.gif" />
+    <Content Include="Images\larco.jpg" />
+    <Content Include="Images\larco120x100.jpg" />
     <Content Include="Images\list.gif" />
     <Content Include="Images\radio.gif" />
     <Content Include="Images\select.gif" />
@@ -108,6 +110,7 @@
     <Content Include="Admin\PageConfig.aspx" />
     <Content Include="Admin\Preview.aspx" />
     <Content Include="Logon.aspx" />
+    <Content Include="Logout.aspx" />
     <Content Include="Scripts\common.js" />
     <Content Include="Scripts\date.js" />
     <Content Include="Scripts\flip.js" />
@@ -122,6 +125,21 @@
     <Content Include="Scripts\jquery.multiselect.js" />
     <Content Include="Scripts\pageconfig.js" />
     <Content Include="Scripts\spin.js" />
+    <Content Include="Styles\blitzer\dataTables.jqueryui.css" />
+    <Content Include="Styles\blitzer\images\ui-bg_diagonals-thick_75_f3d8d8_40x40.png" />
+    <Content Include="Styles\blitzer\images\ui-bg_dots-small_65_a6a6a6_2x2.png" />
+    <Content Include="Styles\blitzer\images\ui-bg_flat_0_333333_40x100.png" />
+    <Content Include="Styles\blitzer\images\ui-bg_flat_65_ffffff_40x100.png" />
+    <Content Include="Styles\blitzer\images\ui-bg_flat_75_ffffff_40x100.png" />
+    <Content Include="Styles\blitzer\images\ui-bg_glass_55_fbf8ee_1x400.png" />
+    <Content Include="Styles\blitzer\images\ui-bg_highlight-hard_100_eeeeee_1x100.png" />
+    <Content Include="Styles\blitzer\images\ui-bg_highlight-hard_100_f6f6f6_1x100.png" />
+    <Content Include="Styles\blitzer\images\ui-bg_highlight-soft_15_cc0000_1x100.png" />
+    <Content Include="Styles\blitzer\images\ui-icons_004276_256x240.png" />
+    <Content Include="Styles\blitzer\images\ui-icons_cc0000_256x240.png" />
+    <Content Include="Styles\blitzer\images\ui-icons_ffffff_256x240.png" />
+    <Content Include="Styles\blitzer\jquery-horizontal-menu.css" />
+    <Content Include="Styles\blitzer\jquery-ui.css" />
     <Content Include="Styles\cupertino\dataTables.jqueryui.css" />
     <Content Include="Styles\cupertino\images\animated-overlay.gif" />
     <Content Include="Styles\cupertino\images\ui-bg_diagonals-thick_90_eeeeee_40x40.png" />
@@ -141,6 +159,7 @@
     <Content Include="Styles\cupertino\jquery-horizontal-menu.css" />
     <Content Include="Styles\cupertino\jquery-ui.css" />
     <Content Include="Styles\Site.css" />
+    <Content Include="UnderConstruction.aspx" />
     <Content Include="Web.config">
       <SubType>Designer</SubType>
     </Content>
@@ -160,6 +179,13 @@
       <DependentUpon>RefreshCache.aspx</DependentUpon>
     </Compile>
     <Compile Include="App_Start\BundleConfig.cs" />
+    <Compile Include="Catalogos\MenuEditor.aspx.cs">
+      <DependentUpon>MenuEditor.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Catalogos\MenuEditor.aspx.designer.cs">
+      <DependentUpon>MenuEditor.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Dao\DAOFactory.cs" />
     <Compile Include="Default.aspx.cs">
       <DependentUpon>Default.aspx</DependentUpon>
@@ -202,6 +228,13 @@
     <Compile Include="Logon.aspx.designer.cs">
       <DependentUpon>Logon.aspx</DependentUpon>
     </Compile>
+    <Compile Include="Logout.aspx.cs">
+      <DependentUpon>Logout.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Logout.aspx.designer.cs">
+      <DependentUpon>Logout.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Site.Master.cs">
       <DependentUpon>Site.Master</DependentUpon>
@@ -209,6 +242,13 @@
     </Compile>
     <Compile Include="Site.Master.designer.cs">
       <DependentUpon>Site.Master</DependentUpon>
+    </Compile>
+    <Compile Include="UnderConstruction.aspx.cs">
+      <DependentUpon>UnderConstruction.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="UnderConstruction.aspx.designer.cs">
+      <DependentUpon>UnderConstruction.aspx</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -226,6 +266,7 @@
   <ItemGroup>
     <Content Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>

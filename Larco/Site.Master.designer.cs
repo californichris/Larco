@@ -7,13 +7,11 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Larco
-{
-
-
-    public partial class SiteMaster
-    {
-
+namespace Larco {
+    
+    
+    public partial class SiteMaster {
+        
         /// <summary>
         /// HeadContent control.
         /// </summary>
@@ -22,16 +20,16 @@ namespace Larco
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.ContentPlaceHolder HeadContent;
-
+        
         /// <summary>
-        /// HeadLoginView control.
+        /// HeadLoginName control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.LoginView HeadLoginView;
-
+        protected global::System.Web.UI.WebControls.LoginName HeadLoginName;
+        
         /// <summary>
         /// MainContent control.
         /// </summary>

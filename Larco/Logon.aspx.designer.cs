@@ -31,15 +31,6 @@ namespace BS.Larco {
         protected global::System.Web.UI.HtmlControls.HtmlInputText txtUserName;
         
         /// <summary>
-        /// vUserName control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.RequiredFieldValidator vUserName;
-        
-        /// <summary>
         /// txtUserPass control.
         /// </summary>
         /// <remarks>
@@ -49,13 +40,13 @@ namespace BS.Larco {
         protected global::System.Web.UI.HtmlControls.HtmlInputPassword txtUserPass;
         
         /// <summary>
-        /// vUserPass control.
+        /// cmdLogin control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.RequiredFieldValidator vUserPass;
+        protected global::System.Web.UI.HtmlControls.HtmlInputSubmit cmdLogin;
         
         /// <summary>
         /// chkPersistCookie control.
@@ -65,15 +56,6 @@ namespace BS.Larco {
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.CheckBox chkPersistCookie;
-        
-        /// <summary>
-        /// cmdLogin control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlInputSubmit cmdLogin;
         
         /// <summary>
         /// lblMsg control.
