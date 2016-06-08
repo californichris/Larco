@@ -7,6 +7,11 @@ namespace BS.Larco
     {
         protected void Page_Load(object sender, EventArgs e)
         {
+            Session["CurrentUserLogin"] = null;
+            Session["CurrentUserName"] = null;
+            Session["CurrentUser"] = null;
+            Session["CurrentUserModules"] = null;
+
             FormsAuthentication.SignOut();
             Response.Redirect("Logon.aspx", true);
         }

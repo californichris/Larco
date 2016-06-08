@@ -20,16 +20,40 @@ namespace Larco
             {
                 string loginName = GetUserLogin();
                 LoggerHelper.Debug("loginName = " + loginName);
+                Entity user = GetUser(loginName);
+                IList<Entity> modules = null;
+                if (user != null)
+                {
+                    modules = GetUserModules(user);
+                    Session["CurrentUserName"] = user.GetProperty("UserName");
+                }
+
+                if (!UserHavePermissions(modules))
+                {
+                    LoggerHelper.Debug("user don't have permissions to access this page redirenting.");
+                    Response.Redirect(Request.ApplicationPath + "/InvalidAccess.aspx");
+                }
 
                 if (!Page.ClientScript.IsClientScriptBlockRegistered("menuGlobals"))
                 {
                     StringBuilder menuGlobals = new StringBuilder();
                     menuGlobals.Append("\n<script type='text/javascript'>\n");
-                    menuGlobals.Append("const LOGIN_NAME = '").Append(loginName).Append("';\n");
-                    Entity user = GetUser(loginName);
+                    menuGlobals.Append("const LOGIN_NAME = '").Append(loginName).Append("';\n");                    
                     if (user != null)
                     {
                         menuGlobals.Append("const USER_NAME = '").Append(user.GetProperty("UserName")).Append("';\n");
+                    }
+
+                    //Modules data
+                    if (modules != null)
+                    {
+                        menuGlobals.Append("var USER_MODULES = '[").Append(SerializeModules(modules)).Append("]';\n");
+                        Entity module = GetModule(modules);
+                        if (module != null)
+                        {
+                            //menuGlobals.Append("const EDIT_ACCESS = ").Append(module.GetProperty("EditAccess").ToLower()).Append(";\n");
+                            //menuGlobals.Append("const DELETE_ACCESS = ").Append(module.GetProperty("DeleteAccess").ToLower()).Append(";\n");
+                        }
                     }
 
                     menuGlobals.Append("</script>");
@@ -42,7 +66,6 @@ namespace Larco
 
         private Entity GetUser(string userName)
         {
-            Entity user = null;
             if (Session["CurrentUser"] == null)
             {
                 BS.Common.Entities.Page.Page usersPage = DAOFactory.Instance.GetPageInfoDAO().GetPageConfig("", "Users");
@@ -55,11 +78,11 @@ namespace Larco
                     Session["CurrentUser"] = list[0];
                 }
 
-                user = (Entity)Session["CurrentUser"];
+                Entity user = (Entity)Session["CurrentUser"];
                 Session["CurrentUserName"] = user.GetProperty("UserName");
             }
-            
-            return user;
+                        
+            return (Entity) Session["CurrentUser"];
         }
 
         //TODO: Move security methods to a class and use the system cache instead of the session so it can be refreshed when necessary.
@@ -86,7 +109,7 @@ namespace Larco
         {
             string reqPath = Request.Path;
             string path = reqPath.Replace(Request.ApplicationPath + "/", "");
-            return ((List<Entity>)modules).Find(x => x.GetProperty("URL") == path);
+            return ((List<Entity>)modules).Find(x => x.GetProperty("URL").Equals(path, StringComparison.InvariantCultureIgnoreCase));
         }
 
         private string GetRequestPage()
@@ -105,6 +128,7 @@ namespace Larco
         private bool UserHavePermissions(string path, IList<Entity> userModules)
         {
             if (path == "InvalidAccess.aspx") return true;
+            if (userModules == null || userModules.Count <= 0) return false;
 
             foreach (Entity userMod in userModules)
             {
@@ -125,14 +149,20 @@ namespace Larco
                 BS.Common.Entities.Page.Page userRolePage = DAOFactory.Instance.GetPageInfoDAO().GetPageConfig("", "UserRoles");
                 Entity userRoleEntity = EntityUtils.CreateEntity(userRolePage);
                 userRoleEntity.SetProperty("UserId", user.GetProperty("UserId"));
-                IList<Entity> roles = DAOFactory.Instance.GetCatalogDAO().GetEntities(userRoleEntity);
+                IList<Entity> roles = DAOFactory.Instance.GetCatalogDAO().FindEntities(userRoleEntity);
 
                 string _userRoles = "";
                 foreach (Entity role in roles)
                 {
-                    _userRoles += role.GetProperty("RoleId");
-                    
+                    _userRoles += role.GetProperty("RoleId") + ",";                    
                 }
+
+                if (_userRoles.Length > 0)
+                {
+                    _userRoles = _userRoles.Remove(_userRoles.Length - 1);
+                }
+
+
                 LoggerHelper.Debug("User roles are " + _userRoles);
                 BS.Common.Entities.Page.Page pageRoleMods = DAOFactory.Instance.GetPageInfoDAO().GetPageConfig("", "RoleModules");
 
@@ -141,11 +171,28 @@ namespace Larco
                 IList<Entity> roleMods = DAOFactory.Instance.GetCatalogDAO().FindEntities(roleModEntity);
 
                 //TODO: sort by moduleId then removed duplicates
+                ((List<Entity>)roleMods).Sort((x, y) => SortRoleModules(x, y));
+                string _prevModule = "";
+                for (int i = roleMods.Count -1; i >= 0; i--)
+                {
+                    Entity roleMod = roleMods[i];
+                    if (_prevModule.Equals(roleMod.GetProperty("ModuleName")))
+                    {
+                        roleMods.RemoveAt(i);
+                    }
+
+                    _prevModule = roleMod.GetProperty("ModuleName");
+                }
 
                 Session["CurrentUserModules"] = roleMods;
             }
 
             return (IList<Entity>) Session["CurrentUserModules"];
+        }
+
+        private int SortRoleModules(Entity ent1, Entity ent2)
+        {
+            return ent1.GetProperty("ModuleId").CompareTo(ent2.GetProperty("ModuleId"));
         }
 
         private string GetUserLogin()

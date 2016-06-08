@@ -92,7 +92,12 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Admin\RefreshCache.aspx" />
+    <Content Include="Catalogos\Clientes.aspx" />
+    <Content Include="Catalogos\Empleados.aspx" />
     <Content Include="Catalogos\MenuEditor.aspx" />
+    <Content Include="Catalogos\Productos.aspx" />
+    <Content Include="Catalogos\Rutas.aspx" />
+    <Content Include="Catalogos\Tareas.aspx" />
     <Content Include="Default.aspx" />
     <Content Include="Global.asax" />
     <Content Include="Images\checkbox.gif" />
@@ -109,6 +114,7 @@
     <Content Include="Admin\ListItemsConfig.aspx" />
     <Content Include="Admin\PageConfig.aspx" />
     <Content Include="Admin\Preview.aspx" />
+    <Content Include="InvalidAccess.aspx" />
     <Content Include="Logon.aspx" />
     <Content Include="Logout.aspx" />
     <Content Include="Scripts\common.js" />
@@ -125,6 +131,7 @@
     <Content Include="Scripts\jquery.multiselect.js" />
     <Content Include="Scripts\pageconfig.js" />
     <Content Include="Scripts\spin.js" />
+    <Content Include="Sistema\Usuarios.aspx" />
     <Content Include="Styles\blitzer\dataTables.jqueryui.css" />
     <Content Include="Styles\blitzer\images\ui-bg_diagonals-thick_75_f3d8d8_40x40.png" />
     <Content Include="Styles\blitzer\images\ui-bg_dots-small_65_a6a6a6_2x2.png" />
@@ -179,12 +186,47 @@
       <DependentUpon>RefreshCache.aspx</DependentUpon>
     </Compile>
     <Compile Include="App_Start\BundleConfig.cs" />
+    <Compile Include="Catalogos\Clientes.aspx.cs">
+      <DependentUpon>Clientes.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Catalogos\Clientes.aspx.designer.cs">
+      <DependentUpon>Clientes.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Catalogos\Empleados.aspx.cs">
+      <DependentUpon>Empleados.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Catalogos\Empleados.aspx.designer.cs">
+      <DependentUpon>Empleados.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Catalogos\MenuEditor.aspx.cs">
       <DependentUpon>MenuEditor.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
     <Compile Include="Catalogos\MenuEditor.aspx.designer.cs">
       <DependentUpon>MenuEditor.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Catalogos\Productos.aspx.cs">
+      <DependentUpon>Productos.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Catalogos\Productos.aspx.designer.cs">
+      <DependentUpon>Productos.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Catalogos\Rutas.aspx.cs">
+      <DependentUpon>Rutas.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Catalogos\Rutas.aspx.designer.cs">
+      <DependentUpon>Rutas.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Catalogos\Tareas.aspx.cs">
+      <DependentUpon>Tareas.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Catalogos\Tareas.aspx.designer.cs">
+      <DependentUpon>Tareas.aspx</DependentUpon>
     </Compile>
     <Compile Include="Dao\DAOFactory.cs" />
     <Compile Include="Default.aspx.cs">
@@ -221,6 +263,13 @@
     <Compile Include="Admin\Preview.aspx.designer.cs">
       <DependentUpon>Preview.aspx</DependentUpon>
     </Compile>
+    <Compile Include="InvalidAccess.aspx.cs">
+      <DependentUpon>InvalidAccess.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="InvalidAccess.aspx.designer.cs">
+      <DependentUpon>InvalidAccess.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Logon.aspx.cs">
       <DependentUpon>Logon.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -236,6 +285,13 @@
       <DependentUpon>Logout.aspx</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Sistema\Usuarios.aspx.cs">
+      <DependentUpon>Usuarios.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Sistema\Usuarios.aspx.designer.cs">
+      <DependentUpon>Usuarios.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Site.Master.cs">
       <DependentUpon>Site.Master</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -266,7 +322,13 @@
   <ItemGroup>
     <Content Include="packages.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Facturacion\" />
+    <Folder Include="Herramientas\" />
+    <Folder Include="Inventarios\" />
+    <Folder Include="Reportes\" />
+    <Folder Include="Stock\" />
+  </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
