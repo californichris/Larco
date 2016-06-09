@@ -951,6 +951,18 @@ $.widget("bs.Catalog", {
                         });
                     }
 
+                    if (!jQuery.isEmptyObject(data)) {
+                        $('input[search-type=equals], select[search-type=equals], input[search-type=null], select[search-type=null]', $('#' + options.pageName + '_filter')).each(function (index) {
+                            if ($(this).attr('id').indexOf('Filter') != -1) {
+                                var _name = $(this).attr('id').replace('Filter', '');
+                                var index = getArrayIndexForKey(options.pageConfig.GridFields, 'ColumnName', _name);
+                                if (index != -1) {
+                                    data.columns[index].searchtype = $(this).attr('search-type');
+                                }
+                            }
+                        });
+                    }
+
                     if (options.beforeServerDataCall != null && typeof (options.beforeServerDataCall) == "function") {
                         options.beforeServerDataCall(data);                                                
                     }
@@ -1245,6 +1257,8 @@ $.widget("bs.Catalog", {
         $('#dialogtabs', this._dialog).tabs('option', 'active', 0);
         $('input:visible:first', $($('div.ui-tabs-panel', this._dialog)[0])).focus();
 
+        if (this.options.viewOnly) disableDialog('#' + this._dialog.attr('id'));
+
         return this._dialog;
     },
 
@@ -1260,6 +1274,8 @@ $.widget("bs.Catalog", {
         this._dialog.dialog('option', 'title', this._dialog.attr('originalTitle') + ' [Edit]').dialog('open');
         $('#dialogtabs', this._dialog).tabs('option', 'active', 0);
         $('input:visible:first', $($('div.ui-tabs-panel', this._dialog)[0])).focus();
+
+        if (this.options.viewOnly) disableDialog('#' + this._dialog.attr('id'));
     },
 
     deleteEntity: function (oTable, options) {
@@ -2415,6 +2431,7 @@ $.widget("bs.Page", {
 $.widget("bs.Filter", {
     //defaults
     options: {
+        debug:false,
         pageConfig: null,
         initCompleteCallBack: function (config) {}
     },
@@ -2481,13 +2498,18 @@ $.widget("bs.Filter", {
             }
         });
 
-        this._FILTER = this._createFilter(this.element);
-
+        var that = this;
         //raise init complete
         if (promises.length == 0) {
+            this._FILTER = this._createFilter(this.element);
+
+            if (this.options.debug) console.log('Filter = ' + $.toJSON(this._FILTER));
+
             that.options.initCompleteCallBack(that.options.pageConfig);
         } else {
             $.when.apply($, promises).done(function () {
+                that._FILTER = that._createFilter(that.element);
+                if (that.options.debug) console.log('Filter = ' + $.toJSON(that._FILTER));
                 that.options.initCompleteCallBack(that.options.pageConfig);
             });
         }
@@ -2627,21 +2649,24 @@ $.page.loadSelectMenu = function (dialog, selectMenu) {
     element.append($('<option></option>').attr('value', '').text('Loading..')).selectmenu();
 
     if (ddInfo.cache != null && (ddInfo.cache == true || ddInfo.cache == 'true')) {
-        var promise = $.getData(ddInfo.url);
-        $.when(promise).done(function (json) {
-            $.page.createSelectMenuOptions(element, json, ddInfo);
-        });
-        return promise;
+        return $.Deferred(function( dfd ) {
+            $.when($.getData(ddInfo.url)).done(function (json) {
+                $.page.createSelectMenuOptions(element, json, ddInfo);
+                dfd.resolve();
+            });
+        }).promise();        
     }
 
-    var promise = $.ajax({
-        url: ddInfo.url,
-    }).done(function (json) {
-        $.page.createSelectMenuOptions(element, json, ddInfo);
-    });
 
-    return promise;
-},
+    return $.Deferred(function( dfd ) {
+        $.ajax({
+            url: ddInfo.url,
+        }).done(function (json) {
+            $.page.createSelectMenuOptions(element, json, ddInfo);
+            dfd.resolve();
+        });
+    }).promise();
+}
 
 $.page.createSelectMenuOptions = function (element, json, ddInfo) {
     if (json.aaData && json.aaData.length > 0) {
@@ -2653,7 +2678,12 @@ $.page.createSelectMenuOptions = function (element, json, ddInfo) {
             firstOptionValue = ddInfo.firstOptionVal;
             element.attr('firstOptionVal', ddInfo.firstOptionVal);
         }
+
         $('<option>').attr('value', firstOptionValue).insertBefore(element.find('option:first'));
+        if ((ddInfo.selectedVal == '' && firstOptionValue == '' && ddInfo.selectedText == '') ||
+            (!ddInfo.selectedVal && !ddInfo.selectedText)) {
+            element.find('option:first').attr('selected', 'selected');
+        }
 
         element.selectmenu('refresh').selectmenu("menuWidget").addClass("select-menu-overflow");
         element.attr('load-complete', 'true');

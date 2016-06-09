@@ -9,6 +9,11 @@
 	                $('h2').text(config.Title);
 	                document.title = config.Title;
 	                initializeCatalog(config);
+
+	                $('#Clave').blur(function () {
+	                    $('#Clave').val(padDigits($('#Clave').val(), 3));
+	                });
+
 	            }
 	        });
 	    });
@@ -20,10 +25,14 @@
 	            showExport: true,
 	            dialogWidth: 800,
 	            validate: function (tips) {
-	                return validateDialog(config, tips);
+	                var valid = validateDialog(config, tips);
+
+	                valid = valid && checkInt(tips, $('#Clave'),'Codigo');
+
+	                return valid;
 	            },
 	            rowCallback: function (nRow, aData, iDisplayIndex) {
-	                var wrap = '<div style="white-space:nowrap;overflow:hidden;width:320px;">DATA</div>';
+	                var wrap = '<div style="white-space:nowrap;overflow:hidden;width:320px;" title="DATA">DATA</div>';
 	                jQuery('td:eq(' + getArrayIndexForKey(config.GridFields, 'ColumnName', 'Nombre') + ')', nRow).html(wrap.replace(/DATA/g, aData.Nombre));
 	                jQuery('td:eq(' + getArrayIndexForKey(config.GridFields, 'ColumnName', 'Contacto') + ')', nRow).html(wrap.replace(/DATA/g, aData.Contacto));
 

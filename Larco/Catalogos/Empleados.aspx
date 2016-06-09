@@ -23,12 +23,10 @@
 	                return validateDialog(config, tips);
 	            },
 	            rowCallback: function (nRow, aData, iDisplayIndex) {
-	                //var wrap = '<div style="white-space:nowrap;overflow:hidden;width:320px;">DATA</div>';
-	                //jQuery('td:eq(' + getArrayIndexForKey(config.GridFields, 'ColumnName', 'Nombre') + ')', nRow).html(wrap.replace(/DATA/g, aData.Nombre));
-	                //jQuery('td:eq(' + getArrayIndexForKey(config.GridFields, 'ColumnName', 'Contacto') + ')', nRow).html(wrap.replace(/DATA/g, aData.Contacto));
-
-	                //var wrap = '<div id="row' + aData.Id + '" style="white-space:nowrap;overflow:hidden;width:180px;">DATA</div>';
-	                //jQuery('td:eq(' + getArrayIndexForKey(config.GridFields, 'ColumnName', 'RFC') + ')', nRow).html(wrap.replace(/DATA/g, aData.RFC));
+	                var wrap = '<div style="white-space:nowrap;overflow:hidden;width:220px;" title="DATA">DATA</div>';
+	                jQuery('td:eq(' + getArrayIndexForKey(config.GridFields, 'ColumnName', 'Nombre') + ')', nRow).html(wrap.replace(/DATA/g, aData.Nombre));
+	                jQuery('td:eq(' + getArrayIndexForKey(config.GridFields, 'ColumnName', 'Departamento') + ')', nRow).html(wrap.replace(/DATA/g, aData.Departamento));
+	                jQuery('td:eq(' + getArrayIndexForKey(config.GridFields, 'ColumnName', 'Puesto') + ')', nRow).html(wrap.replace(/DATA/g, aData.Puesto));
 
 	                return nRow;
 	            }
