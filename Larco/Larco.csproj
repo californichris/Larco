@@ -165,6 +165,8 @@
     <Content Include="Styles\cupertino\images\ui-icons_ffffff_256x240.png" />
     <Content Include="Styles\cupertino\jquery-horizontal-menu.css" />
     <Content Include="Styles\cupertino\jquery-ui.css" />
+    <Content Include="Styles\jquery.multiselect.css" />
+    <Content Include="Styles\jquery.multiselect.filter.css" />
     <Content Include="Styles\Site.css" />
     <Content Include="UnderConstruction.aspx" />
     <Content Include="Web.config">

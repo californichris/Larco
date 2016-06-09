@@ -836,7 +836,9 @@ $.widget("bs.Catalog", {
         if (this.options.pageConfig != null) {
             this.options.pageName = this.options.pageName || this.options.pageConfig.Name;
             this.options.fieldId = this.options.fieldId || this.options.pageConfig.FieldId;
+            log(this.options.columns.length);
             if (this.options.columns.length == 0) {
+                log('entro');
                 this.options.columns = columnsDefinition(this.options.pageConfig);
             }
         }
