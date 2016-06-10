@@ -3,13 +3,14 @@
 <!DOCTYPE html>
 <html  lang="en">
 <head runat="server">
-    <title>EPE Framework</title>
+    <title>Larco</title>
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />    
     <link href="<%= Page.ResolveUrl("~/Images/favicon.ico") %>" type="image/x-icon" rel="shortcut icon"/>
     <%: Styles.Render("~/Styles/site_master_css", "~/Styles/blitzer/jquery_css") %>
     <%: Scripts.Render("~/Scripts/site_master_js") %>    
     <script type="text/javascript">
         var AJAX_CONTROLER_URL = '<%= ResolveUrl("~/AjaxController.ashx") %>';
+        var AJAX = AJAX_CONTROLER_URL; //just a shortcut to the controller
         var CURRENT_PATH = "<%= Request.Path.Substring(0, Request.Path.LastIndexOf('/')) %>";
         var APP_PATH = "<%= Request.ApplicationPath %>";
         var APP_HOST = "<%= Request.Url.Host %>";
