@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Configuration;
 using System.Reflection;
+using BS.Common.Utils;
 
 namespace BS.Common.Dao
 {
@@ -62,13 +63,7 @@ namespace BS.Common.Dao
 
         private IBaseDAO GetDAO(string clazz)
         {
-            string dbConnString = ConfigurationManager.AppSettings[DBConfigParamName];
-
-            Type type = Type.GetType(clazz);
-            ConstructorInfo constInfo = type.GetConstructor(new Type[] { typeof(string) });
-            IBaseDAO instance = (IBaseDAO)constInfo.Invoke(new Object[] { dbConnString });
-
-            return instance;
+            return FactoryUtils.GetDAO(clazz);
         }
     }
 }

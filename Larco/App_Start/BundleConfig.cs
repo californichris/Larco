@@ -14,6 +14,7 @@ namespace BS.Common
                 .Include(SCRIPTS_PATH + "jquery.dataTables.js")
                 .Include(SCRIPTS_PATH + "jquery.json-2.4.js")
                 .Include(SCRIPTS_PATH + "common.js")
+                .Include(SCRIPTS_PATH + "date.js")
                 .Include(SCRIPTS_PATH + "spin.js");
             bundles.Add(siteMasterBundle);
 

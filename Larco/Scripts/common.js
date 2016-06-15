@@ -2277,8 +2277,8 @@ $.widget("bs.Page", {
             elements.append(this._getFieldHTML(field, controlFields)).append('</td>');
 
             if (count % tab.Cols == 0 || f >= length - 1) {
-                html.append('<tr>').append(labels.toString()).append('</tr>');
-                html.append('<tr>').append(elements.toString()).append('</tr>');
+                html.append('<tr class="columns-').append(tab.Cols).append('">').append(labels.toString()).append('</tr>');
+                html.append('<tr class="columns-').append(tab.Cols).append('">').append(elements.toString()).append('</tr>');
 
                 labels = new StringBuffer();
                 elements = new StringBuffer();

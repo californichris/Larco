@@ -100,6 +100,7 @@
     <Content Include="Catalogos\Tareas.aspx" />
     <Content Include="Default.aspx" />
     <Content Include="Global.asax" />
+    <Content Include="Herramientas\Ventas.aspx" />
     <Content Include="Images\checkbox.gif" />
     <Content Include="Images\database.png" />
     <Content Include="Images\favicon.ico" />
@@ -127,6 +128,8 @@
     <Content Include="Scripts\jquery.hotkeys.js" />
     <Content Include="Scripts\jquery.js" />
     <Content Include="Scripts\jquery.json-2.4.js" />
+    <Content Include="Scripts\jquery.mask.js" />
+    <Content Include="Scripts\jquery.maskedinput.js" />
     <Content Include="Scripts\jquery.multiselect.filter.js" />
     <Content Include="Scripts\jquery.multiselect.js" />
     <Content Include="Scripts\pageconfig.js" />
@@ -187,6 +190,7 @@
     <Compile Include="Admin\RefreshCache.aspx.designer.cs">
       <DependentUpon>RefreshCache.aspx</DependentUpon>
     </Compile>
+    <Compile Include="Ajax\Larco.cs" />
     <Compile Include="App_Start\BundleConfig.cs" />
     <Compile Include="Catalogos\Clientes.aspx.cs">
       <DependentUpon>Clientes.aspx</DependentUpon>
@@ -231,6 +235,8 @@
       <DependentUpon>Tareas.aspx</DependentUpon>
     </Compile>
     <Compile Include="Dao\DAOFactory.cs" />
+    <Compile Include="Dao\ILarcoDAO.cs" />
+    <Compile Include="Dao\Sql\LarcoSqlDAO.cs" />
     <Compile Include="Default.aspx.cs">
       <DependentUpon>Default.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -264,6 +270,13 @@
     </Compile>
     <Compile Include="Admin\Preview.aspx.designer.cs">
       <DependentUpon>Preview.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Herramientas\Ventas.aspx.cs">
+      <DependentUpon>Ventas.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Herramientas\Ventas.aspx.designer.cs">
+      <DependentUpon>Ventas.aspx</DependentUpon>
     </Compile>
     <Compile Include="InvalidAccess.aspx.cs">
       <DependentUpon>InvalidAccess.aspx</DependentUpon>
@@ -326,7 +339,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Facturacion\" />
-    <Folder Include="Herramientas\" />
     <Folder Include="Inventarios\" />
     <Folder Include="Reportes\" />
     <Folder Include="Stock\" />

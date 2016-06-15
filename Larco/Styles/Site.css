@@ -178,15 +178,16 @@ div.links
 
 .modal-form {padding:0!important;}
 .modal-form input { display:block; }
-.modal-form input.text, .modal-form textarea.text { margin-bottom:12px; width:95%; padding: 5px; resize: none;}
+.modal-form input.text, .modal-form textarea.text { margin-bottom:6px; width:95%; padding: 4px; resize: none;}
 .modal-form input.hasDatepicker {width:84%; display:inline;}
-.modal-form button.ui-datepicker-trigger {height:26px; margin-left: 0.2em;}
+.modal-form button.ui-datepicker-trigger {height:24px; margin-left: 0.2em;}
 .modal-form fieldset { padding:0; border:0; margin-top:10px; margin-left: 5px;}
-.modal-form select { display:block; margin-bottom:12px; width:98%; padding: .4em;}
-.modal-form input[type=checkbox] {height: 28px; margin-bottom: 9px;}
-.modal-form .custom-combobox-input { margin-bottom: 12px; margin-top: 0px; }
+.modal-form select { display:block; margin-bottom:6px; width:98%; padding: .4em;}
+.modal-form input[type=checkbox] {height: 25px; margin-bottom: 9px;}
+.modal-form .custom-combobox-input { margin-bottom: 6px; margin-top: 0px; }
 .modal-form .ui-selectmenu-button { display:block; margin-bottom: 9.5px; margin-top: 0px; }
 .modal-form .ui-multiselect {margin-bottom: 12px;}
+.modal-form table.table-style td.custom-combobox-input-td { padding-left:0px;}
 
 .select-menu-overflow {
       max-height: 200px;      
@@ -200,15 +201,15 @@ div.links
 
 .custom-combobox-toggle {
 	margin-right: 0px!important;
-	height: 26px;
+	height: 23px;
 	margin-top: 2px;
 		
-    height: 25.5px\9; /*It will apply to all ie from 8 and below */
+    height: 23.5px\9; /*It will apply to all ie from 8 and below */
 }
  
 .custom-combobox-input {
 	margin: 0;
-	padding: 5px;
+	padding: 4px;
 	background: #FFFFFF!important;
 	width: 99%;
 	/*margin-bottom: 12px;*/
@@ -224,10 +225,6 @@ div.links
 {
     width: 31px;
     vertical-align: top;
-}
- 
-.ui-autocomplete {
-	z-index:10000!important;
 }
 
 .ui-autocomplete {
@@ -307,6 +304,7 @@ div.links
     width: 97.5%!important;
 }
 
+.modal-form tr.columns-4 input.hasDatepicker {width:81%;}
 
 /* IE 6 doesn't support max-height
  * we use height instead, but this forces the menu to always be this tall
@@ -374,27 +372,6 @@ div.links
     border: 1px solid #bee1af;
 	color: #696969;
 }
-
-
-/*
-.ui-widget table.dataTable 
-{
-    font-size: 12px;
-    font-family: "Helvetica Neue", "Lucida Grande", "Segoe UI", Arial, Helvetica, Verdana, sans-serif;
-    color: #696969;
-}
-
-.ui-widget table.dataTable tr.odd
-{
-    background-color: #F2F8FC;
-    border: 1px;
-}
-
-.ui-widget table.dataTable tr.even
-{
-   background-color: white;
-    border: 1px;
-}*/
 
 #divBingMap 
 {
@@ -501,13 +478,13 @@ input.readonly
 }
 
 .filter-form input { display:block; border: 1px solid #ddd;}
-.filter-form input { width:93%; padding: 5px; }
-.filter-form input.text, .filter-form textarea.text { width:93%; padding: 5px; }
+.filter-form input { width:93%; padding: 4px; }
+.filter-form input.text, .filter-form textarea.text { width:93%; padding: 4px; }
 .filter-form input.hasDatepicker {width:80%; display:inline;}
-.filter-form button.ui-datepicker-trigger {height:26px; margin-left: 2px;}
+.filter-form button.ui-datepicker-trigger {height:24px; margin-left: 2px;}
 .filter-form table.custom-combobox {width:99%;}
-.filter-form .custom-combobox-input { width:98%; padding: 5px; margin-top: 2px; }
-.filter-form .custom-combobox-toggle { height:26px; }
+.filter-form .custom-combobox-input { width:98%; padding: 4px; margin-top: 2px; }
+.filter-form .custom-combobox-toggle { height:23px; }
 .filter-form .ui-selectmenu-button { display:block; margin-top: 0px; width:97%!important;}
 
 .filter-form tr.columns-1 input { width:98%; }
@@ -520,6 +497,7 @@ input.readonly
 .filter-form tr.columns-2 .ui-selectmenu-button { width:98%!important;}
 
 .ui-selectmenu-menu {z-index:10000!important;}
+.ui-autocomplete { z-index:10000!important;}
 
 ul.export-menu { 
     position: absolute; 

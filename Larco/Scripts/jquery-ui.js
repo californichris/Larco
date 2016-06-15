@@ -8312,8 +8312,8 @@ var dialog = $.widget( "ui.dialog", {
 	},
 
 	_moveToTop: function( event, silent ) {
-		var moved = false,
-			zIndicies = this.uiDialog.siblings(".ui-front:visible:not(.ui-selectmenu-menu)").map(function () {
+	    var moved = false,
+			zIndicies = this.uiDialog.siblings(".ui-front:visible:not(.ui-selectmenu-menu,.ui-autocomplete)").map(function () {
 				return +$( this ).css( "z-index" );
 			}).get(),
 			zIndexMax = Math.max.apply( null, zIndicies );

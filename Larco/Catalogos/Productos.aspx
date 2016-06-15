@@ -26,7 +26,25 @@
 	            showExport: true,
 	            dialogWidth: 600,
 	            validate: function (tips) {
-	                return validateDialog(config, tips);
+	                var valid = validateDialog(config, tips);
+
+	                var checks = $('#TareasProductos_table input[type=checkbox]:checked');
+	                if (checks.length == 1) {
+	                    //alert('Al menos tienes que seleccionar dos tareas por las cuales va a pasar este producto.');
+	                    tips.text('Al menos tienes que seleccionar dos tareas por las cuales va a pasar este producto.').addClass("ui-state-highlight");
+	                    valid = false;
+	                }
+
+	                // validating aggregated value, must be number
+	                if (valid) {
+	                    for (var i = 0; i < checks.length; i++) {
+	                        var check = checks[i];
+	                        valid = valid && checkFloat(tips, $('#txtAggreVal' + $(check).attr('TaskId')), 'Valor Agregado');
+	                        if (!valid) break;
+	                    }
+	                }
+
+	                return valid;
 	            },
 	            newEntityCallBack: function (oTable, options) {
 	                $('#Productos_table').Catalog('newEntity',oTable, options);
@@ -35,7 +53,7 @@
 	                $('#TareasProductos_table input[type=text]').val('').hide();
 	            },
 	            editEntityCallBack: function (oTable, options) {
-	                $('#TareasProductos_table input[type=checkbox]').prop('checked', false).attr('ProdTaskId','');
+	                $('#TareasProductos_table input[type=checkbox]').prop('checked', false).attr('ProdTaskId', '');
 	                $('#TareasProductos_table input[type=text]').val('').hide();
 
 	                var data = getSelectedRowData(oTable);
@@ -61,7 +79,7 @@
 
 	                var entity = getSelectedRowData(oTable);
 	                var aggre = { Product_ID: entity.Id, OperationType: 'DeleteEntities', PageName: 'AggregateValue' };
-	                var routing = { Nombre: entity.Nombre, OperationType: 'DeleteEntities', PageName: 'Routing' };
+	                var routing = { ProductId: entity.Id, OperationType: 'DeleteEntities', PageName: 'Routing' };
 	                entity.OperationType = 'Delete';
 	                entity.PageName = 'Productos';	                               
 
@@ -81,44 +99,103 @@
 	                    } else {
 	                        alert(json.ErrorMsg);
 	                    }
-	                })
+	                });
 	            },
 	            saveEntityCallBack: function (oTable, options) {
-	                if ($('#Id').val() == '') {
-	                    //new product
-	                    saveNewProduct();
-
-
-	                } else {
-	                    //existing product update
-	                    log('not implemented');
+	                if ($('#Id').val() == '') {	                    
+	                    saveNewProduct();//new product
+	                } else {	                    
+	                    editProduct();//existing product update
 	                }
 	            }
 	        });
 	    }
 
 	    function saveNewProduct() {
-            // TODO: validate, aggregate must be number
-	        var checks = $('#TareasProductos_table input[type=checkbox]:checked');
-	        if (checks.length == 1) {
-	            alert('Al menos tienes que seleccionar dos tareas por las cuales va a pasar este producto.');
-	            return false;
-	        }
-
 	        var product = { Id: $('#Id').val(), Nombre: $('#Nombre').val() };
 
-	       
-
-	        log(product);
-	        log(getSaveNewEntities(product));
+	        $.when(saveProduct(product)).done(function (json) {
+	            if (json.ErrorMsg == SUCCESS) {
+	                product.Id = json.Id;
+	                saveRoutesAndAggregateValue(product);
+	            } else {
+	                log(json.ErrorMsg);
+	                showError($("#Productos_dialog p.validateTips"), 'No fue posible grabar el producto.');
+	            }
+	        });
 	    }
 
-	    function getSaveNewEntities(product) {
+	    function editProduct() {
+	        var product = { Id: $('#Id').val(), Nombre: $('#Nombre').val(), OperationType: 'Save', PageName: 'Productos' };
+	        var routing = { ProductId: product.Id, OperationType: 'DeleteEntities', PageName: 'Routing' };
+
 	        var entities = [];
+	        entities.push(product);
+	        entities.push(routing);
+
+	        var _entities = getEditRoutesAndAggregateValueEntities(product);
+	        entities = $.merge(entities, _entities);
+
+	        $.when(_saveRoutesAndAggregateValue(entities)).done(function (json) {
+	            if (json.ErrorMsg == SUCCESS) {
+	                $('#Productos_dialog').dialog('close');
+	                $('#Productos_table').DataTable().ajax.reload();
+	            } else {
+	                log(json.ErrorMsg);
+	                showError($("#Productos_dialog p.validateTips"), 'No fue posible grabar el producto.');
+	            }
+	        });
+	    }
+
+	    function saveRoutesAndAggregateValue(product) {
+	        var entities = getNewRoutesAndAggregateValueEntities(product);
+
+	        $.when(_saveRoutesAndAggregateValue(entities)).done(function (json) {
+	            if (json.ErrorMsg == SUCCESS) {
+	                $('#Productos_dialog').dialog('close');
+	                $('#Productos_table').DataTable().ajax.reload();
+	            } else {
+	                log(json.ErrorMsg);
+	                showError($("#Productos_dialog p.validateTips"), 'No fue posible grabar el producto.');
+	                deleteProduct(product);
+	            }
+	        });
+	    }
+
+	    function deleteProduct(entity) {
+	        $.ajax({
+	            type: "POST",
+	            url: AJAX_CONTROLER_URL + '/PageInfo/DeletePageEntity?pageName=Productos',
+	            data: "entity=" + encodeURIComponent($.toJSON(entity))
+	        }).done(function (json) {
+                log(json.ErrorMsg);
+	        });
+	    }
+
+	    function _saveRoutesAndAggregateValue(entities) {
+	        return $.ajax({
+	            type: "POST",
+	            url: AJAX_CONTROLER_URL + '/PageInfo/ExecuteTransaction',
+	            data: "entities=" + encodeURIComponent($.toJSON(entities))
+	        });
+	    }
+
+	    function saveProduct(product) {
+	        return $.ajax({
+	            type: "POST",
+	            url: AJAX_CONTROLER_URL + '/PageInfo/SavePageEntity?pageName=Productos',
+	            data: "entity=" + encodeURIComponent($.toJSON(product))
+	        });
+	    }
+
+	    function getNewRoutesAndAggregateValueEntities(product) {
+	        var checks = $('#TareasProductos_table input[type=checkbox]:checked');
+	        var entities = [];
+
 	        for (var i = 0; i < checks.length; i++) {
 	            entities.push(getSaveAggregateEntity(product, $(checks[i]).attr('TaskId')));
 
-	            if (i < (checks.length - 1)); {
+	            if (i < (checks.length - 1)) {
 	                entities.push(getSaveRoutingEntity(product, $(checks[i]).attr('TaskId'), $(checks[i + 1]).attr('TaskId')));
 	            }
 	        }
@@ -126,14 +203,41 @@
 	        return entities;
 	    }
 
+	    function getEditRoutesAndAggregateValueEntities(product) {
+	        var entities = [];
+	        var checks = $('#TareasProductos_table input[type=checkbox]:checked');
+
+	        for (var i = 0; i < checks.length; i++) {
+	            var aggregate = getSaveAggregateEntity(product, $(checks[i]).attr('TaskId'))
+	            aggregate.ProdTaskId = $(checks[i]).attr('ProdTaskId');
+	            entities.push(aggregate);
+
+	            if (i < (checks.length - 1)) {
+	                entities.push(getSaveRoutingEntity(product, $(checks[i]).attr('TaskId'), $(checks[i + 1]).attr('TaskId')));
+	            }
+	        }
+
+	        var notChecked = $('#TareasProductos_table input[type=checkbox][ProdTaskId!=]:not(:checked)')
+	        for (var i = 0; i < notChecked.length; i++) {
+	            entities.push(getDeleteAggregateEntity($(notChecked[i]).attr('ProdTaskId')));
+	        }
+
+	        return entities;
+	    }
+
+
 	    function getSaveAggregateEntity(entity, _taskId) {
 	        var _value = $('#txtAggreVal' + _taskId).val() || '1.0';
 
 	        return { ProductId: entity.Id, TaskId: _taskId, Value: _value, OperationType: 'Save', PageName: 'AggregateValue' };
 	    }
 
+	    function getDeleteAggregateEntity(_prodTaskId) {
+	        return { ProdTaskId: _prodTaskId, OperationType: 'Delete', PageName: 'AggregateValue' };
+	    }
+
 	    function getSaveRoutingEntity(entity, _fromTaskId, _toTaskId) {
-	        return { Nombre: entity.Nombre, Rou_From: _fromTaskId, Rou_To: _toTaskId, Rou_Code: 'OK', OperationType: 'Save', PageName: 'Routing' };
+	        return { ProductId: entity.Id, Nombre: entity.Nombre, Rou_From: _fromTaskId, Rou_To: _toTaskId, Rou_Code: 'OK', OperationType: 'Save', PageName: 'Routing' };
 	    }
 
 	    function createTasks() {
@@ -157,8 +261,9 @@
 	                    scrollY: '300px',
 	                    sorting: [[0, 'asc']],
 	                    columns: _columns,
+                        filter:false,
 	                    rowCallback: function (nRow, aData, iDisplayIndex) {
-	                        var wrap = '<input type="checkbox" taskId="DATA" name="chkTaskDATA" id="chkTaskDATA" class="ui-widget-content ui-corner-all">';
+	                        var wrap = '<input type="checkbox" taskId="DATA" name="chkTaskDATA" id="chkTaskDATA" ProdTaskId="" class="ui-widget-content ui-corner-all">';
 	                        var aggre = '<input type="text" name="txtAggreValDATA" id="txtAggreValDATA" class="text ui-widget-content ui-corner-all">';
 	                        jQuery('td:eq(' + getArrayIndexForKey(config.GridFields, 'ColumnName', 'TAS_Order') + ')', nRow).html(wrap.replace(/DATA/g, aData.Id));
 	                        jQuery('td:eq(' + getArrayIndexForKey(config.GridFields, 'ColumnName', 'Id') + ')', nRow).html(aggre.replace(/DATA/g, aData.Id));
