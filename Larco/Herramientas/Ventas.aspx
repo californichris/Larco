@@ -2,7 +2,14 @@
 <asp:Content ID="Content1" ContentPlaceHolderID="HeadContent" runat="server">
         <style type="text/css">
             #StockParcial {display:inline;}
-            #StockParcialCantidad {float: right; margin-right:1px; width:80%; display:inline;}        
+            #StockParcialCantidad {float: right; margin-right:1px; width:80%; display:inline;}
+            table.ventas-detail div.dataTables_scrollBody table.dataTable tbody td,
+            table.ventas-detail div.dataTables_scrollHead table.dataTable thead th ,
+            table.ventas-detail div.dataTables_wrapper table.dataTable thead th,
+            table.ventas-detail div.dataTables_wrapper table.dataTable tbody td
+            {
+                padding:2px 2px 2px 4px;
+            }        
         </style>
     <script type="text/javascript" src="<%= Page.ResolveUrl("~/Scripts/jquery.mask.js") %>"></script>
 	<script type="text/javascript">
@@ -12,6 +19,7 @@
 
 	    var PLANOS = [];
 	    $.getData(AJAX + '/PageInfo/GetPageEntityList?pageName=PlanosList');
+	    $.getData(AJAX + '/PageInfo/GetPageConfig?pageName=MergeOrdenes');
 
 	    $(document).ready(function () {
 	        $('div.catalog').Page({
@@ -48,6 +56,8 @@
 	            }
 	        });
 
+
+
 	        createEventHandlers();
 	        appendAdditionalInfoSection();
 
@@ -62,16 +72,12 @@
 	            newEntityCallBack: function (oTable, options) {
 	                ventasCtlg.Catalog('newEntity', oTable, options);
 	                setDefaults();
-
-	                $('#popularidad_numero_parte_table').DataTable().clear().draw();
-	                $('#popularidad_plano_table').DataTable().clear().draw();
 	            },
 	            editEntityCallBack: function (oTable, options) {
+	                setDefaults();
 	                ventasCtlg.Catalog('editEntity', oTable, options);
-	                $('#popularidad_numero_parte_table').DataTable().clear().draw();
-	                $('#popularidad_plano_table').DataTable().clear().draw();
+	                clearAdditionalInfoTables();
 	                setPlanId();
-
 	                reloadAdditionalInfoSection();
 	            },
 	            deleteEntityCallBack: function (oTable, options) {
@@ -130,6 +136,21 @@
 	        $('#Recibido').datepicker("setDate", new Date());
 	        $('#EmployeeId').val(LOGIN_NAME).selectmenu('refresh');
 	        $('#PN_Id').prop('readonly', !$('#Plano').is(':checked'));
+	        $('#StockParcialCantidad').prop('readonly', !$('#StockParcial').is(':checked'));
+	        clearAdditionalInfoTables();
+	        $('#newMergeOrdenes_table').button('disable');
+	        $('#AlertaMsg').prop('readonly', true);
+	        $('#Instrucciones').prop('readonly', true);
+	    }
+
+	    function clearAdditionalInfoTables() {
+	        $('#popularidad_numero_parte_table').DataTable().clear().draw();
+	        $('#popularidad_plano_table').DataTable().clear().draw();
+	        $('#prod_orders_part_number_table').DataTable().clear().draw();
+	        $('#prod_orders_plan_table').DataTable().clear().draw();
+	        $('#MergeOrdenes_table').DataTable().clear().draw();
+
+	        $(DIALOG_SELECTOR + ' td.dataTables_empty').remove();
 	    }
 
 	    function getLatestOrderByClient(_clientId) {
@@ -141,7 +162,7 @@
 	    }
 
 	    function appendAdditionalInfoSection() {
-	        var table = $('#OrdenesVW_dialog #tabs-1 table.table-style');
+	        var table = $(DIALOG_SELECTOR + ' #tabs-1 table.table-style');
 	        $('#additional_info').insertAfter(table).show();
 
 	        var options = {
@@ -150,24 +171,198 @@
 	            filter: false,
 	            jQueryUI: true,
 	            info: false,
-	            scrollY: '60px',
 	            columns: [
                     { title: "Ordenes", data: 'Ordenes', bSortable: false },
                     { title: "Piezas", data: 'Piezas', bSortable: false },
                     { title: "Stock", data: 'Stock', bSortable: false },
-                    { title: "Sugerida", data: 'Sugerida', bSortable: false }
+                    { title: "Sug.", data: 'Sugerida', bSortable: false }
 	            ]
 	        }
 	        $('#popularidad_numero_parte_table').DataTable(options);
 	        $('#popularidad_numero_parte_table_wrapper div.fg-toolbar').remove();
 	        $('#popularidad_plano_table').DataTable(options);
 	        $('#popularidad_plano_table_wrapper div.fg-toolbar').remove();
+
+	        var prodOptions = {
+	            data: [],
+	            paginate: false,
+	            filter: false,
+	            jQueryUI: true,
+	            info: false,
+	            scrollY: '75px',
+	            columns: [
+                    { title: "Orden", data: 'ITE_Nombre', bSortable: false },
+                    { title: "Larco", data: 'Ordenada', bSortable: false, width: '35px' },
+                    { title: "Cliente", data: 'Requerida', bSortable: false, width: '35px' },
+                    { title: "Disp.", data: 'Disp', bSortable: false, width: '35px' },
+                    { title: "Tarea", data: 'Tarea', bSortable: false },
+                    { title: "Status", data: 'TaskStatus', bSortable: false, width: '35px' }
+	            ]
+	        }
+
+	        $('#prod_orders_part_number_table').DataTable(prodOptions);
+	        $('#prod_orders_part_number_table_wrapper div.fg-toolbar').remove();
+	        $('#prod_orders_plan_table').DataTable(prodOptions);
+	        $('#prod_orders_plan_table_wrapper div.fg-toolbar').remove();
+
+	        $('table.ventas-detail span.DataTables_sort_icon').remove();
+	        
+	        $('#merge_orders_info').show();
+
+	        var td = $('label[for=MezclarOrders]').parent();
+	        var mergeTD = $('#MezclarOrders').parent();
+	        $('label[for=MezclarOrders]').remove();
+	        td.append($('#merge_orders_info'));
+	        mergeTD.remove();
+	        td.attr('rowspan', '2');
+
+	        $.when($.getData(AJAX + '/PageInfo/GetPageConfig?pageName=MergeOrdenes')).done(function (json) {
+	            $('#merge_orders_info').Page({
+	                source: json,
+	                dialogStyle: 'table',
+	                onLoadComplete: function (config) {
+	                    $('#Order_ITE_Nombre').attr('name','ITE_Nombre');
+	                    $.page.initSelectMenu('#MO_ITE_Nombre');
+
+	                    var mergeCtlg = $('#MergeOrdenes_table').Catalog({
+	                        pageConfig: config,
+	                        source: [],
+	                        filter: false,
+	                        paginate: false,
+	                        scrollY: '30px',
+                            showEdit:false,
+	                        initCompleteCallBack: function () {
+	                            $('#merge_orders_info div.ui-corner-br').remove();
+	                            $('#merge_orders_info td.dataTables_empty').remove();
+	                        },
+	                        validate: function (tips) {
+	                            return validateDialog(config, tips);
+	                        },
+	                        newEntityCallBack: function (oTable, options) {
+	                            if ($('#OrdenId').val() == '') {
+	                                alert('Necesitas grabar la Orden primero.');
+	                                return;
+	                            }
+
+	                            $('#MergeOrdenes_dialog').attr('originaltitle', 'Mezclar Orden');	                            
+	                            mergeCtlg.Catalog('newEntity', oTable, options);
+	                        },
+	                        saveEntityCallBack: function (oTable, options) {
+	                            if ($('#OrdenId').val() == '') {
+	                                showError($("#MergeOrdenes_dialog p.validateTips"), 'Necesitas grabar la Orden primero.');
+	                                return;
+	                            }
+
+	                            var entity = getObject('#MergeOrdenes_dialog');
+	                            entity.Order_ITE_Nombre = $('#ITE_Nombre').val();
+	                            entity.Update_Date = 'GETDATE()';
+	                            entity.Update_User = LOGIN_NAME;
+
+	                            $.ajax({
+	                                type: "POST",
+	                                url: options.saveRequest,
+	                                data: "entity=" + encodeURIComponent($.toJSON(entity))
+	                            }).done(function (json) {
+	                                if (json.ErrorMsg == SUCCESS) {	                                    
+	                                    $('#MergeOrdenes_dialog').dialog('close');
+	                                    $('#MergeOrdenes_table_wrapper button.disable').button('disable');
+	                                    oTable.ajax.reload();
+	                                    reloadAdditionalInfoSection();
+	                                } else {
+	                                    var errorMsg = 'No fue posible grabar la orden mezclada';
+	                                    if (json.ErrorMsg.indexOf('already exists') != -1) {
+	                                        errorMsg = 'No se puede mezclar con la misma orden';
+	                                    } 
+	                                    showError($("#MergeOrdenes_dialog p.validateTips"), errorMsg);
+	                                }
+	                            });
+	                        },
+	                        deleteEntityCallBack: function (oTable, options) {
+	                            if (confirm('Estas seguro que quieres borrar esta orden mezclada?') == false)
+	                                return false;
+
+	                            var entity = getSelectedRowData(oTable);
+	                            $.ajax({
+	                                type: "POST",
+	                                url: options.deleteRequest,
+	                                data: "entity=" + encodeURIComponent($.toJSON(entity))
+	                            }).done(function (json) {
+	                                if (json.ErrorMsg == SUCCESS) {
+	                                    oTable.ajax.reload();
+	                                    $('#MergeOrdenes_table_wrapper button.disable').button('disable');
+	                                    reloadAdditionalInfoSection();
+	                                } else {
+	                                    alert('No se pudo borrar la orden mezclada.');
+	                                }
+	                            });
+	                        }
+	                    });
+	                }
+	            });
+
+	        });
 	    }
 
 	    function reloadAdditionalInfoSection() {
-	        //reloadPartNumberPopularity();
-	        //reloadPlanPopularity();
+	        reloadPartNumberAdditionalInfo(false);
+	        reloadPlanAdditionalInfo();
+	        if ($('#Mezclado').is(':checked')) {
+	            reloadMergeOrders();
+	            $('#newMergeOrdenes_table').button('enable');
+	        }
+	        $(DIALOG_SELECTOR + ' td.dataTables_empty').remove();
+	    }
+
+	    function reloadMergeDrop() {
+	        var groupData = getProdOrdersData();
+
+            $.page.createSelectMenuOptions($('#MO_ITE_Nombre'), { aaData: groupData }, { textField: 'ITE_Nombre', valField: 'ITE_Nombre' });
+	    }
+
+	    function getProdOrdersData() {
+	        var list = []
+	        $.merge(list, $('#prod_orders_part_number_table').DataTable().data());
+	        $.merge(list, $('#prod_orders_plan_table').DataTable().data());
+	        var fieldName = 'ITE_Nombre';
+
+	        list.sort(function (a, b) {
+	            var a1 = a[fieldName], b1 = b[fieldName];
+	            if (a1 == b1) return 0;
+	            return a1 > b1 ? 1 : -1;
+	        });
+
+	        var groupData = [];
+	        var prevVal = '';
+
+	        for (var i = 0; i < list.length; i++) {
+	            var data = list[i];
+	            if (prevVal != data[fieldName]) {
+	                groupData.push(data);
+	            }
+	            prevVal = data[fieldName];
+	        }
+
+            //TODO: removed orders that have 0 available pieces
+	        return groupData;
+	    }
+
+	    function reloadMergeOrders() {
+	        var entity = { Order_ITE_Nombre: $('#ITE_Nombre').val() };
+	        var _url = AJAX_CONTROLER_URL + '/PageInfo/GetPageEntityList?pageName=MergeOrdenes&entity=' + encodeURIComponent($.toJSON(entity));
+	        $('#MergeOrdenes_table').DataTable().ajax.url(_url).load();
+	        $('#MergeOrdenes_table').css('width', '100%').DataTable().columns.adjust().draw(); //Fix column width bug in datatables.
+	    }
+
+	    function reloadPartNumberAdditionalInfo(updateQuantity) {
+	        reloadPartNumberPopularity(updateQuantity);
 	        reloadProdOrdersByPartNumber();
+	        $('#prod_orders_part_number_table').css('width', '100%').DataTable().columns.adjust().draw();	        
+	    }
+
+	    function reloadPlanAdditionalInfo() {
+	        reloadPlanPopularity();
+	        reloadProdOrdersByPlan();
+	        $('#prod_orders_plan_table').css('width', '100%').DataTable().columns.adjust().draw();
 	    }
 
 	    function getPopularityAggregate() {
@@ -179,7 +374,7 @@
 	        return aggregate;
 	    }
 
-	    function reloadPartNumberPopularity() {
+	    function reloadPartNumberPopularity(updateQuantity) {
 	        if ($.trim($('#Numero').val()) == '') return;
 	        
 	        var aggregate = getPopularityAggregate();
@@ -189,9 +384,10 @@
 	        stockAggregate.Functions.push({ Function: 'SUM', FieldName: 'ST_Cantidad', Alias: 'Cantidad' });
 	        var entityStock = { PA_Alias: $.trim($('#Numero').val()) };
 	        
-	        $.when(getAggreateData('OrdenesVW', aggregate, entity), getAggreateData('PlanoAliasStock', stockAggregate, entityStock)).done(function (json1, json2) {
+	        $.when(getAggreateData(PAGE_NAME, aggregate, entity), getAggreateData('PlanoAliasStock', stockAggregate, entityStock)).done(function (json1, json2) {
 	            var dataSet = createPopularityDataSet(json1, json2);
 	            $('#popularidad_numero_parte_table').DataTable().clear().rows.add(dataSet).draw();
+	            if (updateQuantity) $('#Requerida').val($('#popularidad_numero_parte_table tbody tr td:last').html());
 	        });
 	    }
 
@@ -205,22 +401,62 @@
 	        stockAggregate.Functions.push({ Function: 'SUM', FieldName: 'ST_Cantidad', Alias: 'Cantidad' });
 	        var entityStock = { PN_Id: $.trim($('#PN_Id').attr('PlanId')) };
 
-	        $.when(getAggreateData('OrdenesVW', aggregate, entity), getAggreateData('PlanoStock', stockAggregate, entityStock)).done(function (json1, json2) {
+	        $.when(getAggreateData(PAGE_NAME, aggregate, entity), getAggreateData('PlanoStock', stockAggregate, entityStock)).done(function (json1, json2) {
 	            var dataSet = createPopularityDataSet(json1, json2);
 	            $('#popularidad_plano_table').DataTable().clear().rows.add(dataSet).draw();
 	        });
 	    }
 
-	    function reloadProdOrdersByPartNumber() {
+	    function getProdOrdersAggregate() {
 	        var aggregate = { GroupByFields: 'ITE_Nombre,Ordenada,Requerida,Tarea,TaskStatus,StockParcialCantidad', Functions: [] };
 	        aggregate.Functions.push({ Function: 'SUM', FieldName: 'MO_Cantidad', Alias: 'Usadas' });
+            
+	        return aggregate;
+	    }
 
-	        var entity = { Numero: '7112-5088-XW', ITS_DTStart: 'NOT_NULL', ITS_DTStop: 'NULL', ITS_Status: 'NOT_9' };
+	    function reloadProdOrdersByPartNumber() {
+	        if ($.trim($('#Numero').val()) == '') return;
+
+	        var aggregate = getProdOrdersAggregate();
+	        var entity = { Numero: $.trim($('#Numero').val()), ITS_DTStart: 'NOT_NULL', ITS_DTStop: 'NULL', ITS_Status: 'NOT_9' };
 
 	        $.when(getAggreateData('OrdenesInProd', aggregate, entity)).done(function (json) {
-	            log(json);
+	            if (json.aaData && json.aaData.length > 0) {
+	                $('#prod_orders_part_number_table').DataTable().clear().rows.add(createProdDataSet(json)).draw();
+	                reloadMergeDrop();
+	            } else {
+	                $('table.ventas-detail td.dataTables_empty').remove();
+	            }
 	        });
+	    }
 
+	    function reloadProdOrdersByPlan() {
+	        if ($.trim($('#PN_Id').val()) == '') return;
+
+	        var aggregate = getProdOrdersAggregate();
+	        var entity = { PN_Id: $.trim($('#PN_Id').attr('PlanId')), ITS_DTStart: 'NOT_NULL', ITS_DTStop: 'NULL', ITS_Status: 'NOT_9' };
+
+	        $.when(getAggreateData('OrdenesInProd', aggregate, entity)).done(function (json) {
+	            if (json.aaData && json.aaData.length > 0) {
+	                $('#prod_orders_plan_table').DataTable().clear().rows.add(createProdDataSet(json)).draw();
+	                reloadMergeDrop();
+	            } else {
+	                $('table.ventas-detail td.dataTables_empty').remove();
+	            }
+	        });
+	    }
+
+	    function createProdDataSet(json) {
+	        for (var i = 0; i < json.aaData.length; i++) {
+	            var data = json.aaData[i];
+	            var stockParcial = data.StockParcialCantida || 0.0;
+	            var usadas = data.Usadas || 0.0;
+
+	            var disp = (parseInt(data.Ordenada) + parseInt(stockParcial)) - (parseInt(data.Requerida) + parseInt(usadas));
+	            data.Disp = disp;
+	        }
+
+	        return json.aaData;
 	    }
 
 	    function createPopularityDataSet(json1, json2) {
@@ -302,6 +538,9 @@
 	        $('#Mezclado').click(function () {
 	            if ($('#Mezclado').is(':checked')) {
 	                $('#Stock,#StockParcial').prop('checked', false);
+	                $('#newMergeOrdenes_table').button('enable');
+	            } else {
+	                $('#newMergeOrdenes_table').button('disable');
 	            }
 	        });
 
@@ -342,6 +581,11 @@
 	            $('#Total').val((req * uni).toFixed(2));
 	        });
 
+	        $('#Numero').change(function () {
+	            reloadPartNumberAdditionalInfo(true);
+                //TODO: get latest intructions
+	        });
+
 	        $.when($.getData(AJAX + '/PageInfo/GetPageEntityList?pageName=PlanosList')).done(function (json) {
 	            PLANOS = json.aaData;
 	            $('#PN_Id').autocomplete({
@@ -351,6 +595,7 @@
 	                    $('#PN_Id').val(ui.item.label);
 	                    $('#PN_Id').attr('PlanId', ui.item.value);
 
+	                    reloadPlanAdditionalInfo();
 	                    return false;
 	                },
 	                focus: function (event, ui) {
@@ -359,6 +604,21 @@
 	                }
 	            });
 	        });
+
+
+	        $('#Alerta').click(function () {
+	            $('#AlertaMsg').prop('readonly', true);
+	            $('#Instrucciones').prop('readonly', true);
+
+	            if ($('#Alerta').is(':checked')) {
+	                $('#AlertaMsg').val('Atención: INSTRUCCIONES ESPECIALES');
+	                $('#AlertaMsg').prop('readonly', false);
+	                $('#Instrucciones').prop('readonly', false);
+	            } else {
+	                $('#AlertaMsg').val('');
+	                $('#Instrucciones').val('');
+	            }
+	        });
 	    }
 
 	</script>
@@ -366,13 +626,27 @@
 <asp:Content ID="Content2" ContentPlaceHolderID="MainContent" runat="server">
     <h2></h2><br />
     <div class="catalog"></div>
+    <div id="merge_orders_info" style="display:none;">
+        <!--<table id="merge_orders_table" width="100%" cellspacing="0" cellpadding="0" style="font-size:10px;">
+            <thead>
+                <tr>
+                    <th>Orden</th>
+                    <th>Cantidad</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>-->
+    </div>
+
     <div id="additional_info" style="display:none;">
         <h3 style="margin-top:2px;">Informacion Adicional</h3>
-        <table  ="100%" cellspacing="0" cellpadding="2">
+        <table  width="100%" cellspacing="0" cellpadding="2" class="ventas-detail">
             <tbody>
                 <tr>
-                    <td width="25%">
-                        <table id="popularidad_numero_parte_table" width="100%" cellspacing="0" cellpadding="0">
+                    <td width="20%" valign="top">
+                        <h3 style="margin-top:2px;font-size: 11px;">Popularidad por Numero de Parte</h3>
+                        <table id="popularidad_numero_parte_table" width="100%" cellspacing="0" cellpadding="0" style="font-size:10px;">
                             <thead>
                                 <tr>
                                     <th>Ordenes</th>
@@ -385,8 +659,45 @@
                             </tbody>
                         </table>
                     </td>
-                    <td width="25%">
-                        <table id="popularidad_plano_table" width="100%" cellspacing="0" cellpadding="0">
+                    <td width="40%" rowspan="2" valign="top">
+                        <h3 style="margin-top:2px;font-size: 11px;">Ordenes en Produccion por Numero de Parte</h3>
+                        <table id="prod_orders_part_number_table" width="100%" cellspacing="0" cellpadding="0" style="font-size:10px;">
+                            <thead>
+                                <tr>
+                                    <th>Orden</th>
+                                    <th>Larco</th>
+                                    <th>Cliente</th>
+                                    <th>Disp.</th>
+                                    <th>Tarea</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </td>
+                    <td width="40%" rowspan="2" valign="top">
+                        <h3 style="margin-top:2px;font-size: 11px;">Ordenes en produccion por Numero de Plano</h3>
+                        <table id="prod_orders_plan_table" width="100%" cellspacing="0" cellpadding="0" style="font-size:10px;">
+                            <thead>
+                                <tr>
+                                    <th>Orden</th>
+                                    <th>Larco</th>
+                                    <th>Cliente</th>
+                                    <th>Disp.</th>
+                                    <th>Tarea</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td width="20%" valign="top">
+                        <h3 style="margin-top:2px;font-size: 11px;">Popularidad por Numero de Plano</h3>                        
+                        <table id="popularidad_plano_table" width="100%" cellspacing="0" cellpadding="0" style="font-size:10px;">
                             <thead>
                                 <tr>
                                     <th>Ordenes</th>
@@ -399,11 +710,7 @@
                             </tbody>
                         </table>
                     </td>
-                    <td width="25%">
-                    </td>
-                    <td width="25%">
 
-                    </td>
                 </tr>
             </tbody>
         </table>
