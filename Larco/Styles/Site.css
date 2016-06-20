@@ -540,3 +540,7 @@ table.dataTable tbody tr.ui-state-active {
 table.dataTable tbody tr.ui-state-active:hover {
     font-weight: normal!important;
 }
+
+.ui-autocomplete-loading {
+    background: white url("../Images/ui-anim_basic_16x16.gif") right center no-repeat!important;
+}
