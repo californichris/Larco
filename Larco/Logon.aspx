@@ -57,7 +57,7 @@
                         <input id="txtUserName" type="text" runat="server" placeholder="Usuario"  class="text ui-corner-all">
                         <label>Password:</label><br /><br />
                         <input id="txtUserPass" type="password" runat="server" placeholder="Contraseña"  class="text ui-corner-all">
-                        <input type="submit" Value="Iniciar sesion" runat="server" ID="cmdLogin"><p></p>
+                        <input type="submit" Value="Iniciar sesion" runat="server" ID="cmdLogin" class="i-button ui-widget ui-state-default ui-corner-all"><p></p>
                         <ASP:CheckBox id="chkPersistCookie" runat="server" autopostback="false" Visible="false" />
                         <asp:Label id="lblMsg" ForeColor="red" Font-Name="Verdana" Font-Size="10" runat="server" />			        	
 					</fieldset>        

@@ -133,15 +133,15 @@
       var id = el.attr('id') || multiselectID++; // unique ID for the label & option tags
 
       // build items
-      el.find('option').each(function(i) {
+      el.find('option').each(function (i) {
         var $this = $(this);
         var parent = this.parentNode;
         var description = this.innerHTML;
         var title = this.title;
         var value = this.value;
         var inputID = 'ui-multiselect-' + (this.id || id + '-option-' + i);
-        var isDisabled = this.disabled;
-        var isSelected = this.selected;
+        var isDisabled = $(this).attr('disabled') && $(this).attr('disabled') == 'disabled' || this.disabled;
+        var isSelected = $(this).attr('selected') && $(this).attr('selected') == 'selected' || this.selected;
         var labelClasses = [ 'ui-corner-all' ];
         var liClasses = (isDisabled ? 'ui-multiselect-disabled ' : ' ') + this.className;
         var optLabel;

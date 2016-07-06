@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Linq;
 using System.Text;
-using System.Web;
 using BS.Common.Dao;
 using BS.Common.Dao.Handlers;
 using BS.Common.Entities;
@@ -32,7 +30,7 @@ namespace BS.Larco.Dao.Sql
                 IList<DBParam> queryParams = new List<DBParam>();
                 
                 query.Append("SELECT TOP 1 ITE_Nombre,Interna,Entrega,OrdenCompra,Requisicion,Terminal ");
-                query.Append("FROM OrdenesVW WHERE ClientId = @p0 ORDER BY ITE_Nombre DESC");
+                query.Append("FROM tblOrdenes WHERE ClientId = @p0 ORDER BY ITE_Nombre DESC");
                 LoggerHelper.Debug(query.ToString());
                 queryParams.Add(new DBParam(queryParams, entity.GetProperty("ClientId"), DbType.String, false));
 

@@ -13,15 +13,20 @@
         </style>
     <script type="text/javascript" src="<%= Page.ResolveUrl("~/Scripts/jquery.mask.js") %>"></script>
 	<script type="text/javascript">
-	    const PAGE_NAME = 'OrdenesVW';
+	    
+	    const PAGE_NAME = 'Ordenes';
 	    const TABLE_SELECTOR = '#' + PAGE_NAME + '_table';
 	    const DIALOG_SELECTOR = '#' + PAGE_NAME + '_dialog';
 	    const BUTTONS_SELECTOR = '#' + PAGE_NAME + 'table_wrapper_buttons button.disable';
+
+	    var LAST_PROD_ORDERS_BY_PLAN = [];
+	    var LAST_PROD_ORDERS_BY_PART = [];
 
         //Preloading MergeOrdenes page config
 	    $.getData(AJAX + '/PageInfo/GetPageConfig?pageName=MergeOrdenes');
 
 	    $(document).ready(function () {
+	        LOGIN_NAME = '14'; //TODO: removed this line, is only for testing
 	        $('div.catalog').Page({
 	            source: AJAX + '/PageInfo/GetPageConfig?pageName=' + PAGE_NAME,
 	            dialogStyle: 'table',
@@ -34,28 +39,6 @@
 	    });
 
 	    function initializeCatalog(config) {
-	        var year = Date.today().toString('yy');
-	        $('#ITE_Nombre').mask('99-999-999-99', {
-	            placeholder: year + '-___-___-__', selectOnFocus: true,
-	            onChange: function (_value) {
-	                if ($('#OrdenId').val() == '' && _value.length == 6) {//only in new
-	                    var numbers = _value.split('-');
-	                    if (numbers.length >= 1) {
-	                        $.when(getLatestOrderByClient(numbers[1])).done(function (json) {
-	                            if (json.aaData && json.aaData.length > 0) {
-	                                populateDialog(json.aaData[0], DIALOG_SELECTOR);
-	                                numbers = json.aaData[0].ITE_Nombre.split('-');
-	                                numbers[numbers.length - 1] = padDigits(parseInt(numbers[numbers.length - 1]) + 1, 2);
-	                                $('#ITE_Nombre').val(numbers.join('-'));
-
-	                                setDefaults();
-	                            }
-	                        });
-	                    }
-	                }
-	            }
-	        });
-
 	        createEventHandlers();
 	        appendAdditionalInfoSection();
 
@@ -71,23 +54,74 @@
 	                }
 
                     //TODO: validate cliente: maybe the foreign key can take care of this
-
 	                if ($('#Stock').is(':checked')) {
 	                    valid = valid && checkRequired(tips, $('#PN_Id'), 'Numero de Plano');
 
-	                    //TODO: validate on new La Cantidad de Stock Parcial debe de ser menor o igual que la cantidad en Stock(
-	                    //TODO: validate on edit El aumento en la Cantidad de Stock Parcial (cambio de
+	                    if ($('#OrdenId').val() == '') { //new
+	                        var list = $('#popularidad_plano_table').DataTable().data();
+	                        if (list.length <= 0) {//No rows in the table
+	                            tips.text('La Cantidad de Cliente debe de ser menor o igual que la cantidad en Stock para este plano.').addClass("ui-state-highlight");
+	                            return false;
+	                        }
+
+	                        var stock = $('#popularidad_plano_table').DataTable().rows(0).data()[0].Stock;
+	                        if (parseInt($('#Requerida').val()) > parseInt(stock)) {
+	                            tips.text('La Cantidad de Cliente debe de ser menor o igual que la cantidad en Stock(' + stock + ') para este plano.').addClass("ui-state-highlight");
+	                            return false;
+	                        }
+	                    } else {
+	                        var data = getSelectedRowData($(TABLE_SELECTOR).DataTable());
+	                        if (parseInt(data.Requerida) != parseInt($('#Requerida').val()) && parseInt($('#Requerida').val()) > parseInt(data.Requerida)) {
+	                            var diff = parseInt($('#Requerida').val()) - parseInt(data.Requerida);
+	                            var list = $('#popularidad_plano_table').DataTable().data();
+	                            if (list.length <= 0) {
+	                                tips.text('El aumento en la Cantidad de Cliente (cambio de ' + data.Requerida + ' a ' + $('#Requerida').val() + ') debe de ser menor o igual que la cantidad en Stock.').addClass("ui-state-highlight");
+	                                return false;
+	                            }
+
+	                            var stock = $('#popularidad_plano_table').DataTable().rows(0).data()[0].Stock;
+	                            if (parseInt(diff) > parseInt(stock)) {
+	                                tips.text('El aumento en la Cantidad de Cliente (cambio de ' + data.Requerida + ' a ' + $('#Requerida').val() + ') debe de ser menor o igual que la cantidad en Stock(' + stock + ').').addClass("ui-state-highlight");
+	                                return false;
+	                            }
+	                        }
+	                    }
 	                }
 
 	                if ($('#StockParcial').is(':checked')) {
 	                    valid = valid && checkRequired(tips, $('#StockParcialCantidad'), 'Cantidad Stock Parcial');
 	                    valid = valid && checkInt(tips, $('#StockParcialCantidad'), 'Cantidad Stock Parcial', 1, parseInt($('#Requerida').val()));
-
 	                    valid = valid && checkRequired(tips, $('#PN_Id'), 'Numero de Plano');
 
+	                    if ($('#OrdenId').val() == '') { //new
+	                        var list = $('#popularidad_plano_table').DataTable().data();
+	                        if (list.length <= 0) {
+	                            tips.text('La Cantidad de Stock Parcial debe de ser menor o igual que la cantidad en Stock para este plano.').addClass("ui-state-highlight");
+	                            return false;
+	                        }
 
-	                    //TODO: validate on new La Cantidad de Stock Parcial debe de ser menor o igual que la cantidad en Stock(
-	                    //TODO: validate on edit El aumento en la Cantidad de Stock Parcial (cambio de
+	                        var stock = $('#popularidad_plano_table').DataTable().rows(0).data()[0].Stock;
+	                        if (parseInt($('#StockParcialCantidad').val()) > parseInt(stock)) {
+	                            tips.text('La Cantidad de Stock Parcial debe de ser menor o igual que la cantidad en Stock para este plano.').addClass("ui-state-highlight");
+	                            return false;
+	                        }
+	                    } else { //edit
+	                        var data = getSelectedRowData($(TABLE_SELECTOR).DataTable());
+	                        if (parseInt(data.StockParcialCantida) != parseInt($('#StockParcialCantidad').val()) && parseInt($('#StockParcialCantidad').val()) > parseInt(data.StockParcialCantida)) {
+	                            var diff = parseInt($('#StockParcialCantidad').val()) - parseInt(data.StockParcialCantida);
+	                            var list = $('#popularidad_plano_table').DataTable().data();
+	                            if (list.length <= 0) {
+	                                tips.text('El aumento en la Cantidad de Stock Parcial (cambio de ' + data.StockParcialCantida + ' a ' + $('#StockParcialCantidad').val() + ') debe de ser menor o igual que la cantidad en Stock.').addClass("ui-state-highlight");
+	                                return false;
+	                            }
+
+	                            var stock = $('#popularidad_plano_table').DataTable().rows(0).data()[0].Stock;
+	                            if (parseInt(diff) > parseInt(stock)) {
+	                                tips.text('El aumento en la Cantidad de Cliente (cambio de ' + data.StockParcialCantidad + ' a ' + $('#StockParcialCantidad').val() + ') debe de ser menor o igual que la cantidad en Stock(' + stock + ').').addClass("ui-state-highlight");
+	                                return false;
+	                            }
+	                        }
+	                    }
 	                }
 
 	                if ($('#Mezclado').is(':checked')) {
@@ -123,121 +157,364 @@
 	                var data = getSelectedRowData(oTable);
 	                setDefaults();
 	                ventasCtlg.Catalog('editEntity', oTable, options);
+
 	                clearAdditionalInfoTables();
 	                setPlanId(data);
 	                reloadAdditionalInfoSection();
 
-	                $('#Stock,#StockParcial,#Mezclado').prop('disabled', true);
-	            },
-	            deleteEntityCallBack: function (oTable, options) {
-	                var data = getSelectedRowData(oTable);
-	                deleteOrden(data);
-	            },
-	            saveEntityCallBack: function (oTable, options) {
-	                if ($('#OrdenId').val() == '') {
-	                    saveNewOrden();//new product
-	                } else {
-	                    editOrden();//existing product update
+	                $('#Stock, #StockParcial, #Mezclado').prop('disabled', true);
+
+	                if(isTrue(data.Mezclado)) {
+	                    $('#Plano').prop('disabled', true);
+	                    $('#PN_Id,#Numero').prop('readonly', true);
+	                }
+
+	                if (isTrue(data.StockParcial)) {
+	                    $('#StockParcialCantidad').prop('readonly', false);
+	                    $('#Plano').prop('disabled', true);
+	                    $('#PN_Id,#Numero').prop('readonly', true);
 	                }
 	            },
-	            sorting: [[getArrayIndexForKey(config.GridFields, 'ColumnName', 'Recibido') || 0, 'desc']]
+	            deleteEntityCallBack: function (oTable, options) {
+	                deleteOrden( getSelectedRowData(oTable) );
+	            },
+	            saveEntityCallBack: function (oTable, options) {
+	                saveOrden( getOrdenEntity() );
+	            },
+	            sorting: [[getArrayIndexForKey(config.GridFields, 'ColumnName', 'Recibido') || 0, 'desc'],
+	                      [getArrayIndexForKey(config.GridFields, 'ColumnName', 'OrdenId') || 0, 'desc']
+	                     ]
 	        });
 	    }
 
-	    function saveNewOrden() {
-	        if ($('#Stock').is(':checked') || $('#Mezclado').is(':checked')) {
-	            saveStockMergeOrden();
+	    function saveOrden(entity) {
+	        if (entity.OrdenId == '') {
+	            saveNewOrden(entity);//new Orden
 	        } else {
-	            saveProdOrden();
+	            editOrden(entity);//existing Orden update
 	        }
 	    }
 
-	    function editOrden() {
-	        if ($('#Stock').is(':checked') || $('#Mezclado').is(':checked')) {
-	            editStockMergeOrden();
+	    function saveNewOrden(entity) {
+	        if (isTrue(entity.Stock) || isTrue(entity.Mezclado)) {
+	            saveStockMergeOrden(entity);
 	        } else {
-	            editProdOrden();
+	            saveProdOrden(entity);
+	        }
+	    }
+
+	    function editOrden(entity) {
+	        if (isTrue(entity.Stock) || isTrue(entity.Mezclado)) {
+	            editStockMergeOrden(entity);
+	        } else {
+	            editProdOrden(entity);
 	        }	       
 	    }
 
-	    function editStockMergeOrden() {
-	        var entity = getOrdenEntity();
+	    function editProdOrden(entity) {
+	        var prevData = getSelectedRowData($(TABLE_SELECTOR).DataTable());
+
+	        $.when( getItemTasks(entity.ITE_Nombre) ).done(function (json) {
+	            var entities = [];
+
+	            if (prevData.ITE_Nombre != entity.ITE_Nombre && prevData.ProductId != entity.ProductId) {
+	                var item = getItemsEntity(entity);
+	                item.OperationType = 'Save';
+	                item.PageName = 'Items';
+	                entities.push(item);
+	            }
+
+	            if (entity.ST_ID && prevData.StockParcialCantidad != entity.StockParcialCantidad) {
+	                var stock = getStockParcialEntity(entity);
+	                stock.OperationType = 'Save';
+	                stock.PageName = 'Stock';
+	                entities.push(stock);
+	            }
+
+	            var tasks = json.aaData;
+	            tasks.sort(function (a, b) {
+	                var a1 = parseInt(a['TAS_Order']), b1 = parseInt(b['TAS_Order']);
+	                return a1 > b1 ? 1 : -1;
+	            });
+
+	            for (var i = 0; i < tasks.length; i++) {
+	                var update = false;
+	                var itemTask = { OperationType: 'Update', PageName: 'ItemTasks', ItemTaskId: tasks[i].ItemTaskId, ITE_Nombre: entity.ITE_Nombre };
+
+	                if (!prevData.PN_Id && (entity.PN_Id != '' && entity.PN_Id != 'NULL')) {
+	                    if (tasks[i].TAS_Id == '1') {//TAS_Id ==1 is Ventas//&& tasks[i].ITS_Status == '1'
+	                        itemTask.ITS_Status = '2';
+	                        itemTask.ITS_DTStart = 'GETDATE()';
+	                        itemTask.ITS_DTStop = 'GETDATE()';
+	                        itemTask.USE_Login = LOGIN_NAME;
+	                    }
+
+	                    if (i == 1) { //next task
+	                        itemTask.ITS_Status = '0';
+	                        itemTask.ITS_DTStart = 'GETDATE()';
+	                        itemTask.USE_Login = LOGIN_NAME;
+	                    }
+	                    update = true;
+	                }
+	                
+
+	                //move order back to active in ventas when planid goes back to null
+	                if (prevData.PN_Id && (!entity.PN_Id || entity.PN_Id == 'NULL')) {
+	                    log('prev plano is not null and new plano is null');
+	                    if (tasks[i].TAS_Id == '1') {//TAS_Id ==1 is Ventas//&& tasks[i].ITS_Status == '1'
+	                        itemTask.ITS_Status = '1';
+	                        itemTask.ITS_DTStart = 'GETDATE()';
+	                        itemTask.ITS_DTStop = 'NULL';
+	                        itemTask.USE_Login = LOGIN_NAME;
+	                    } else {
+	                        itemTask.ITS_Status = 'NULL';
+	                        itemTask.ITS_DTStart = 'NULL';
+	                        itemTask.ITS_DTStop = 'NULL';
+	                        itemTask.USE_Login = 'NULL';
+	                    }
+	                    update = true;
+	                }
+                    
+	                if (prevData.ITE_Nombre != entity.ITE_Nombre) update = true;
+
+	                if (update) {
+	                    entities.push(itemTask);
+	                }	                
+	            }
+
+	            entity.OperationType = 'Save';
+	            entity.PageName = 'Ordenes';
+	            entities.push(entity);
+
+	            $.when(executeTransaction(entities)).done(function (json) {
+	                if (json.ErrorMsg == SUCCESS) {
+	                    $(TABLE_SELECTOR).DataTable().ajax.reload();
+	                    $(BUTTONS_SELECTOR).button('disable');
+	                    $(DIALOG_SELECTOR).dialog('close');
+	                } else if (json.ErrorMsg.indexOf('already exists') != -1) {
+	                    showError($(DIALOG_SELECTOR + " p.validateTips"), 'Ya existe una Orden de Trabajo con este numero.');	                        	                
+	                } else {
+	                    showError($(DIALOG_SELECTOR + 'p.validateTips'), 'No fue posible actualizar la Orden de Trabajo.');
+	                }
+	            });
+	        });
+	    }
+
+	    function editStockMergeOrden(entity) {
+	        var entities = [];
+
+	        if (isTrue(entity.Stock)) {
+	            var stock = getStockEntity(entity);
+	            stock.OperationType = 'Save';
+	            stock.PageName = 'Stock';
+	            
+	            entity.OperationType = 'Save';
+	            entity.PageName = PAGE_NAME;
+
+	            entities.push(stock);
+	            entities.push(entity);	            
+	        } else { // Mezclado
+	            entity.OperationType = 'Save';
+	            entity.PageName = PAGE_NAME;
+	            entities.push(entity);
+
+	            entities.push({ ITE_Nombre: entity.ITE_Nombre, OperationType: 'DeleteEntities', PageName: 'MergeOrdenes' });
+
+	            var mergeOrders = $('#MergeOrdenes_table').DataTable().data();
+	            for (var i = 0; i < mergeOrders.length; i++) {
+	                var merge = mergeOrders[i];
+	                merge.OperationType = 'Save';
+	                merge.PageName = 'MergeOrdenes';
+	                merge.Order_ITE_Nombre = entity.ITE_Nombre;
+	                merge.MO_ID = '';
+
+	                entities.push(merge);
+	            }
+	        }
+
+	        $.when(executeTransaction(entities)).done(function (json) {
+	            if (json.ErrorMsg == SUCCESS) {
+	                $(TABLE_SELECTOR).DataTable().ajax.reload();
+	                $(BUTTONS_SELECTOR).button('disable');
+	                $(DIALOG_SELECTOR).dialog('close');
+	            } else if (json.ErrorMsg.indexOf('already exists') != -1) {
+	                showError($(DIALOG_SELECTOR + " p.validateTips"), 'Ya existe una Orden de Trabajo con este numero.');	                        
+	            } else {
+	                showError($(DIALOG_SELECTOR + 'p.validateTips'), 'No fue posible actualizar la Orden de Trabajo.');
+	            }
+	        });
+	    }
+
+	    function saveProdOrden(entity) {
+	        $.when(getTasksByProduct()).done(function (json) {
+	            var tasks = json.aaData;
+
+	            var entities = [];
+
+	            var item = getItemsEntity(entity);
+	            item.OperationType = 'Save';
+	            item.PageName = 'Items';
+
+	            entities.push(item);
+
+	            if ( isTrue(entity.StockParcial) ) {
+	                var stockParcial = getStockParcialEntity(entity);
+	                stockParcial.OperationType = 'Save';
+	                stockParcial.PageName = 'Stock';
+
+	                entities.push(stockParcial);
+	            }
+
+	            entity.OperationType = 'Save';
+	            entity.PageName = 'Ordenes';
+	            entities.push(entity);
+
+	            addItemTasks(entities, entity, tasks);
+
+	            log(entities);
+
+	            executeSaveOrdenTransaction(entities);
+	        });
+
+	    }
+
+	    function addItemTasks(entities, entity, tasks) {
+	        tasks.sort(function (a, b) {
+	            var a1 = parseInt(a['TaskOrder']), b1 = parseInt(b['TaskOrder']);
+	            return a1 > b1 ? 1 : -1;
+	        });
+
+	        for (var i = 0; i < tasks.length; i++) {
+	            var itemTask = getItemTasksEntity(entity, tasks[i]);
+	            itemTask.OperationType = 'Save';
+	            itemTask.PageName = 'ItemTasks';
+
+	            if (tasks[i].TaskName == 'Ventas') {
+	                if (entity.PN_Id != '' && entity.PN_Id != 'NULL') {
+	                    itemTask.ITS_Status = '2';
+	                    itemTask.ITS_DTStart = 'GETDATE()';
+	                    itemTask.ITS_DTStop = 'GETDATE()';
+	                    itemTask.USE_Login = LOGIN_NAME;
+	                } else {
+	                    itemTask.ITS_Status = '1';
+	                    itemTask.ITS_DTStart = 'GETDATE()';
+	                    itemTask.USE_Login = LOGIN_NAME;
+	                }
+	            }
+
+	            if (i == 1 && entity.PN_Id != '' && entity.PN_Id != 'NULL') {//next task
+	                itemTask.ITS_Status = '0';
+	                itemTask.ITS_DTStart = 'GETDATE()';
+	                itemTask.USE_Login = LOGIN_NAME;
+	            }
+
+	            entities.push(itemTask);
+	        }
+	    }
+
+
+	    function saveOrdenAndItemTasks(entity, tasks) {
+	        tasks.sort(function (a, b) {
+	            var a1 = parseInt(a['TaskOrder']), b1 = parseInt(b['TaskOrder']);
+	            return a1 > b1 ? 1 : -1;
+	        });
+
+	        var entities = [];
+	        for (var i = 0; i < tasks.length; i++) {
+	            var itemTask = getItemTasksEntity(entity, tasks[i]);
+	            itemTask.OperationType = 'Save';
+	            itemTask.PageName = 'ItemTasks';
+
+	            if (tasks[i].TaskName == 'Ventas') {
+	                if (entity.PN_Id != '' && entity.PN_Id != 'NULL') {
+	                    itemTask.ITS_Status = '2';
+	                    itemTask.ITS_DTStart = 'GETDATE()';
+	                    itemTask.ITS_DTStop = 'GETDATE()';
+	                    itemTask.USE_Login = LOGIN_NAME;
+	                } else {
+	                    itemTask.ITS_Status = '1';
+	                    itemTask.ITS_DTStart = 'GETDATE()';
+	                    itemTask.USE_Login = LOGIN_NAME;
+	                }
+	            }
+
+	            if (i == 1 && entity.PN_Id != '' && entity.PN_Id != 'NULL') {//next task
+	                itemTask.ITS_Status = '0';
+	                itemTask.ITS_DTStart = 'GETDATE()';
+	                itemTask.USE_Login = LOGIN_NAME;
+	            }
+
+	            entities.push(itemTask);
+	        }
+
+	        entity.OperationType = 'Save';
+	        entity.PageName = PAGE_NAME;
+
+	        entities.push(entity);
+
+	        $.when(executeTransaction(entities)).done(function (json) {
+	            if (json.ErrorMsg == SUCCESS) {
+	                $(TABLE_SELECTOR).DataTable().ajax.reload();
+	                $(BUTTONS_SELECTOR).button('disable');
+	                $(DIALOG_SELECTOR).dialog('close');
+	            } else if (json.ErrorMsg.indexOf('already exists') != -1) {
+	                if (entity.ST_ID) {
+	                    deleteStock({ ST_ID: entity.ST_ID });
+	                }
+	                deleteItems({ ITE_ID: entity.ITE_ID });
+
+	                showError($(DIALOG_SELECTOR + " p.validateTips"), 'Ya existe una Orden de Trabajo con este numero.');
+	            } else {
+	                showError($(DIALOG_SELECTOR + 'p.validateTips'), 'No fue posible crear la Orden de Trabajo.');
+	            }
+	        });
+	    }
+
+	    function getOrden() {
+	        var entity = { ITE_Nombre: $('#ITE_Nombre').val() };
+	        return $.ajax({
+	            url: AJAX + '/PageInfo/GetPageEntityList?pageName=' + PAGE_NAME + '&entity=' + $.toJSON(entity),
+	            dataType: 'json'
+	        });
+	    }
+
+	    function getTasksByProduct() {
+	        var entity = { ProductId: $('#ProductId').val() };
+	        return $.ajax({
+	            url: AJAX + '/PageInfo/GetPageEntityList?pageName=RoutingVW&entity=' + $.toJSON(entity),
+	            dataType: 'json'
+	        });
+	    }
+
+	    function getItemTasks(_ITE_Nombre) {
+	        var entity = { ITE_Nombre: _ITE_Nombre };
+	        return $.ajax({
+	            url: AJAX + '/PageInfo/GetPageEntityList?pageName=ItemTasks&entity=' + $.toJSON(entity),
+	            dataType: 'json'
+	        });
+	    }
+
+	    function saveStockMergeOrden(entity) {
+	        //TODO: add logic to save instructions
+
 	        if ($('#Stock').is(':checked')) {
 	            var stock = getStockEntity(entity);
 	            stock.OperationType = 'Save';
 	            stock.PageName = 'Stock';
 
-	            var entities = [];
-
 	            entity.OperationType = 'Save';
-	            entity.PageName = 'OrdenesStock';
+	            entity.PageName = 'Ordenes';
 
+	            var entities = [];
 	            entities.push(stock);
 	            entities.push(entity);
 
-	            $.when(executeTransaction(entities)).done(function (json) {
-	                if (json.ErrorMsg == SUCCESS) {
-	                    $(TABLE_SELECTOR).DataTable().ajax.reload();
-	                    $(BUTTONS_SELECTOR).button('disable');
-	                    $(DIALOG_SELECTOR).dialog('close');
-	                } else {
-	                    showError($(DIALOG_SELECTOR + 'p.validateTips'), 'No fue posible actualizar la Orden de Trabajo.');
-	                }
-	            });
-
-	        } else { //$('#Mezclado').is(':checked') 
+	            executeSaveOrdenTransaction(entities);
+	        } else { //Merge Orders       
 	            var entities = [];
 
 	            entity.OperationType = 'Save';
-	            entity.PageName = 'OrdenesStock';
-
-	            entities.push(entity);
-
-	            $.when(executeTransaction(entities)).done(function (json) {
-	                if (json.ErrorMsg == SUCCESS) {
-	                    $(TABLE_SELECTOR).DataTable().ajax.reload();
-	                    $(BUTTONS_SELECTOR).button('disable');
-	                    $(DIALOG_SELECTOR).dialog('close');
-	                } else {
-	                    showError($(DIALOG_SELECTOR + 'p.validateTips'), 'No fue posible actualizar la Orden de Trabajo.');
-	                }
-	            });
-	        }
-	    }
-
-	    function saveStockMergeOrden() {
-	        var entity = getOrdenEntity();
-
-	        //TODO: add logic to save instructions
-
-	        if ($('#Stock').is(':checked')) {
-
-	            $.when(saveStock(getStockEntity(entity))).done(function (json) {
-	                if (json.ErrorMsg == SUCCESS) {
-	                    entity.ST_ID = json.Id;
-	                    
-	                    $.when(saveStockOrden(entity)).done(function (json2) {
-	                        if (json2.ErrorMsg == SUCCESS) {
-	                            $(TABLE_SELECTOR).DataTable().ajax.reload();
-	                            $(DIALOG_SELECTOR).dialog('close');
-	                            $(BUTTONS_SELECTOR).button('disable');
-	                        } else {
-	                            log(json2.ErrorMsg);
-	                            showError($(DIALOG_SELECTOR + " p.validateTips"), 'No fue posible grabar la Orden de Trabajo.');
-	                        }
-	                    });
-
-	                } else {
-	                    log(json.ErrorMsg);
-	                    showError($(DIALOG_SELECTOR + " p.validateTips"), 'No fue posible grabar la Orden de Trabajo.');
-	                }
-	            });
-
-	        } else { //$('#Mezclado').is(':checked')            
-	            var entities = [];
-
-	            entity.OperationType = 'Save';
-	            entity.PageName = 'OrdenesStock';
+	            entity.PageName = PAGE_NAME;
 	            entities.push(entity);
                 
                 //TODO: add foreign key to tblMergeOrders ITE_nombre with tblOrdenes
@@ -257,13 +534,57 @@
 
 	    function getOrdenEntity() {
 	        var entity = getObject(DIALOG_SELECTOR);
-	        entity.PN_Id = $('#PN_Id').attr('PlanId');
+	        if ($('#Plano').is(':checked')) {
+	            entity.PN_Id = $('#PN_Id').attr('PlanId');
+	        } else {
+	            entity.PN_Id = 'NULL';
+	        }
+	        
 	        entity.Update_Date = 'GETDATE()';
 	        entity.Update_User = LOGIN_NAME;
 	        entity.ClientId = $('#ITE_Nombre').val().split('-')[1];
 	        //TODO: remove this will once the columns have been removed.
 	        entity.Nombre = $('#EmployeeId option:selected').text();
 	        entity.Producto = $('#ProductId option:selected').text();
+
+	        return entity;
+	    }
+
+	    function getItemsEntity(data) {
+	        var entity = {};
+	        entity.ITE_ID = data.ITE_ID;
+	        entity.ITE_Nombre = data.ITE_Nombre;
+	        entity.PRO_Nombre = data.Producto;
+	        entity.ProductId = data.ProductId;
+
+	        return entity;
+	    }
+
+	    function getItemTasksEntity(data, task) {
+	        var entity = {};
+	        entity.ITE_Id = data.ITE_ID;
+	        entity.ITE_Nombre = data.ITE_Nombre;
+	        entity.ITS_DTStart = 'NULL';
+	        entity.ITS_DTStop = 'NULL';
+	        entity.ITS_Machine = 'NULL';
+	        entity.ITS_Status = 'NULL';
+	        entity.TAS_Id = task.TaskId;
+	        entity.USE_Login = 'NULL';
+
+	        return entity;
+	    }
+
+	    function getStockParcialEntity(data) {
+	        var entity = {};
+	        entity.PN_Id = data.PN_Id;
+	        entity.ITE_Nombre = data.ITE_Nombre;
+	        entity.ST_Cantidad = data.StockParcialCantidad;
+	        entity.ST_Fecha = 'GETDATE()';
+	        entity.ST_Tipo = 'Salida';
+	        entity.Update_Date = 'GETDATE()';
+	        entity.Update_User = LOGIN_NAME;
+	        entity.ST_ID = data.ST_ID;
+	        entity.OrdenId = data.OrdenId;
 
 	        return entity;
 	    }
@@ -285,7 +606,7 @@
 	    function saveStockOrden(entity) {
 	        return $.ajax({
 	            type: "POST",
-	            url: AJAX + '/PageInfo/SavePageEntity?pageName=OrdenesStock',
+	            url: AJAX + '/PageInfo/SavePageEntity?pageName=' + PAGE_NAME,
 	            data: "entity=" + encodeURIComponent($.toJSON(entity))
 	        });
 	    }
@@ -298,6 +619,30 @@
 	        });
 	    }
 
+	    function saveItems(item) {
+	        return $.ajax({
+	            type: "POST",
+	            url: AJAX + '/PageInfo/SavePageEntity?pageName=Items',
+	            data: "entity=" + encodeURIComponent($.toJSON(item))
+	        });
+	    }
+
+	    function deleteStock(stock) {
+	        return $.ajax({
+	            type: "POST",
+	            url: AJAX + '/PageInfo/DeletePageEntity?pageName=Stock',
+	            data: "entity=" + encodeURIComponent($.toJSON(stock))
+	        });
+	    }
+
+	    function deleteItems(item) {
+	        return $.ajax({
+	            type: "POST",
+	            url: AJAX + '/PageInfo/DeletePageEntity?pageName=Items',
+	            data: "entity=" + encodeURIComponent($.toJSON(item))
+	        });
+	    }
+
 	    function deleteOrden(data) {
 	        if (confirm('Estas seguro que quieres borrar la orden?') == false)
 	            return false;
@@ -305,7 +650,7 @@
 	        if (confirm('En verdad estas seguro que quieres borrar la orden?') == false)
 	            return false;
 
-	        if ($('#Stock').is(':checked') || $('#Mezclado').is(':checked')) {
+	        if (data.Stock == 'True' || data.Mezclado == 'True') {
 	            deleteStockOrden(data);
 	        } else {
 	            deleteProdOrden(data);
@@ -313,30 +658,31 @@
 	    }
 
 	    function deleteStockOrden(data) {
-	        var entities = [];
+	        var entities = [];	        
+	        entities.push({ ITE_Nombre: data.ITE_Nombre, OperationType: 'DeleteEntities', PageName: 'MergeOrdenes' });
+	        data.OperationType = 'Delete';
+	        data.PageName = PAGE_NAME;
+	        entities.push(data);
+
 	        if (data.ST_ID) {
 	            entities.push({ ST_ID: data.ST_ID, OperationType: 'Delete', PageName: 'Stock' });
-	        }	        
-	        entities.push({ Order_ITE_Nombre: data.ITE_Nombre, OperationType: 'DeleteEntities', PageName: 'MergeOrdenes' });
-	        data.OperationType = 'Delete';
-	        data.PageName = 'OrdenesStock';
-	        entities.push(data);
+	        }
 
 	        executeDeleteTransaction(entities);
 	    }
 
 	    function deleteProdOrden(data) {
 	        var entities = [];
-	        if (data.ST_ID) {
-	            entities.push({ ST_ID: data.ST_ID, OperationType: 'Delete', PageName: 'Stock' });
-	        }
 	        entities.push({ ITE_Nombre: data.ITE_Nombre, OperationType: 'DeleteEntities', PageName: 'Items' });
 	        entities.push({ ITE_Nombre: data.ITE_Nombre, OperationType: 'DeleteEntities', PageName: 'ItemTasks' });
-	        entities.push({ ITE_Nombre: data.ITE_Nombre, OperationType: 'DeleteEntities', PageName: 'Stock' });
-
+	        
 	        data.OperationType = 'Delete';
 	        data.PageName = 'Ordenes';
 	        entities.push(data);
+
+	        if (data.ST_ID) {
+	            entities.push({ ST_ID: data.ST_ID, OperationType: 'Delete', PageName: 'Stock' });
+	        }
 
 	        executeDeleteTransaction(entities);
 	    }
@@ -358,6 +704,8 @@
 	                $(TABLE_SELECTOR).DataTable().ajax.reload();
 	                $(BUTTONS_SELECTOR).button('disable');
 	                $(DIALOG_SELECTOR).dialog('close');
+	            } else if (json.ErrorMsg.indexOf('already exists') != -1) {
+	                showError($(DIALOG_SELECTOR + " p.validateTips"), 'Ya existe una Orden de Trabajo con este numero.');
 	            } else {
 	                showError($(DIALOG_SELECTOR + 'p.validateTips'), 'No fue posible crear la Orden de Trabajo.');
 	            }
@@ -414,12 +762,17 @@
 	        $('#Recibido,#Interna,#Entrega').datepicker("setDate", new Date());
 	        $('#EmployeeId').val(LOGIN_NAME).selectmenu('refresh');
 	        $('#PN_Id').prop('readonly', !$('#Plano').is(':checked'));
+	        $('#PN_Id').attr('PlanId', '');
 	        $('#StockParcialCantidad').prop('readonly', !$('#StockParcial').is(':checked'));
 	        clearAdditionalInfoTables();
 	        $('#newMergeOrdenes_table').button('disable');
 	        $('#AlertaMsg').prop('readonly', true);
 	        $('#Instrucciones').prop('readonly', true);
 	        $('#Stock,#StockParcial,#Mezclado').prop('disabled', false);
+
+	        $('#Plano').prop('disabled', false);
+	        $('#Numero').prop('readonly', false);
+
 	    }
 
 	    function clearAdditionalInfoTables() {
@@ -508,87 +861,108 @@
 	                        source: [],
 	                        filter: false,
 	                        paginate: false,
-	                        scrollY: '30px',
+	                        scrollY: '35px',
                             showEdit:false,
 	                        initCompleteCallBack: function () {
 	                            $('#merge_orders_info div.ui-corner-br').remove();
 	                            $('#merge_orders_info td.dataTables_empty').remove();
 	                        },
 	                        validate: function (tips) {
-	                            return validateDialog(config, tips);
+	                            var valid = validateDialog(config, tips);
+
+	                            if (LAST_PROD_ORDERS_BY_PART.length > 0) {
+	                                var index = getArrayIndexForKey(LAST_PROD_ORDERS_BY_PLAN, 'ITE_Nombre', $('#MO_ITE_Nombre').val());
+	                                if (index != -1) { //this should never happend the index must always be != than -1
+	                                    if (parseInt($('#MO_Cantidad').val()) > parseInt(LAST_PROD_ORDERS_BY_PLAN[index].Disp)) {
+	                                        showError(tips, 'La cantidad es mayor que lo disponible en esta orden.');
+	                                        valid = false;
+	                                    }
+
+	                                }
+	                            }
+	                            if (LAST_PROD_ORDERS_BY_PART.length > 0) {
+	                                var index = getArrayIndexForKey(LAST_PROD_ORDERS_BY_PART, 'ITE_Nombre', $('#MO_ITE_Nombre').val());
+	                                if (valid && index != -1) { //this should never happend the index must always be != than -1
+	                                    if (parseInt($('#MO_Cantidad').val()) > parseInt(LAST_PROD_ORDERS_BY_PART[index].Disp)) {
+	                                        showError(tips, 'La cantidad es mayor que lo disponible en esta orden.');
+	                                        valid = false;
+	                                    }
+	                                }
+	                            }
+
+	                            return valid;
 	                        },
 	                        newEntityCallBack: function (oTable, options) {
 	                            $('#MergeOrdenes_dialog').attr('originaltitle', 'Mezclar Orden');	                            
 	                            mergeCtlg.Catalog('newEntity', oTable, options);
 	                        },
-	                        saveEntityCallBack: function (oTable, options) {
+	                        saveEntityCallBack: function (oTable, options) {	                            
 	                            var tips = $("#MergeOrdenes_dialog p.validateTips");
-	                            if ($('#OrdenId').val() == '') {//New Orden de Trabajo
-	                                var entity = getObject('#MergeOrdenes_dialog');
-	                                entity.Order_ITE_Nombre = $('#ITE_Nombre').val();
-	                                entity.Update_Date = 'GETDATE()';
-	                                entity.Update_User = LOGIN_NAME;
-
-	                                var list = oTable.data();
-
-                                    var results = $.grep(list, function (mo) {
-                                        return mo.MO_ITE_Nombre == entity.MO_ITE_Nombre;
-                                    });
-
-                                    if (results.length > 0) {
-                                        showError(tips, 'No se puede mezclar con la misma orden.');
-                                        return;
-                                    }
-
-	                                list.push(entity);                               
-
-	                                oTable.clear().rows.add(list).draw();
-	                                $('#MergeOrdenes_dialog').dialog('close');
-	                                return;
-	                            }
-
 	                            var entity = getObject('#MergeOrdenes_dialog');
 	                            entity.Order_ITE_Nombre = $('#ITE_Nombre').val();
 	                            entity.Update_Date = 'GETDATE()';
 	                            entity.Update_User = LOGIN_NAME;
 
-	                            $.ajax({
-	                                type: "POST",
-	                                url: options.saveRequest,
-	                                data: "entity=" + encodeURIComponent($.toJSON(entity))
-	                            }).done(function (json) {
-	                                if (json.ErrorMsg == SUCCESS) {	                                    
-	                                    $('#MergeOrdenes_dialog').dialog('close');
-	                                    $('#MergeOrdenes_table_wrapper button.disable').button('disable');
-	                                    oTable.ajax.reload();
-	                                    reloadAdditionalInfoSection();
-	                                } else {
-	                                    var errorMsg = 'No fue posible grabar la orden mezclada';
-	                                    if (json.ErrorMsg.indexOf('already exists') != -1) {
-	                                        errorMsg = 'No se puede mezclar con la misma orden';
-	                                    } 
-	                                    showError(tips, errorMsg);
-	                                }
-	                            });
+	                            var list = oTable.data();
+                                var results = $.grep(list, function (mo) {
+                                    return mo.MO_ITE_Nombre == entity.MO_ITE_Nombre;
+                                });
+
+                                if (results.length > 0) {
+                                    showError(tips, 'No se puede mezclar con la misma orden.');
+                                    return;
+                                }
+
+	                            list.push(entity);                               
+	                            oTable.clear().rows.add(list).draw();
+	                            $('#MergeOrdenes_dialog').dialog('close');
+
+	                            index = getArrayIndexForKey(LAST_PROD_ORDERS_BY_PLAN, 'ITE_Nombre', entity.MO_ITE_Nombre);
+	                            if (index != -1) { //this should never happend the index must always be != than -1
+	                                LAST_PROD_ORDERS_BY_PLAN[index].Disp = parseInt(LAST_PROD_ORDERS_BY_PLAN[index].Disp) - parseInt(entity.MO_Cantidad);
+	                                $('#prod_orders_plan_table').DataTable().clear().rows.add(LAST_PROD_ORDERS_BY_PLAN).draw();
+	                            }
+
+	                            index = getArrayIndexForKey(LAST_PROD_ORDERS_BY_PART, 'ITE_Nombre', entity.MO_ITE_Nombre);
+	                            if (index != -1) { //this should never happend the index must always be != than -1
+	                                LAST_PROD_ORDERS_BY_PART[index].Disp = parseInt(LAST_PROD_ORDERS_BY_PART[index].Disp) - parseInt(entity.MO_Cantidad);
+	                                $('#prod_orders_part_number_table').DataTable().clear().rows.add(LAST_PROD_ORDERS_BY_PART).draw();
+	                            }
+
+	                            if (list.length > 0) {
+	                                $('#Plano').prop('disabled', true);
+	                                $('#PN_Id,#Numero').prop('readonly', true);
+	                            }
+
 	                        },
 	                        deleteEntityCallBack: function (oTable, options) {
 	                            if (confirm('Estas seguro que quieres borrar esta orden mezclada?') == false)
 	                                return false;
 
 	                            var entity = getSelectedRowData(oTable);
-	                            $.ajax({
-	                                type: "POST",
-	                                url: options.deleteRequest,
-	                                data: "entity=" + encodeURIComponent($.toJSON(entity))
-	                            }).done(function (json) {
-	                                if (json.ErrorMsg == SUCCESS) {
-	                                    oTable.ajax.reload();
-	                                    $('#MergeOrdenes_table_wrapper button.disable').button('disable');
-	                                    reloadAdditionalInfoSection();
-	                                } else {
-	                                    alert('No se pudo borrar la orden mezclada.');
-	                                }
-	                            });
+	                            var list = oTable.data();
+	                            var index = getArrayIndexForKey(list, 'MO_ITE_Nombre', entity.MO_ITE_Nombre);
+	                            if (index != -1) { //this should never happend the index must always be != than -1
+	                                oTable.rows(index).remove().draw();
+	                            }
+
+	                            index = getArrayIndexForKey(LAST_PROD_ORDERS_BY_PLAN, 'ITE_Nombre', entity.MO_ITE_Nombre);
+	                            if (index != -1) { //this should never happend the index must always be != than -1
+	                                LAST_PROD_ORDERS_BY_PLAN[index].Disp = parseInt(LAST_PROD_ORDERS_BY_PLAN[index].Disp) + parseInt(entity.MO_Cantidad);
+	                                $('#prod_orders_plan_table').DataTable().clear().rows.add(LAST_PROD_ORDERS_BY_PLAN).draw();
+	                            }
+
+	                            index = getArrayIndexForKey(LAST_PROD_ORDERS_BY_PART, 'ITE_Nombre', entity.MO_ITE_Nombre);
+	                            if (index != -1) { //this should never happend the index must always be != than -1
+	                                LAST_PROD_ORDERS_BY_PART[index].Disp = parseInt(LAST_PROD_ORDERS_BY_PART[index].Disp) + parseInt(entity.MO_Cantidad);
+	                                $('#prod_orders_part_number_table').DataTable().clear().rows.add(LAST_PROD_ORDERS_BY_PART).draw();
+	                            }
+
+	                            list = oTable.data();
+	                            if (list.length <= 0) {
+	                                $('#Plano').prop('disabled', false);
+	                                $('#PN_Id,#Numero').prop('readonly', false);
+	                            }
 	                        }
 	                    });
 	                }
@@ -663,7 +1037,7 @@
 	        var aggregate = { GroupByFields: '', Functions: [] };
 	        aggregate.Functions.push({ Function: 'COUNT', FieldName: '*', Alias: 'Ordenes' });
 	        aggregate.Functions.push({ Function: 'SUM', FieldName: 'Requerida', Alias: 'Piezas' });
-	        aggregate.Functions.push({ Function: 'AVG', FieldName: 'Requerida', Alias: 'Sugerida' });
+	        //aggregate.Functions.push({ Function: 'AVG', FieldName: 'Requerida', Alias: 'Sugerida' });
 
 	        return aggregate;
 	    }
@@ -715,8 +1089,9 @@
 	        var entity = { Numero: $.trim($('#Numero').val()), ITS_DTStart: 'NOT_NULL', ITS_DTStop: 'NULL', ITS_Status: 'NOT_9' };
 
 	        $.when(getAggreateData('OrdenesInProd', aggregate, entity)).done(function (json) {
+	            LAST_PROD_ORDERS_BY_PART = createProdDataSet(json);
 	            if (json.aaData && json.aaData.length > 0) {
-	                $('#prod_orders_part_number_table').DataTable().clear().rows.add(createProdDataSet(json)).draw();
+	                $('#prod_orders_part_number_table').DataTable().clear().rows.add(LAST_PROD_ORDERS_BY_PART).draw();
 	                reloadMergeDrop();
 	            } else {
 	                $('table.ventas-detail td.dataTables_empty').remove();
@@ -732,7 +1107,8 @@
 
 	        $.when(getAggreateData('OrdenesInProd', aggregate, entity)).done(function (json) {
 	            if (json.aaData && json.aaData.length > 0) {
-	                $('#prod_orders_plan_table').DataTable().clear().rows.add(createProdDataSet(json)).draw();
+	                LAST_PROD_ORDERS_BY_PLAN = createProdDataSet(json);
+	                $('#prod_orders_plan_table').DataTable().clear().rows.add(LAST_PROD_ORDERS_BY_PLAN).draw();
 	                reloadMergeDrop();
 	            } else {
 	                $('table.ventas-detail td.dataTables_empty').remove();
@@ -770,7 +1146,7 @@
 	            json1.aaData[0].Stock = stock;
 	            json1.aaData[0].Ordenes = json1.aaData[0].Ordenes || 0;
 	            json1.aaData[0].Piezas = json1.aaData[0].Piezas || 0;
-	            json1.aaData[0].Sugerida = json1.aaData[0].Sugerida || 0;
+	            json1.aaData[0].Sugerida = Math.ceil((json1.aaData[0].Piezas || 0) * .50);//TODO: get percentage from config
 	            dataSet.push(json1.aaData[0]);
 	        } else {
 	            dataSet.push({ Stock: stock, Ordenes: 0, Requerida: 0, Sugerida: 0 });
@@ -795,6 +1171,8 @@
 	    }
 
 	    function createEventHandlers() {
+	        addOrdenHandler();
+
 	        $('#Requerida').blur(function () {
 	            if ($('#Ordenada').val() == '') {
 	                $('#Ordenada').val($('#Requerida').val());
@@ -808,7 +1186,7 @@
 	        $('#Plano').click(function () {
 	            $('#PN_Id').prop('readonly', !$('#Plano').is(':checked'));
 	            if (!$('#Plano').is(':checked')) {
-	                $('#PN_Id').val('').attr('PlanoId', '');
+	                $('#PN_Id').val('').attr('PlanId', '');
 	            } else {
 	                $('#PN_Id').focus();
 	            }
@@ -819,6 +1197,7 @@
 	        $('#StockParcial').click(function () {
 	            $('#Mezclado,#Stock').prop('checked', false);
 	            $('#newMergeOrdenes_table').button('disable');
+	            $('#MergeOrdenes_table').DataTable().clear().draw();
 	            $('#StockParcialCantidad').prop('readonly', !$('#StockParcial').is(':checked'));
 	            if ($('#StockParcial').is(':checked')) {
 	                $('#StockParcialCantidad').focus();
@@ -832,6 +1211,7 @@
 	                $('#Mezclado,#StockParcial').prop('checked', false);
 	                $('#StockParcialCantidad').prop('readonly', true).val('');
 	                $('#newMergeOrdenes_table').button('disable');
+	                $('#MergeOrdenes_table').DataTable().clear().draw();
 	            }
 	        });
 
@@ -839,6 +1219,7 @@
 	            if ($('#Mezclado').is(':checked')) {
 	                $('#Stock,#StockParcial').prop('checked', false);
 	                $('#newMergeOrdenes_table').button('enable');
+	                reloadAdditionalInfoSection();
 	            } else {
 	                $('#newMergeOrdenes_table').button('disable');
 	            }
@@ -930,24 +1311,37 @@
 	        });
 	    }
 
+	    function addOrdenHandler() {
+	        var year = Date.today().toString('yy');
+	        $('#ITE_Nombre').mask('99-999-999-99', {
+	            placeholder: year + '-___-___-__', selectOnFocus: true,
+	            onChange: function (_value) {
+	                if ($('#OrdenId').val() == '' && _value.length == 6) {//only in new
+	                    var numbers = _value.split('-');
+	                    if (numbers.length >= 1) {
+	                        $.when(getLatestOrderByClient(numbers[1])).done(function (json) {
+	                            if (json.aaData && json.aaData.length > 0) {
+	                                populateDialog(json.aaData[0], DIALOG_SELECTOR);
+	                                numbers = json.aaData[0].ITE_Nombre.split('-');
+	                                numbers[numbers.length - 1] = padDigits(parseInt(numbers[numbers.length - 1]) + 1, 2);
+	                                $('#ITE_Nombre').val(numbers.join('-'));
+
+	                                setDefaults();
+	                            }
+	                        });
+	                    }
+	                }
+	            }
+	        });
+	    }
+
 	</script>
 </asp:Content>
 <asp:Content ID="Content2" ContentPlaceHolderID="MainContent" runat="server">
     <h2></h2><br />
     <div class="catalog"></div>
     <div id="merge_orders_info" style="display:none;">
-        <!--<table id="merge_orders_table" width="100%" cellspacing="0" cellpadding="0" style="font-size:10px;">
-            <thead>
-                <tr>
-                    <th>Orden</th>
-                    <th>Cantidad</th>
-                </tr>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>-->
     </div>
-
     <div id="additional_info" style="display:none;">
         <h3 style="margin-top:2px;">Informacion Adicional</h3>
         <table  width="100%" cellspacing="0" cellpadding="2" class="ventas-detail">

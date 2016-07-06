@@ -1,6 +1,6 @@
 ﻿/**
 * @required    jquery-1.9.1.js or higher
-* @description EPE Common functions 
+* @description Beltran Soft Common functions 
 * @version     1.0
 * @file        common.js
 * @author      Christian Beltran
@@ -10,7 +10,7 @@
 *
 */
 var SUCCESS = 'Success';
-var TABLE_DISPLAY_LENGTH = 18;
+var TABLE_DISPLAY_LENGTH = 25;
 var SESSION_EXPIRED = 'Session expired.';
 
 $.ajaxSetup({
@@ -605,6 +605,10 @@ function validateDialog(config, tips, dialog) {
     return valid;
 }
 
+function isTrue(value) {
+    return value == '1' || value == 'True' || value == 'YES';
+}
+
 function populateDialog(data, selector) {
     var sel = selector + ' input,' + selector + ' select,' + selector + ' textarea';
     $(sel).each(
@@ -614,7 +618,7 @@ function populateDialog(data, selector) {
                 id = $(this).attr('id');
             }
 
-            if ($(this).attr('type') == 'checkbox' && (data[id] == '1' || data[id] == 'True' || data[id] == 'YES')) {
+            if ($(this).attr('type') == 'checkbox' && isTrue(data[id])) {
                 $(this).prop('checked', true);
             } else if ($(this).hasClass('hasDatepicker') && data[id] != '') {
                 $(this).datepicker('setDate', new Date(data[id]));
@@ -802,6 +806,7 @@ $.widget("bs.Catalog", {
         dialogWidth: 500,
         dialogHeight: 'auto',
         //datatables options
+        deferRender : false,
         serverSide: false,
         processing: true,
         displayLength: TABLE_DISPLAY_LENGTH,
@@ -913,6 +918,7 @@ $.widget("bs.Catalog", {
             pageLength: options.displayLength,
             searching: options.filter,
             rowId: options.fieldId,
+            deferRender: options.deferRender,
             rowCallback: function (nRow, aData, iDisplayIndex) {
                 return options.rowCallback(nRow, aData, iDisplayIndex);
             },
@@ -935,11 +941,14 @@ $.widget("bs.Catalog", {
 
         if ($.isArray(options.source)) {
             dtOptions.data = options.source;
+        } else if ($.isFunction(options.source)) {
+            dtOptions.ajax = options.source;            
         } else if (typeof this.options.source === "string") {
             dtOptions.ajax = {
                 url: options.source,
                 data: function (data) {
                     if (options.serverSide && options.pageConfig.Filter && $('#' + options.pageName + '_filter').attr('firsttime') == 'true') {
+                        log('first');
                         var newFilter = $.page.filter.createFilter($('#' + options.pageName + '_filter'));
                         $.each(newFilter, function (key, val) {
                             if (val) {
@@ -949,9 +958,12 @@ $.widget("bs.Catalog", {
                                 }
                             }
                         });
+
+                        $('#' + options.pageName + '_filter').Filter('setFilter', newFilter);
+                        log(newFilter);
                     }
 
-                    if (!jQuery.isEmptyObject(data)) {
+                    if (!jQuery.isEmptyObject(data)) {                        
                         $('input[search-type=equals], select[search-type=equals], input[search-type=null], select[search-type=null]', $('#' + options.pageName + '_filter')).each(function (index) {
                             if ($(this).attr('id').indexOf('Filter') != -1) {
                                 var _name = $(this).attr('id').replace('Filter', '');
@@ -964,9 +976,9 @@ $.widget("bs.Catalog", {
                     }
 
                     if (options.beforeServerDataCall != null && typeof (options.beforeServerDataCall) == "function") {
-                        options.beforeServerDataCall(data);                                                
+                        options.beforeServerDataCall(data);
                     }
-
+                    log(data);
                     if (jQuery.isEmptyObject(data)) {
                         return data;
                     } else {
@@ -984,6 +996,10 @@ $.widget("bs.Catalog", {
         } else {
             console.error('Source is not supported, is not an array or a string.');
         }
+
+
+
+        log(dtOptions);
 
         /* Creating dataTable */
         this.dataTableOptions = dtOptions;
@@ -1890,7 +1906,7 @@ $.widget("bs.Page", {
         var cols = filter.FilterCols;
 
         var html = new StringBuffer();
-        html.append('<tr><td colspan="').append(cols).append('" style="font-weight: bold;color: #2779aa;padding-bottom:10px;padding-top:5px;">' + filter.FilterText +'</td>');
+        html.append('<tr><td class="filter-header" colspan="').append(cols).append('" style="font-weight: bold;color: #2779aa;padding-bottom:10px;padding-top:5px;">' + filter.FilterText +'</td>');
         html.append('<td colspan="').append(cols).append('" style="font-weight: bold;color: #2779aa;padding-bottom:10px;padding-top:5px;padding-right:5px;" align="right">');
 
         if (filter.ShowClear.toLowerCase() == 'true') {
@@ -2072,10 +2088,11 @@ $.widget("bs.Page", {
 
     _initFilter: function (config) {
         var that = this;
-
         $(this.filter).Filter({
             pageConfig: config, initCompleteCallBack: function (json) {
                 $(that.element).show();
+
+                that.options.onFilterInitComplete(json);
 
                 that.options.onLoadComplete(json);
 
@@ -2083,7 +2100,6 @@ $.widget("bs.Page", {
                     that.loading.remove();
                 }
 
-                that.options.onFilterInitComplete(json);
             }
         });
     },
@@ -2433,7 +2449,7 @@ $.widget("bs.Filter", {
     options: {
         debug:false,
         pageConfig: null,
-        initCompleteCallBack: function (config) {}
+        initCompleteCallBack: function (config) { }
     },
 
     _create: function () {
@@ -2450,8 +2466,13 @@ $.widget("bs.Filter", {
             return f.FieldData.ControlType == 'dropdownlist' ? f.FieldData : null;
         });
 
+        var multiselects = $.map(config.Filter.Fields, function (f, i) {
+            return f.FieldData.ControlType == 'multiselect' ? f.FieldData : null;
+        });
+
         $.page.initSelectMenu(selectMenus.join(','));
         this._initComboBoxes(ddlMenus);
+        this._initMultiSelects(multiselects);
 
         var length = config.Filter.Fields.length;
         var promises = [];
@@ -2462,6 +2483,9 @@ $.widget("bs.Filter", {
                 promises.push(promise);
             } else if (f.FieldData.ControlType == 'dropdownlist') {
                 var promise = this._initComboBox(f.FieldData);
+                promises.push(promise);
+            } else if (f.FieldData.ControlType == 'multiselect') {
+                var promise = $.page.loadMultiSelect($(this.element), f.FieldData);
                 promises.push(promise);
             } else if (f.FieldData.Type.indexOf('date') != -1) {
                 $('#' + f.GridData.ColumnName, $(this.element)).datepicker({
@@ -2480,6 +2504,13 @@ $.widget("bs.Filter", {
             $('input,select', this.element).val("");
             $('select.selectMenu', this.element).selectmenu('refresh', true);
 
+            if (scriptLoaded('multiselect')) {
+                $('select.multiselect', this.element).each(function(ele) {
+                    $(this).multiselect('uncheckAll');
+                    $.page.refreshMultiselect($(this));                
+                });
+            }            
+
             that._filterChange();
         });
 
@@ -2488,8 +2519,6 @@ $.widget("bs.Filter", {
         });
 
         $('input[type=text]', this.element).change(function () {
-            that._filterChange();
-        }).blur(function () {
             that._filterChange();
         }).keydown(function () {
             if ((event.type == 'keydown' && event.keyCode == 13)) {
@@ -2510,14 +2539,14 @@ $.widget("bs.Filter", {
             $.when.apply($, promises).done(function () {
                 that._FILTER = that._createFilter(that.element);
                 if (that.options.debug) console.log('Filter = ' + $.toJSON(that._FILTER));
+
                 that.options.initCompleteCallBack(that.options.pageConfig);
             });
         }
     },
 
-    _filterChange: function () {
+    _filterChange: function () {        
         if (this._FILTER == null) this._FILTER = {}; //not yet initialize, setting filter to empty object
-
         var newFilter = this._createFilter(this.element);
         if ($.toJSON(this._FILTER) == $.toJSON(newFilter)) return; // no changes in filter
 
@@ -2544,8 +2573,8 @@ $.widget("bs.Filter", {
             var index = getArrayIndexForKey(columns, 'ColumnName', key);
             if (index != -1 && uniqueCols.indexOf(key) == -1) oTable.columns(index).search(val);
         });
-
-        oTable.draw();
+        
+        oTable.draw();        
     },
 
     _createFilter : function() {
@@ -2608,9 +2637,26 @@ $.widget("bs.Filter", {
         }
     }, 
 
+    _initMultiSelects: function (fields) {
+        if (!fields) return;
+        for (var i = 0; i < fields.length; i++) {
+            var field = fields[i];
+            var ddInfo = $.evalJSON(field.DropDownInfo);
+            $.page.initMultiselect($('#' + field.FieldName), ddInfo);
+        }
+    },
+
     refresh: function() {
         this._FILTER = {};
         this._filterChange();
+    },
+
+    setFilter: function(_newFilter) {
+        this._FILTER = _newFilter;
+    },
+
+    getFilter: function () {
+        return this._FILTER;
     },
 
     _destroy: function () {
@@ -2663,6 +2709,32 @@ $.page.loadSelectMenu = function (dialog, selectMenu) {
             url: ddInfo.url,
         }).done(function (json) {
             $.page.createSelectMenuOptions(element, json, ddInfo);
+            dfd.resolve();
+        });
+    }).promise();
+}
+
+$.page.loadMultiSelect = function (dialog, multiSelect) {
+    var ddInfo = $.evalJSON(multiSelect.DropDownInfo);
+    var element = $('#' + multiSelect.FieldName, dialog);
+    
+    if (ddInfo.cache != null && (ddInfo.cache == true || ddInfo.cache == 'true')) {
+        return $.Deferred(function (dfd) {
+            $.when($.getData(ddInfo.url)).done(function (json) {
+                $.page.createSelectOptions(element, json, ddInfo);
+                $.page.refreshMultiselect(element);
+                dfd.resolve();
+            });
+        }).promise();
+    }
+
+
+    return $.Deferred(function (dfd) {
+        $.ajax({
+            url: ddInfo.url,
+        }).done(function (json) {
+            $.page.createSelectOptions(element, json, ddInfo);
+            $.page.refreshMultiselect(element);
             dfd.resolve();
         });
     }).promise();
@@ -2813,14 +2885,21 @@ $.page.filter = {};
 $.page.filter.createFilter = function (filterEle) {
     var filter = {};
 
-    $('input[type=text], select.selectMenu, input:checkbox, select.combobox, input[type=hidden]', filterEle).each(function (index) {
+    $('input[type=text], select.selectMenu, input:checkbox, select.combobox, input[type=hidden], select.multiselect', filterEle).each(function (index) {
         if ($(this).attr('id').indexOf('Filter') != -1) {
-            if ($(this).attr('filter-type') == 'text') {
-                filter[$(this).attr('id').replace('Filter', '')] = $.trim($('option:selected', $(this)).text());
+            var key = $(this).attr('id').replace('Filter', '');
+            if ($(this).hasClass('multiselect')) {
+                $.page.filter.setMultiSelectVal(filter, this);
+            } else if ($(this).attr('filter-type') == 'text') {
+                filter[key] = $.trim($('option:selected', $(this)).text());
             } else if ($(this).attr('filter-type') == 'date-range') {
                 $.page.filter.setDateRangeFilterVal(filter, this);
             } else {
-                filter[$(this).attr('id').replace('Filter', '')] = $.trim($(this).val());
+                filter[key] = $.trim($(this).val());
+            }
+
+            if ($(this).hasClass('multiselect') && filter[key]) {
+                filter[key] = 'LIST_' + filter[key];
             }
         }
     });
@@ -2835,6 +2914,23 @@ $.page.filter.setDateRangeFilterVal = function (filter, ele) {
     } else {
         filter[_id] = '';
     }    
+}
+
+$.page.filter.setMultiSelectVal = function (filter, ele) {
+    var _id = $(ele).attr('id').replace('Filter', '');
+    if ($(ele).attr('filter-type') == 'text') {
+
+        filter[_id] = $.map($('#' + $(ele).attr('id')).multiselect('getChecked'), function (opt) {
+            return $.trim($(opt).next('span').html());
+        }).join(',');
+
+    } else {
+
+        filter[_id] = $.map($('#' + $(ele).attr('id')).multiselect('getChecked'), function (opt) {
+            return $(opt).val();
+        }).join(',');
+
+    }
 }
 
 $.widget("ui.selectmenu", $.ui.selectmenu, {

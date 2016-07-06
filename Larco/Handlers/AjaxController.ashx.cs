@@ -234,7 +234,7 @@ namespace BS.Common.handler
             }
             finally
             {
-                LoggerHelper.Debug("Ajax Response = [" + ajaxResponse + "]");
+                //LoggerHelper.Debug("Ajax Response = [" + ajaxResponse + "]");
             }
 
             return ajaxResponse;

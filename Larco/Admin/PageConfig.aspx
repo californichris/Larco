@@ -155,6 +155,7 @@
                                         <option value="real">real</option>
                                         <option value="smalldatetime">smalldatetime</option>
                                         <option value="smallint">smallint</option>
+                                        <option value="tinyint">tinyint</option>
                                         <option value="varchar">varchar</option>
                                     </select>
                                     <label for="ControlType">Control Type :</label>

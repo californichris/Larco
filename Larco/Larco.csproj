@@ -115,12 +115,29 @@
     <Content Include="Admin\ListItemsConfig.aspx" />
     <Content Include="Admin\PageConfig.aspx" />
     <Content Include="Admin\Preview.aspx" />
+    <Content Include="Images\ui-anim_basic_16x16.gif" />
     <Content Include="InvalidAccess.aspx" />
     <Content Include="Logon.aspx" />
     <Content Include="Logout.aspx" />
+    <Content Include="Reportes\RelacionFechaEntrega.aspx" />
+    <Content Include="Reportes\RelacionOrdenCompra.aspx" />
+    <Content Include="Reportes\ScrapDinero.aspx" />
+    <Content Include="Reportes\ScrapPorcentaje.aspx" />
     <Content Include="Scripts\common.js" />
+    <Content Include="Scripts\dashboard_common.js" />
     <Content Include="Scripts\date.js" />
     <Content Include="Scripts\flip.js" />
+    <Content Include="Scripts\jqplot\jqplot.barRenderer.js" />
+    <Content Include="Scripts\jqplot\jqplot.canvasAxisLabelRenderer.js" />
+    <Content Include="Scripts\jqplot\jqplot.canvasAxisTickRenderer.js" />
+    <Content Include="Scripts\jqplot\jqplot.canvasOverlay.js" />
+    <Content Include="Scripts\jqplot\jqplot.canvasTextRenderer.js" />
+    <Content Include="Scripts\jqplot\jqplot.categoryAxisRenderer.js" />
+    <Content Include="Scripts\jqplot\jqplot.dateAxisRenderer.js" />
+    <Content Include="Scripts\jqplot\jqplot.logAxisRenderer.js" />
+    <Content Include="Scripts\jqplot\jqplot.pieRenderer.js" />
+    <Content Include="Scripts\jqplot\jqplot.pointLabels.js" />
+    <Content Include="Scripts\jqplot\jquery.jqplot.js" />
     <Content Include="Scripts\jquery-ui-timepicker-addon.js" />
     <Content Include="Scripts\jquery-ui.js" />
     <Content Include="Scripts\jquery.carousel.js" />
@@ -168,6 +185,7 @@
     <Content Include="Styles\cupertino\images\ui-icons_ffffff_256x240.png" />
     <Content Include="Styles\cupertino\jquery-horizontal-menu.css" />
     <Content Include="Styles\cupertino\jquery-ui.css" />
+    <Content Include="Styles\jquery.jqplot.css" />
     <Content Include="Styles\jquery.multiselect.css" />
     <Content Include="Styles\jquery.multiselect.filter.css" />
     <Content Include="Styles\Site.css" />
@@ -300,6 +318,34 @@
       <DependentUpon>Logout.aspx</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Reportes\RelacionFechaEntrega.aspx.cs">
+      <DependentUpon>RelacionFechaEntrega.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Reportes\RelacionFechaEntrega.aspx.designer.cs">
+      <DependentUpon>RelacionFechaEntrega.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Reportes\RelacionOrdenCompra.aspx.cs">
+      <DependentUpon>RelacionOrdenCompra.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Reportes\RelacionOrdenCompra.aspx.designer.cs">
+      <DependentUpon>RelacionOrdenCompra.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Reportes\ScrapDinero.aspx.cs">
+      <DependentUpon>ScrapDinero.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Reportes\ScrapDinero.aspx.designer.cs">
+      <DependentUpon>ScrapDinero.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Reportes\ScrapPorcentaje.aspx.cs">
+      <DependentUpon>ScrapPorcentaje.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Reportes\ScrapPorcentaje.aspx.designer.cs">
+      <DependentUpon>ScrapPorcentaje.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Sistema\Usuarios.aspx.cs">
       <DependentUpon>Usuarios.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -340,7 +386,6 @@
   <ItemGroup>
     <Folder Include="Facturacion\" />
     <Folder Include="Inventarios\" />
-    <Folder Include="Reportes\" />
     <Folder Include="Stock\" />
   </ItemGroup>
   <PropertyGroup>
