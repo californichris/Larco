@@ -480,7 +480,6 @@ function checkEmail(tips, field, fieldDesc) {
 function checkURL(tips, field) {
     field.removeClass("ui-state-error").off('.validation');
     field.val($.trim(field.val()));
-   //var valid = (/^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/|www\.)[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$/.test(field.val())) || (/.*\?((.*=.*)(&?))+/.test(field.val()));
     valid = /^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/|\\(\\[^\s\\]+)+(\\)?).*$/ig.test(field.val());
 
     if (!valid) {
@@ -806,7 +805,6 @@ $.widget("bs.Catalog", {
         dialogWidth: 500,
         dialogHeight: 'auto',
         //datatables options
-        deferRender : false,
         serverSide: false,
         processing: true,
         displayLength: TABLE_DISPLAY_LENGTH,
@@ -918,7 +916,6 @@ $.widget("bs.Catalog", {
             pageLength: options.displayLength,
             searching: options.filter,
             rowId: options.fieldId,
-            deferRender: options.deferRender,
             rowCallback: function (nRow, aData, iDisplayIndex) {
                 return options.rowCallback(nRow, aData, iDisplayIndex);
             },
@@ -948,7 +945,6 @@ $.widget("bs.Catalog", {
                 url: options.source,
                 data: function (data) {
                     if (options.serverSide && options.pageConfig.Filter && $('#' + options.pageName + '_filter').attr('firsttime') == 'true') {
-                        log('first');
                         var newFilter = $.page.filter.createFilter($('#' + options.pageName + '_filter'));
                         $.each(newFilter, function (key, val) {
                             if (val) {
@@ -960,7 +956,6 @@ $.widget("bs.Catalog", {
                         });
 
                         $('#' + options.pageName + '_filter').Filter('setFilter', newFilter);
-                        log(newFilter);
                     }
 
                     if (!jQuery.isEmptyObject(data)) {                        
@@ -978,7 +973,6 @@ $.widget("bs.Catalog", {
                     if (options.beforeServerDataCall != null && typeof (options.beforeServerDataCall) == "function") {
                         options.beforeServerDataCall(data);
                     }
-                    log(data);
                     if (jQuery.isEmptyObject(data)) {
                         return data;
                     } else {
@@ -997,9 +991,6 @@ $.widget("bs.Catalog", {
             console.error('Source is not supported, is not an array or a string.');
         }
 
-
-
-        log(dtOptions);
 
         /* Creating dataTable */
         this.dataTableOptions = dtOptions;
@@ -1179,7 +1170,7 @@ $.widget("bs.Catalog", {
             expbtn.button(buttonOpts).click(function (event) {
                 if (options.serverSide) {
                     //getting last url
-                    var _url = $('#' + id).DataTable().ajax.url() + '&csv=true&allColumns=true';
+                    var _url = options.exportRequest;
 
                     //getting last data send and setting length to -1 so it will retrieved all filtered records
                     var _params = $('#' + id).DataTable().ajax.params() || '';
@@ -1906,7 +1897,7 @@ $.widget("bs.Page", {
         var cols = filter.FilterCols;
 
         var html = new StringBuffer();
-        html.append('<tr><td class="filter-header" colspan="').append(cols).append('" style="font-weight: bold;color: #2779aa;padding-bottom:10px;padding-top:5px;">' + filter.FilterText +'</td>');
+        html.append('<tr><td colspan="').append(cols).append('" style="font-weight: bold;color: #2779aa;padding-bottom:10px;padding-top:5px;">' + filter.FilterText +'</td>');
         html.append('<td colspan="').append(cols).append('" style="font-weight: bold;color: #2779aa;padding-bottom:10px;padding-top:5px;padding-right:5px;" align="right">');
 
         if (filter.ShowClear.toLowerCase() == 'true') {
@@ -2039,33 +2030,36 @@ $.widget("bs.Page", {
         }
 
         for (var s = 0; s < controlFields.selectMenuFields.length; s++) {
-            var selectMenu = controlFields.selectMenuFields[s];
-            if (selectMenu.DropDownInfo == null || selectMenu.DropDownInfo == '') {
+            var field = controlFields.selectMenuFields[s];
+            if (!field.DropDownInfo) {
                 continue;
             }
 
-            $.page.loadSelectMenu(dialog, selectMenu);
+            $.page.loadSelectMenu(dialog, field);
 
-            var field = controlFields.selectMenuFields[s];
-            var readonly = this._getFieldProp(field, 'readonly');
-            if (readonly && (readonly == 'true' || readonly == true)) {
+            if (this._isReadOnly(field)) {
                 $('#' + field.FieldName, dialog).selectmenu('disable');
             }
         }
 
         for (var m = 0; m < controlFields.multiSelectFields.length; m++) {
-            var multiSelect = controlFields.multiSelectFields[m];
-            if (multiSelect.DropDownInfo == null || multiSelect.DropDownInfo == '') {
+            var field = controlFields.multiSelectFields[m];
+            if (!field.DropDownInfo) {
                 continue;
             }
 
-            this._loadMultiSelect(dialog, multiSelect);
+            $.page.loadMultiSelect(dialog, field);
+
+            if (this._isReadOnly(field)) {
+                $('#' + field.FieldName, dialog).multiselect('disable');
+            }
         }
 
         for (var dt = 0; dt < controlFields.dateFields.length; dt++) {
-            if (controlFields.dateFields[dt].ControlType == 'hidden') continue;
+            var field = controlFields.dateFields[dt];
+            if (field.ControlType == 'hidden') continue;
 
-            $('#' + controlFields.dateFields[dt].FieldName, dialog).datepicker({
+            $('#' + field.FieldName, dialog).datepicker({
                 showButtonPanel: true,
                 showOn: "button"
             }).next('button').text('').button({
@@ -2074,16 +2068,13 @@ $.widget("bs.Page", {
                 },
                 text: false
             });
-
-            var field = controlFields.dateFields[dt];
-            var readonly = this._getFieldProp(field, 'readonly');
-            if (readonly && (readonly == 'true' || readonly == true)) {
+            
+            if ( this._isReadOnly(field) ) {
                 $('#' + field.FieldName, dialog).next('button').button('disable');
             }
         }
 
         this.dialog = dialog;
-        //$(this.element).show();       
     },
 
     _initFilter: function (config) {
@@ -2131,7 +2122,7 @@ $.widget("bs.Page", {
                         return f.FieldId == fieldId;
                     });
 
-                    if (fieldData) {
+                    if (fieldData.length > 0) {
                         field.FieldData = $.evalJSON($.toJSON(fieldData[0]));
                         break;
                     }
@@ -2168,36 +2159,6 @@ $.widget("bs.Page", {
 
         if (this.options.debug) console.timeEnd('_getFilterFields');
         return fields;
-    },
-
-    _loadMultiSelect: function (dialog, selectMenu) {
-        var ddInfo = $.evalJSON(selectMenu.DropDownInfo);
-        var that = this;
-
-        var element = $.page.initMultiselect($('#' + selectMenu.FieldName, dialog), ddInfo);       
-        var opts = that.options;
-        if (ddInfo.cache != null && ddInfo.cache == true) {
-            $.when($.getData(ddInfo.url)).done(function (json) {
-                that._createMultiSelectMenuOptions(element, json, ddInfo);
-            });
-            return;
-        }
-
-        $.ajax({
-            type: "GET",
-            url: ddInfo.url
-        }).done(function (json) {
-            that._createMultiSelectMenuOptions(element, json, ddInfo);
-        });        
-    },
-
-    _createMultiSelectMenuOptions: function (element, json, ddInfo) {
-        if (json.aaData) {
-            $.page.createSelectOptions(element, json, ddInfo);
-            $.page.refreshMultiselect(element);
-        } else {
-            log("Unable to fetch " + element.attr('id') + " list.");
-        }
     },
 
     _getTabContent: function (tab, controlFields, idFields, index) {
@@ -2244,9 +2205,6 @@ $.widget("bs.Page", {
         var html = new StringBuffer();
         html.append('<table width="100%" cellspacing="0" cellpadding="0" class="table-style"><tbody>');
 
-        var labels = new StringBuffer();
-        var elements = new StringBuffer();
-
         var tabFields = tab.Fields;
 
         var idsInTab = jQuery.grep(tab.Fields, function (f) {
@@ -2261,6 +2219,9 @@ $.widget("bs.Page", {
 
         var count = 0;
         var length = fields.length;
+        var lastRowAddedAtCount = 0;
+        var labels = new StringBuffer();
+        var elements = new StringBuffer();
         for (var f = 0; f < length; f++) {
             var field = fields[f];
             var colSpan = this._fieldColspan(field);
@@ -2270,43 +2231,72 @@ $.widget("bs.Page", {
                 count++;
             } else {
                 colWidth = colWidth * parseInt(colSpan);
-                count += parseInt(colSpan);
+
+                if (((count + parseInt(colSpan)) - parseInt(lastRowAddedAtCount)) > parseInt(tab.Cols)) {
+                    this._appendRows(html, tab, labels, elements);
+
+                    labels = new StringBuffer();
+                    elements = new StringBuffer();
+
+                    lastRowAddedAtCount = parseInt(lastRowAddedAtCount) + parseInt(tab.Cols);
+                    count = parseInt(lastRowAddedAtCount) + parseInt(colSpan);
+                } else {
+                    count += parseInt(colSpan);
+                }                
             }
 
-            labels.append('<td width="').append(colWidth).append('%"');
-
-            if (colSpan != null) {
-                labels.append(' colspan="').append(colSpan).append('"');
-            }
-
-            labels.append('><label for="').append(field.FieldName).append('">').append(field.Label);
-            if (field.Required == 'True') {
-                labels.append('<font color="red">*</font>');
-            }
-            labels.append(' :</label></td>');
-
-            elements.append('<td valign="top" width="').append(colWidth).append('%"');
-            if (colSpan != null) {
-                elements.append(' colspan="').append(colSpan).append('"');
-            }
-            elements.append('>')
-            elements.append(this._getFieldHTML(field, controlFields)).append('</td>');
-
+            this._appendLabelColumn(labels, colWidth, colSpan, field);
+            this._appendElementColumn(elements, colWidth, colSpan, field, controlFields);
+            
             if (count % tab.Cols == 0 || f >= length - 1) {
-                html.append('<tr class="columns-').append(tab.Cols).append('">').append(labels.toString()).append('</tr>');
-                html.append('<tr class="columns-').append(tab.Cols).append('">').append(elements.toString()).append('</tr>');
+                this._appendRows(html, tab, labels, elements);
 
                 labels = new StringBuffer();
                 elements = new StringBuffer();
+                lastRowAddedAtCount = count;
             }
         }
 
         html.append('</tbody></table>');
-
-        var tabContent = $('<div id="tabs-' + (index + 1) + '"></div>');
         html.append(this._getHiddenFieldsHTML(tab, controlFields));
+       
+        var tabContent = $('<div id="tabs-' + (index + 1) + '"></div>');        
         tabContent.html(html.toString());
 
+        this._applyControlProps(tab, tabContent);
+
+        return tabContent;
+    },
+
+    _appendRows: function(html, tab, labels, elements) {
+        html.append('<tr class="columns-').append(tab.Cols).append('">').append(labels.toString()).append('</tr>');
+        html.append('<tr class="columns-').append(tab.Cols).append('">').append(elements.toString()).append('</tr>');
+    },
+
+    _appendLabelColumn: function(labels, colWidth, colSpan, field) {
+        labels.append('<td width="').append(colWidth).append('%"');
+
+        if (colSpan != null) {
+            labels.append(' colspan="').append(colSpan).append('"');
+        }
+
+        labels.append('><label for="').append(field.FieldName).append('">').append(field.Label);
+        if (field.Required == 'True') {
+            labels.append('<font color="red">*</font>');
+        }
+        labels.append(' :</label></td>');
+    },
+
+    _appendElementColumn: function (elements, colWidth, colSpan, field, controlFields) {
+        elements.append('<td valign="top" width="').append(colWidth).append('%"');
+        if (colSpan != null) {
+            elements.append(' colspan="').append(colSpan).append('"');
+        }
+        elements.append('>')
+        elements.append(this._getFieldHTML(field, controlFields)).append('</td>');
+    },
+
+    _applyControlProps: function (tab, tabContent) {
         var controlPropFields = jQuery.grep(tab.Fields, function (f) {
             return (f.ControlProps);
         });
@@ -2331,8 +2321,6 @@ $.widget("bs.Page", {
                 } catch (e) { /* not able to parse props*/ }
             }
         }
-
-        return tabContent;
     },
 
     _getHiddenFieldsHTML: function (tab, controlFields) {
@@ -2422,6 +2410,11 @@ $.widget("bs.Page", {
         return null;
     },
 
+    _isReadOnly : function (field) {
+        var readonly = this._getFieldProp(field, 'readonly');
+        return readonly && (readonly == 'true' || readonly == true);
+    },
+
     getConfig: function () {
         return this.config;
     },
@@ -2459,7 +2452,7 @@ $.widget("bs.Filter", {
         var config = this.options.pageConfig;
 
         var selectMenus = $.map(config.Filter.Fields, function (f, i) {
-            return f.FieldData.ControlType == 'selectmenu' ? '#' + f.GridData.ColumnName + 'Filter' : null;
+            return f.FieldData.ControlType == 'selectmenu' ? '#' + f.GridData.ColumnName : null;
         });
 
         var ddlMenus = $.map(config.Filter.Fields, function (f, i) {
@@ -2675,7 +2668,7 @@ $.page.initSelectMenu = function (selector) {
 $.page.initMultiselect = function (element, ddInfo) {
     var _header = (ddInfo.header && ddInfo.header == true) ? true : false;
 
-    element.attr('load-complete', 'false').empty();
+    element.addClass('multiselect').attr('load-complete', 'false').empty();
     element.append($('<option></option>').attr('value', '').text('Loading..'));
     if (ddInfo.filter && ddInfo.filter == true) {
         element.multiselect({ header: _header }).multiselectfilter();
@@ -2690,9 +2683,13 @@ $.page.initMultiselect = function (element, ddInfo) {
 }
 
 $.page.loadSelectMenu = function (dialog, selectMenu) {
-    var ddInfo = $.evalJSON(selectMenu.DropDownInfo);
-    var element = $('#' + selectMenu.FieldName, dialog).addClass('selectMenu').attr('load-complete', 'false').empty();
-    element.append($('<option></option>').attr('value', '').text('Loading..')).selectmenu();
+    var ddInfo = $.evalJSON(selectMenu.DropDownInfo);    
+    var element = $('#' + selectMenu.FieldName, dialog);
+    
+    if(!element.hasClass('selectMenu')) {
+        element.addClass('selectMenu').attr('load-complete', 'false').empty();
+        element.append($('<option></option>').attr('value', '').text('Loading..')).selectmenu();
+    }
 
     if (ddInfo.cache != null && (ddInfo.cache == true || ddInfo.cache == 'true')) {
         return $.Deferred(function( dfd ) {
@@ -2718,6 +2715,10 @@ $.page.loadMultiSelect = function (dialog, multiSelect) {
     var ddInfo = $.evalJSON(multiSelect.DropDownInfo);
     var element = $('#' + multiSelect.FieldName, dialog);
     
+    if (!element.hasClass('multiselect')) {
+        $.page.initMultiselect($('#' + multiSelect.FieldName), ddInfo);
+    }
+
     if (ddInfo.cache != null && (ddInfo.cache == true || ddInfo.cache == 'true')) {
         return $.Deferred(function (dfd) {
             $.when($.getData(ddInfo.url)).done(function (json) {
@@ -2727,7 +2728,6 @@ $.page.loadMultiSelect = function (dialog, multiSelect) {
             });
         }).promise();
     }
-
 
     return $.Deferred(function (dfd) {
         $.ajax({

@@ -100,6 +100,9 @@
     <Content Include="Catalogos\Tareas.aspx" />
     <Content Include="Default.aspx" />
     <Content Include="Global.asax" />
+    <Content Include="Herramientas\EditorOrdenes.aspx" />
+    <Content Include="Herramientas\EditorRetrabajo.aspx" />
+    <Content Include="Herramientas\EditorScrap.aspx" />
     <Content Include="Herramientas\Ventas.aspx" />
     <Content Include="Images\checkbox.gif" />
     <Content Include="Images\database.png" />
@@ -149,6 +152,7 @@
     <Content Include="Scripts\jquery.maskedinput.js" />
     <Content Include="Scripts\jquery.multiselect.filter.js" />
     <Content Include="Scripts\jquery.multiselect.js" />
+    <Content Include="Scripts\larco_common.js" />
     <Content Include="Scripts\pageconfig.js" />
     <Content Include="Scripts\spin.js" />
     <Content Include="Sistema\Usuarios.aspx" />
@@ -288,6 +292,27 @@
     </Compile>
     <Compile Include="Admin\Preview.aspx.designer.cs">
       <DependentUpon>Preview.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Herramientas\EditorOrdenes.aspx.cs">
+      <DependentUpon>EditorOrdenes.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Herramientas\EditorOrdenes.aspx.designer.cs">
+      <DependentUpon>EditorOrdenes.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Herramientas\EditorRetrabajo.aspx.cs">
+      <DependentUpon>EditorRetrabajo.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Herramientas\EditorRetrabajo.aspx.designer.cs">
+      <DependentUpon>EditorRetrabajo.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Herramientas\EditorScrap.aspx.cs">
+      <DependentUpon>EditorScrap.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Herramientas\EditorScrap.aspx.designer.cs">
+      <DependentUpon>EditorScrap.aspx</DependentUpon>
     </Compile>
     <Compile Include="Herramientas\Ventas.aspx.cs">
       <DependentUpon>Ventas.aspx</DependentUpon>

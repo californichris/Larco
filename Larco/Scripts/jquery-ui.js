@@ -3266,18 +3266,18 @@ $.widget( "ui.autocomplete", {
 	},
 
 	_renderMenu: function( ul, items ) {
-		var that = this;
+	    var that = this;
 		$.each( items, function( index, item ) {
 			that._renderItemData( ul, item );
 		});
 	},
 
 	_renderItemData: function( ul, item ) {
-		return this._renderItem( ul, item ).data( "ui-autocomplete-item", item );
+	    return this._renderItem(ul, item).data("ui-autocomplete-item", item);
 	},
 
 	_renderItem: function( ul, item ) {
-		return $( "<li>" ).text( item.label ).appendTo( ul );
+	    return $("<li>").text(item.label).appendTo(ul);
 	},
 
 	_move: function( direction, event ) {
