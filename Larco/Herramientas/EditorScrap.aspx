@@ -161,7 +161,7 @@
 	                });
 	            },
 	            deleteEntityCallBack: function (oTable, options) {
-	                var data = getSelectedRowData(oTable)
+	                var data = getSelectedRowData(oTable);
 
 	                if (confirm('Estas seguro que quieres borrar la orden ' + data.ITE_Nombre + ' que fue marcada como scrap?') == false)
 	                    return false;

@@ -19,6 +19,10 @@
 	    });
 
 	    function initializeCatalog(config) {
+	        var nombreIndex = getArrayIndexForKey(config.GridFields, 'ColumnName', 'Nombre');
+	        var contactoIndex = getArrayIndexForKey(config.GridFields, 'ColumnName', 'Contacto');
+	        var rfcIndex = getArrayIndexForKey(config.GridFields, 'ColumnName', 'RFC');
+
 	        $('table.display').Catalog({
 	            pageConfig: config,
 	            serverSide: true,
@@ -26,18 +30,17 @@
 	            dialogWidth: 800,
 	            validate: function (tips) {
 	                var valid = validateDialog(config, tips);
-
 	                valid = valid && checkInt(tips, $('#Clave'),'Codigo');
 
 	                return valid;
 	            },
 	            rowCallback: function (nRow, aData, iDisplayIndex) {
 	                var wrap = '<div style="white-space:nowrap;overflow:hidden;width:320px;" title="DATA">DATA</div>';
-	                jQuery('td:eq(' + getArrayIndexForKey(config.GridFields, 'ColumnName', 'Nombre') + ')', nRow).html(wrap.replace(/DATA/g, aData.Nombre));
-	                jQuery('td:eq(' + getArrayIndexForKey(config.GridFields, 'ColumnName', 'Contacto') + ')', nRow).html(wrap.replace(/DATA/g, aData.Contacto));
+	                jQuery('td:eq(' + nombreIndex + ')', nRow).html(wrap.replace(/DATA/g, aData.Nombre));
+	                jQuery('td:eq(' + contactoIndex + ')', nRow).html(wrap.replace(/DATA/g, aData.Contacto));
 
 	                var wrap = '<div id="row' + aData.Id + '" style="white-space:nowrap;overflow:hidden;width:180px;">DATA</div>';
-	                jQuery('td:eq(' + getArrayIndexForKey(config.GridFields, 'ColumnName', 'RFC') + ')', nRow).html(wrap.replace(/DATA/g, aData.RFC));
+	                jQuery('td:eq(' + rfcIndex + ')', nRow).html(wrap.replace(/DATA/g, aData.RFC));
 
 	                return nRow;
 	            }
