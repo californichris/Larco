@@ -1,6 +1,8 @@
 ﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Preview.aspx.cs" Inherits="BS.Common.Preview" %>
+<%@ Import Namespace="System.Web.Optimization" %>
 <asp:Content ID="Content1" ContentPlaceHolderID="HeadContent" runat="server">
-    <script type="text/javascript" src="<%= Page.ResolveUrl("~/Scripts/jquery.multiselect.js") %>"></script>
+    <%: Styles.Render("~/Styles/multiselect_css") %>
+    <%: Scripts.Render("~/Scripts/multiselect_js") %>
 	<script type="text/javascript">
 	    var PAGE_NAME = '<%= HttpUtility.HtmlEncode(Request.QueryString["pageName"]) %>';
 	    $(document).ready(function () {

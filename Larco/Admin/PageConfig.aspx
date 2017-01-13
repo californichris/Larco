@@ -1,4 +1,5 @@
 ﻿<%@ Page Title="Page Config" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="PageConfig.aspx.cs" Inherits="BS.Common.PageConfig" %>
+<%@ Import Namespace="System.Web.Optimization" %>
 <asp:Content ID="Content1" ContentPlaceHolderID="HeadContent" runat="server">
     <style type="text/css">
         #filter-fields, #grid-columns, .connectedSortable { list-style-type: none; margin: 0; padding: 0 0 2.5em; float: left; }
@@ -16,8 +17,7 @@
         div.jsonformat, div.tableformat { padding:4px;}    
         div.container .ui-selectmenu-button { width:98%!important;}                 
     </style>
-    <script type="text/javascript" src="<%= Page.ResolveUrl("~/Scripts/jquery.carousel.js") %>"></script>
-    <script type="text/javascript" src="<%= Page.ResolveUrl("~/Scripts/pageconfig.js") %>"></script>
+    <%: Scripts.Render("~/Scripts/page_config_js") %>  
 </asp:Content>
 <asp:Content ID="Content2" ContentPlaceHolderID="MainContent" runat="server">
     <div id="my-carousel">

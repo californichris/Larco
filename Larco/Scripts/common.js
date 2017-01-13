@@ -368,7 +368,7 @@ function checkFloat(tips, field, fieldDesc, min, max) {
     var desc = fieldDesc + " must be a decimal number.";
     if (valid) {
         if ((typeof min != undefined && typeof max != undefined) && (parseFloat(field.val()) < min || parseFloat(field.val()) > max)) {
-            desc = fieldDesc + " must be a decimal number between " + min + " and " + max + ".";
+            desc = fieldDesc + " must be a decimal number between " + min.toFixed(2) + " and " + max.toFixed(2) + ".";
         } else {
             return true;
         }
@@ -909,6 +909,7 @@ $.widget("bs.Catalog", {
             language: options.language,
             paging: options.paginate,
             scrollY: options.scrollY,
+            //autoWidth: false,
             scrollX: options.scrollX,
             scrollXInner: options.scrollXInner,
             scrollCollapse: options.scrollCollapse,
@@ -944,7 +945,7 @@ $.widget("bs.Catalog", {
             dtOptions.ajax = {
                 url: options.source,
                 data: function (data) {
-                    if (options.serverSide && options.pageConfig.Filter && $('#' + options.pageName + '_filter').attr('firsttime') == 'true') {
+                    if (options.serverSide && options.pageConfig && options.pageConfig.Filter && $('#' + options.pageName + '_filter').attr('firsttime') == 'true') {
                         var newFilter = $.page.filter.createFilter($('#' + options.pageName + '_filter'));
                         $.each(newFilter, function (key, val) {
                             if (val) {
@@ -991,6 +992,9 @@ $.widget("bs.Catalog", {
             console.error('Source is not supported, is not an array or a string.');
         }
 
+        if (options.dialogSelector != '') {
+            this._initializeDialog();
+        }
 
         /* Creating dataTable */
         this.dataTableOptions = dtOptions;
@@ -1029,11 +1033,7 @@ $.widget("bs.Catalog", {
             }
 
             options.doubleClickCallBack(that.oTable);
-        });
-        
-        if (options.dialogSelector != '') {
-            this._initializeDialog();
-        }
+        });       
     },
 
     _createButtons: function () {
@@ -1352,6 +1352,12 @@ $.widget("bs.Catalog", {
         return this.oTable.ajax.reload();
     },
 
+    clearTable: function() {
+        this.oTable.clear().draw();
+        var t = this.oTable;
+        return t;
+    },
+
     getTableOptions: function() {
         return this.dataTableOptions;
     },
@@ -1574,7 +1580,7 @@ $.widget("bs.ComboBox", {
         var input = this.input,
           wasOpen = false;
 
-        $("<a>")
+        this.button = $("<a>")
           .attr("tabindex", this.element.attr("tabindex"))
           .tooltip()
           .appendTo(this.wrapper.find('td.custom-combobox-button-td'))
@@ -1673,12 +1679,26 @@ $.widget("bs.ComboBox", {
         this.element.show();
     },
 
+    getList: function() {
+        return this.options.list;
+    },
+
     hide: function () {
         this.wrapper.hide();
     },
 
     show: function () {
         this.wrapper.show();
+    },
+
+    disable:function() {
+        $(this.input).prop('readonly', true);
+        $(this.button).button('disable');
+    },
+
+    enable: function () {
+        $(this.input).prop('readonly', false);
+        $(this.button).button('enable');
     },
 
     value: function (val) {
@@ -2179,7 +2199,9 @@ $.widget("bs.Page", {
             return (f.IsId == 'True');
         });
 
-        idFields = idFields.concat(idsInTab);
+        for (var i = 0; i < idsInTab.length; i++) {
+            idFields.push(idsInTab[i]);
+        }
 
         var length = tabFields.length;
         for (var f = 0; f < length; f++) {
@@ -2211,7 +2233,9 @@ $.widget("bs.Page", {
             return (f.IsId == 'True');
         });
 
-        idFields = idFields.concat(idsInTab);
+        for (var i = 0; i < idsInTab.length; i++) {
+            idFields.push(idsInTab[i]);
+        }
 
         var fields = jQuery.grep(tab.Fields, function (f) {
             return (f.ControlType != 'hidden');

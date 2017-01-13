@@ -120,6 +120,7 @@
     <Content Include="Admin\Preview.aspx" />
     <Content Include="Images\ui-anim_basic_16x16.gif" />
     <Content Include="InvalidAccess.aspx" />
+    <Content Include="Inventarios\Entradas.aspx" />
     <Content Include="Logon.aspx" />
     <Content Include="Logout.aspx" />
     <Content Include="Reportes\RelacionFechaEntrega.aspx" />
@@ -328,6 +329,13 @@
     <Compile Include="InvalidAccess.aspx.designer.cs">
       <DependentUpon>InvalidAccess.aspx</DependentUpon>
     </Compile>
+    <Compile Include="Inventarios\Entradas.aspx.cs">
+      <DependentUpon>Entradas.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Inventarios\Entradas.aspx.designer.cs">
+      <DependentUpon>Entradas.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Logon.aspx.cs">
       <DependentUpon>Logon.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -410,8 +418,10 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Facturacion\" />
-    <Folder Include="Inventarios\" />
     <Folder Include="Stock\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Properties\PublishProfiles\Larco.pubxml" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

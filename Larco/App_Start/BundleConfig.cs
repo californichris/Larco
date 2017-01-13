@@ -19,6 +19,26 @@ namespace BS.Common
                 .Include(SCRIPTS_PATH + "spin.js");
             bundles.Add(siteMasterBundle);
 
+            var pageConfigBundle = new ScriptBundle(SCRIPTS_PATH + "page_config_js")
+                .Include(SCRIPTS_PATH + "jquery.carousel.js")
+                .Include(SCRIPTS_PATH + "pageconfig.js");
+            bundles.Add(pageConfigBundle);
+
+            var jqplotJSBundle = new ScriptBundle(SCRIPTS_PATH + "jqplot_js")
+                .Include(SCRIPTS_PATH + "dashboard_common.js")
+                .Include(SCRIPTS_PATH + "jqplot/jquery.jqplot.js")
+                .Include(SCRIPTS_PATH + "jqplot/jqplot.pieRenderer.js")
+                .Include(SCRIPTS_PATH + "jqplot/jqplot.barRenderer.js")
+                .Include(SCRIPTS_PATH + "jqplot/jqplot.categoryAxisRenderer.js")
+                .Include(SCRIPTS_PATH + "jqplot/jqplot.pointLabels.js")
+                .Include(SCRIPTS_PATH + "jqplot/jqplot.canvasOverlay.js");
+            bundles.Add(jqplotJSBundle);
+
+            var multiSelectJSBundle = new ScriptBundle(SCRIPTS_PATH + "multiselect_js")
+                .Include(SCRIPTS_PATH + "jquery.multiselect.js")
+                .Include(SCRIPTS_PATH + "jquery.multiselect.filter.js");
+            bundles.Add(multiSelectJSBundle);
+
             const string STYLES_APP_ROOT = "~/Styles/";
             var cssBundle = new StyleBundle(STYLES_APP_ROOT + "site_master_css")
                 .Include(STYLES_APP_ROOT + "Site.css");
@@ -30,30 +50,14 @@ namespace BS.Common
                 .Include(STYLES_APP_ROOT + "blitzer/dataTables.jqueryui.css");                       
             bundles.Add(styleBundle);
 
-            var multiSelectJSBundle = new ScriptBundle(SCRIPTS_PATH + "multiselect_js")
-                .Include(SCRIPTS_PATH + "jquery.multiselect.js")
-                .Include(SCRIPTS_PATH + "jquery.multiselect.filter.js");
-            bundles.Add(multiSelectJSBundle);
+            var jqplotBundle = new StyleBundle(STYLES_APP_ROOT + "jqplot_css")
+                .Include(STYLES_APP_ROOT + "jquery.jqplot.css");
+            bundles.Add(jqplotBundle);
 
             var multiSelectCSSBundle = new StyleBundle(STYLES_APP_ROOT + "multiselect_css")
                 .Include(STYLES_APP_ROOT + "jquery.multiselect.css")
                 .Include(STYLES_APP_ROOT + "jquery.multiselect.filter.css");
             bundles.Add(multiSelectCSSBundle);
-
-
-            var jqplotJSBundle = new ScriptBundle(SCRIPTS_PATH + "jqplot_js")
-               .Include(SCRIPTS_PATH + "dashboard_common.js")
-               .Include(SCRIPTS_PATH + "jqplot/jquery.jqplot.js")
-               .Include(SCRIPTS_PATH + "jqplot/jqplot.pieRenderer.js")
-               .Include(SCRIPTS_PATH + "jqplot/jqplot.barRenderer.js")
-               .Include(SCRIPTS_PATH + "jqplot/jqplot.categoryAxisRenderer.js")
-               .Include(SCRIPTS_PATH + "jqplot/jqplot.pointLabels.js")
-               .Include(SCRIPTS_PATH + "jqplot/jqplot.canvasOverlay.js");
-            bundles.Add(jqplotJSBundle);
-
-            var jqplotBundle = new StyleBundle(STYLES_APP_ROOT + "jqplot_css")
-                .Include(STYLES_APP_ROOT + "jquery.jqplot.css");
-            bundles.Add(jqplotBundle);
         }
     }
 }

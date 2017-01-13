@@ -1,7 +1,9 @@
-﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="RefreshCache.aspx.cs" Inherits="BS.Common.RefreshCache" %>
+﻿<%@ Page Title="Refresh Cache" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="RefreshCache.aspx.cs" Inherits="BS.Common.RefreshCache" %>
 <asp:Content ID="Content1" ContentPlaceHolderID="HeadContent" runat="server">
 <script type="text/javascript">
-    $(document).ready(function () {        
+
+    $(document).ready(function () {
+        
         $('#refreshPageCache').button().click(function () {
             $.ajax({
                 url: AJAX_CONTROLER_URL + '/PageInfo/RefreshCache',
@@ -10,6 +12,7 @@
                 alert(json.ErrorMsg);
             });
         });        
+
     });
     </script>
 </asp:Content>

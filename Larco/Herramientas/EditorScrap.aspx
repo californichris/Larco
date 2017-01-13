@@ -1,7 +1,7 @@
 ﻿<%@ Page Title="Editor de Scrap" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="EditorScrap.aspx.cs" Inherits="BS.Larco.Herramientas.EditorScrap" %>
 <asp:Content ID="Content1" ContentPlaceHolderID="HeadContent" runat="server">
 	<script type="text/javascript">
-	    var PAGE_NAME = 'Scrap';
+	    const PAGE_NAME = 'Scrap';
 	    const TABLE_SELECTOR = '#' + PAGE_NAME + '_table';
 	    const DIALOG_SELECTOR = '#' + PAGE_NAME + '_dialog';
 	    const BUTTONS_SELECTOR = TABLE_SELECTOR + '_wrapper_buttons button.disable';
@@ -142,8 +142,6 @@
                             //return to prev val
 	                        newOrden.PN_Id = newOrden.PN_Id == 'TEMP_VAL' ? 'NULL' : newOrden.PN_Id;
 	                        entities.push(addTransAttrs(scrap, 'Save', PAGE_NAME));
-
-	                        log(entities);
 
 	                        $.when(executeTransaction(entities)).done(function (json) {
 	                            if (json.ErrorMsg == SUCCESS) {

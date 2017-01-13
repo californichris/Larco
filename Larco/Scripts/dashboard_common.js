@@ -3,13 +3,22 @@ var detailTable = null;
 var OTHER = 'Otros*';
 var FILTERTYPE = { EQUALS: 'EQUALS', NOTEQUALS: 'NOTEQUALS', DATERANGE: 'DATERANGE' };
 var SERIES_COLORS = ['#004276', '#CF0E0E', '#AD2323', '#AF5D5D', '#CCCCCC', '#EEEEEE', '#F9F9F9', '#5191C4', '#1D6094'];
+var DEFAULT_DETAIL_DIALOG_OPTS = {
+    autoOpen: false,
+    height: 630,
+    width: 1020,
+    modal: true,
+    show: {
+        effect: 'clip'
+    },
+    hide: {
+        effect: 'clip'
+    }
+}
 
 var tableOpts = {
-    sAjaxSource: { "aaData": [] }, bJQueryUI: true, bProcessing: true, bDestroy: true, bPaginate: false, bFilter: true, bInfo: true, sScrollY: 490,
-    fnServerData: function (sSource, aoData, fnCallback) {
-        fnCallback(sSource);
-    },
-    fnRowCallback: function (nRow, aData, iDisplayIndex) {
+    data: [], jQueryUI: true, processing: true, destroy: true, paging: false, searching: true, info: true, scrollY: 490,
+    rowCallback: function (nRow, aData, iDisplayIndex) {
         var armJobNumber = aData.ArmJobNumber;
         if (aData.ArmJobNumber != null && aData.ArmJobNumber != '') {
             var url = APP_PATH + '/Projects/Projects.aspx?action=view&projectId=' + aData.ProjectId;
@@ -19,8 +28,8 @@ var tableOpts = {
         jQuery('td:eq(0)', nRow).html(armJobNumber);
         return nRow;
     },
-    aoColumns: [{ mDataProp: 'ArmJobNumber', sWidth: '110px' }, { mDataProp: 'JobIdShortDesc', sWidth: '450px' }, { mDataProp: 'StatusIdText', sWidth: '80px' },
-        { mDataProp: 'EmployeeId', sWidth: '80px' }, { mDataProp: 'PriorityIdText', sWidth: '80px' }, { mDataProp: 'RequestingGroup', sWidth: '160px' }],
+    columns: [{ data: 'ArmJobNumber' }, { mDataProp: 'JobIdShortDesc' }, { data: 'StatusIdText' },
+        { data: 'EmployeeId' }, { mDataProp: 'PriorityIdText' }, { data: 'RequestingGroup' }]
 };
 
 function createLoading() {
@@ -34,28 +43,11 @@ function createLoading() {
 }
 
 function createDetailDialog() {
-    $('#detail_dialog').dialog({
-        autoOpen: false,
-        height: 630,
-        width: 1020,
-        modal: true,
-        show: {
-            effect: 'clip'
-        },
-        hide: {
-            effect: 'clip'
-        }
-    });
+    $('#detail_dialog').dialog(DEFAULT_DETAIL_DIALOG_OPTS);
 }
 
 function createDetailTable(opts) {
-    detailTable = $('#detail_table').dataTable(opts);
-    $('#detail_dialog div.DataTables_sort_wrapper').css('width', 'inherit');
-
-    $('#detail_dialog div.dataTables_scrollHeadInner').css('height', '20px');
-    $('#detail_dialog div.dataTables_scrollHeadInner thead tr').css('height', '18px').css('vertical-align', 'top');
-    $('#detail_dialog div.dataTables_scrollHeadInner thead tr th').css('height', '18px');
-    $('#detail_dialog div.dataTables_scrollHeadInner thead tr th div').css('height', '16px');
+    detailTable = $('#detail_table').DataTable(opts);
 
     // Bind the mouseover/mouseout events to the detail table
     $('tbody', $('#detail_table')).mouseover(function (event) {
@@ -384,18 +376,19 @@ function reloadDetailTable(current, target, data) {
             filteredData = filterData(filteredData, fieldName, filterVal, FILTERTYPE.NOTEQUALS);
         }
     }
-    log('filteredData');
-    log(filteredData);
+
     var _data = { "aaData": filteredData }
     displayDetail(_data);
 }
 
 function displayDetail(_data) {
-    detailTable.fnReloadAjax(_data);
-
+    detailTable.clear().rows.add(_data.aaData).draw();
+    
     $('#detail_dialog div.dataTables_filter input').addClass('ui-corner-all');
     $('#detail_dialog .DataTables_sort_icon').css('float', 'right');
     $('#detail_dialog').dialog('open');
+
+    detailTable.columns.adjust().draw();
 }
 
 function groupData(options) {

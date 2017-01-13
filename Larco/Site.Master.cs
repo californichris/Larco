@@ -38,9 +38,11 @@ namespace Larco
                 {
                     StringBuilder menuGlobals = new StringBuilder();
                     menuGlobals.Append("\n<script type='text/javascript'>\n");
-                    menuGlobals.Append("var LOGIN_NAME = '").Append(loginName).Append("';\n");                    
+                    menuGlobals.Append("const LOGIN_NAME = '").Append(loginName).Append("';\n");                    
                     if (user != null)
                     {
+
+                        menuGlobals.Append("const USER_ID = '").Append(user.GetProperty("UserId")).Append("';\n");
                         menuGlobals.Append("const USER_NAME = '").Append(user.GetProperty("UserName")).Append("';\n");
                     }
 
