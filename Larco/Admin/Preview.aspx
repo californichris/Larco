@@ -13,8 +13,10 @@
 
 	        $('div.catalog').Page({
 	            source: AJAX_CONTROLER_URL + '/PageInfo/GetPageConfig?pageName=' + PAGE_NAME,
+                dialogStyle: 'table',
 	            onLoadComplete: function (config) {
 	                $('h2').text(config.Title);
+	                if (config.Filter != null) $('div.catalog').before('<br/>')
 	                document.title = config.Title;
 	                initializeCatalog(config);
 	            }
@@ -24,7 +26,8 @@
 	    function initializeCatalog(config) {
 	        $('table.display').Catalog({
 	            pageConfig: config,
-	            showExport: true
+	            showExport: true,
+                serverSide: true
 	        });
 	    }
 

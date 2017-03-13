@@ -12,6 +12,7 @@
 var SUCCESS = 'Success';
 var TABLE_DISPLAY_LENGTH = 25;
 var SESSION_EXPIRED = 'Session expired.';
+var DEFAULT_VALUE = 'defaultVal';
 
 $.ajaxSetup({
     dataType: 'json'
@@ -100,6 +101,18 @@ function getArrayIndexForKey(arr, key, val) {
 
 function getToday() {
     return Date.today().toString('MM/dd/yyyy');
+}
+
+function clone(obj) {
+    return $.evalJSON($.toJSON(obj));
+}
+
+function startsWith(text, str) {
+    return text.substring(0, str.length) === str;
+}
+
+function endsWith(text, str) {
+    return text.substring(text.length - str.length, text.length) === str;
 }
 
 /**
@@ -254,6 +267,31 @@ function showError(tips, msg, removed) {
             tips.text('');
         }
     }, 1500);
+}
+
+function isAlpha(value) {
+    return !/[~`!@#$%\^&*+=\-\[\]\\';,/{}|\\":<>\?]/.test(value);//Alpha no special characters
+}
+
+function checkAlpha(tips, field, fieldDesc) {
+    if (checkEmpty(field)) return true;
+
+    var valid = isAlpha(field.val()); //Alpha no special characters
+    if (!valid) {
+        field.addClass("ui-state-error");
+        tips.text(fieldDesc + " must be alphanumeric.").addClass("ui-state-highlight");
+        field.on('blur.validation', function () {
+            if (checkAlpha(tips, field, fieldDesc)) {
+                tips.text("").removeClass("ui-state-highlight");
+                field.removeClass("ui-state-error");
+                field.off('.validation');
+            }
+        });
+
+        return false;
+    } else {
+        return true;
+    }
 }
 
 function checkRequired(tips, field, fieldDesc) {
@@ -605,7 +643,9 @@ function validateDialog(config, tips, dialog) {
 }
 
 function isTrue(value) {
-    return value == '1' || value == 'True' || value == 'YES';
+    if(!value) return false;
+
+    return value == '1' || value.toLowerCase() == 'true' || value.toUpperCase() == 'YES';
 }
 
 function populateDialog(data, selector) {
@@ -799,6 +839,7 @@ $.widget("bs.Catalog", {
         showIcons: true,
         showText: true,
         showExport: false,
+        encodeExport: true,
         viewOnly: false,
         //dialog options
         dialogSelector: "div.modal-form",
@@ -810,6 +851,7 @@ $.widget("bs.Catalog", {
         displayLength: TABLE_DISPLAY_LENGTH,
         columns: [],
         sorting: [[0, 'asc']],
+        ordering:true,
         info: true,
         language: {},
         destroy: false,
@@ -819,6 +861,9 @@ $.widget("bs.Catalog", {
         scrollX: '',
         scrollXInner: '',
         scrollCollapse: false,
+        autoWidth: true,
+        editOnDoubleClick: true,
+
         //callback functions
         rowCallback: function (nRow, aData, iDisplayIndex) { return nRow; },
         initCompleteCallBack: function (oTable, oSettings, json, options) { },
@@ -826,7 +871,6 @@ $.widget("bs.Catalog", {
         selectRowCallBack: function (oTable) { },
         doubleClickCallBack: function (oTable) { },
         beforeServerDataCall: null,
-        editOnDoubleClick: true,
         newEntityCallBack: null,
         editEntityCallBack: null,
         deleteEntityCallBack: null,
@@ -899,6 +943,8 @@ $.widget("bs.Catalog", {
         var options = this.options;
         var that = this;
 
+        this._updateNoWrapFields();
+
         var dtOptions = {
             jQueryUI: true,
             lengthChange: false,
@@ -909,16 +955,17 @@ $.widget("bs.Catalog", {
             language: options.language,
             paging: options.paginate,
             scrollY: options.scrollY,
-            //autoWidth: false,
+            autoWidth: options.autoWidth,
             scrollX: options.scrollX,
             scrollXInner: options.scrollXInner,
             scrollCollapse: options.scrollCollapse,
             processing: options.processing,
             pageLength: options.displayLength,
             searching: options.filter,
+            ordering: options.ordering,
             rowId: options.fieldId,
             rowCallback: function (nRow, aData, iDisplayIndex) {
-                return options.rowCallback(nRow, aData, iDisplayIndex);
+                return that._rowCallBack(nRow, aData, iDisplayIndex);
             },
             initComplete: function (oSettings, json) {
                 this.buttonsWrapper = that._createButtons();
@@ -934,7 +981,7 @@ $.widget("bs.Catalog", {
                 options.drawCallBack(this, oSettings);
             },
             columns: options.columns,
-            order: options.sorting
+            order: $.evalJSON($.toJSON(options.sorting))
         };
 
         if ($.isArray(options.source)) {
@@ -977,7 +1024,7 @@ $.widget("bs.Catalog", {
                     if (jQuery.isEmptyObject(data)) {
                         return data;
                     } else {
-                        return 'filterInfo=' + $.toJSON(data);
+                        return 'filterInfo=' + encodeURIComponent($.toJSON(data));
                     }
                 },
                 dataSrc: function (json) {
@@ -1003,7 +1050,7 @@ $.widget("bs.Catalog", {
 
         that.oTable.off('click');
 
-        that.oTable.on('click', 'tr', function () {
+        that.oTable.on('click', 'tbody tr', function () {
             if (that._isDataTableEmpty()) return;
 
             selectRow(that.oTable, this);
@@ -1011,7 +1058,7 @@ $.widget("bs.Catalog", {
         });
 
         that.oTable.off('dblclick'); //Remove all dblclick event handlers table tbody
-        that.oTable.on('dblclick', 'tr', function (event) {
+        that.oTable.on('dblclick', 'tbody tr', function (event) {
             event.stopPropagation();
             if (that._isDataTableEmpty()) return;
 
@@ -1034,6 +1081,63 @@ $.widget("bs.Catalog", {
 
             options.doubleClickCallBack(that.oTable);
         });       
+    },
+
+    _getWrapText: function (field, aData, gridData) {
+        var text = '';
+        var wrapFields = $.page.getFieldProp(field, 'nowrap-fields');
+        if (wrapFields) {
+            var concatChar = $.page.getFieldProp(field, 'nowrap-concat') ? $.trim($.page.getFieldProp(field, 'nowrap-concat')) + ' ' : ', ';
+            text = this._getText(wrapFields.split(','), aData, concatChar);
+        } else {
+            text = aData[gridData.ColumnName];
+        }
+
+        return text;
+    },
+
+    _getText: function (array, obj, concatChar) {
+        var text = '';
+        for (var i = 0; i < array.length; i++) {
+            text = text + $.trim( obj[$.trim(array[i])] ) + concatChar;
+        }
+
+        text = text.substring(0, text.length - concatChar.length);
+        return text;
+    },
+
+    _updateNoWrapFields: function () {
+        var opts = this.options;
+        if (!opts || !opts.pageConfig || !opts.pageConfig.NoWrapFields || opts.pageConfig.NoWrapFields.length <= 0) return;
+        var config = opts.pageConfig;
+        var fields = config.NoWrapFields;
+        for (var f = 0; f < fields.length; f++) {
+            var field = fields[f];
+            // find grid data of field
+            var gridData = $.grep(config.GridFields, function (gf, i) {
+                gf.ColIndex = i;
+                return gf.FieldId == field.FieldId;
+            });
+
+            field.GridData = clone(gridData[0]);
+        }
+    },
+
+    _rowCallBack: function (nRow, aData, iDisplayIndex) {
+        var options = this.options;
+        if (options.pageConfig && options.pageConfig.NoWrapFields && options.pageConfig.NoWrapFields.length > 0) {
+            var wrap = '<div class="nowrap-col" style="width:COL_WIDTH;" title="DATA">DATA</div>';
+            var noWrapFields = options.pageConfig.NoWrapFields;
+            for (var f = 0; f < noWrapFields.length; f++) {
+                var field = noWrapFields[f];
+                var gridData = field.GridData;
+                var text = this._getWrapText(field, aData, gridData);
+
+                jQuery('td:eq(' + gridData.ColIndex + ')', nRow).html(wrap.replace(/DATA/g, text).replace('COL_WIDTH', gridData.Width + 'px'));
+            }
+        }
+
+        return options.rowCallback(nRow, aData, iDisplayIndex);
     },
 
     _createButtons: function () {
@@ -1126,10 +1230,13 @@ $.widget("bs.Catalog", {
 
                 if (options.serverSide) {
                     //getting last data send and setting length to -1 so it will retrieved all filtered records
-                    var _params = $('#' + id).DataTable().ajax.params() || '';
+                    var _params = $('#' + id).DataTable().ajax.params() || '';                    
+                    _params = decodeURIComponent(_params);
                     _params = _params.replace(/"length":\d+,/gi, '"length":-1,')
-
-                    _url = encodeURI(_url + '&' + _params);
+                    _params = that._removeUnnecessaryFilterAttributes(_params);
+                    if (options.encodeExport) _params = encodeURIComponent(_params);
+                    
+                    _url = _url + '&filterInfo=' + _params;
                 } 
 
                 $(this).attr('href', _url);
@@ -1174,9 +1281,13 @@ $.widget("bs.Catalog", {
 
                     //getting last data send and setting length to -1 so it will retrieved all filtered records
                     var _params = $('#' + id).DataTable().ajax.params() || '';
+                    _params = decodeURIComponent(_params);
                     _params = _params.replace(/"length":\d+,/gi, '"length":-1,')
-                    
-                    _url = encodeURI(_url + '&' + _params);
+                    _params = that._removeUnnecessaryFilterAttributes(_params);
+                    if (options.encodeExport) _params = encodeURIComponent(_params);
+
+                    _url = _url + '&filterInfo=' + _params;
+
                     $(this).attr('href', _url);
                 } else {
                     var href = options.exportRequest;
@@ -1196,8 +1307,24 @@ $.widget("bs.Catalog", {
         return buttonsWrapper;
     },
 
-    _isDataTableEmpty: function() {
-        var tableId = $(this.oTable.node()).attr('id');
+    _removeUnnecessaryFilterAttributes: function(_params) {
+        if (_params) {
+            var paramsObj = $.evalJSON(_params.replace('filterInfo=',''));
+            for (var i = 0; i < paramsObj.columns.length; i++) {
+                var col = paramsObj.columns[i];
+                delete col['orderable'];
+                delete col.search['regex']
+            }
+
+            delete paramsObj.search['regex']
+            _params = '' + $.toJSON(paramsObj);
+        }
+
+        return _params;
+    },
+
+    _isDataTableEmpty: function () {
+        var tableId = $(this.element).attr('id');
         return exists('#' + tableId + ' td.dataTables_empty');
     },
 
@@ -1256,12 +1383,12 @@ $.widget("bs.Catalog", {
     },
 
     newEntity: function (oTable, options) {
-        $('input,select', this._dialog).val("").removeClass("ui-state-error");
-        $('input[type=checkbox]', this._dialog).prop('checked', false);
-        $('p.validateTips', this._dialog).text("");
+        clearDialog('#' + this._dialog.attr('id'));
+        this._setDefaultValues(options.pageConfig);
 
         this._dialog.dialog('option', 'title', this._dialog.attr('originalTitle') + ' [New]').dialog('open');
         $('#dialogtabs', this._dialog).tabs('option', 'active', 0);
+        //TODO: create method to set focus to first element on the dialog
         $('input:visible:first', $($('div.ui-tabs-panel', this._dialog)[0])).focus();
 
         if (this.options.viewOnly) disableDialog('#' + this._dialog.attr('id'));
@@ -1277,7 +1404,10 @@ $.widget("bs.Catalog", {
             return;
         };
 
+        clearDialog('#' + this._dialog.attr('id'));
         populateDialog(row, '#' + this._dialog.attr('id'));
+        this._setDefaultValues(options.pageConfig);
+
         this._dialog.dialog('option', 'title', this._dialog.attr('originalTitle') + ' [Edit]').dialog('open');
         $('#dialogtabs', this._dialog).tabs('option', 'active', 0);
         $('input:visible:first', $($('div.ui-tabs-panel', this._dialog)[0])).focus();
@@ -1340,20 +1470,68 @@ $.widget("bs.Catalog", {
         });
     },
 
+    _setDefaultValues: function(config) {
+        if (!(config && config.Tabs)) return;
+
+        var fields = [];
+
+        for (var t = 0; t < config.Tabs.length; t++) {
+            var _results = jQuery.grep(config.Tabs[t].Fields, function (field, i) {
+                var _data = field.ControlProps;
+                return (_data.toLowerCase().indexOf(DEFAULT_VALUE.toLowerCase()) != -1)
+            });
+
+            fields = fields.concat(_results);
+        }
+        
+        for (var f = 0; f < fields.length; f++) {
+            this._setFieldValue(fields[f]);
+        }
+    },
+
+    _setFieldValue: function(field) {
+        var controlPros = $.evalJSON(field.ControlProps);
+        var _value = controlPros[DEFAULT_VALUE];
+        if (!_value) return;
+
+        if (startsWith(_value, 'js:')) {
+            _value = _value.substring(3);
+            _value = eval('(' + _value + ')');
+        }
+
+        var _field = $('#' + field.FieldName);
+
+        if (field.ControlType == 'selectmenu' && $('#' + field.FieldName).hasClass('selectMenu')) {
+            _field.val(_value).selectmenu('refresh');           
+        } else if (field.ControlType == 'dropdownlist') {
+            _field.ComboBox('value', _value);
+        } else if (field.ControlType == 'checkbox') {
+            _field.prop('checked', isTrue(_value));
+        } else {
+            _field.val(_value);
+        }
+    },
+
     reloadTable: function (url, callback) {
         if (typeof url != 'undefined' && url != null && url != '' && callback != null) {
             return this.oTable.ajax.url(url).load(callback);
         }
 
         if (typeof url != 'undefined' && url != null && url != '') {
-            this.oTable.ajax.url(url);
+            return this.oTable.ajax.url(url).load();
         }
 
         return this.oTable.ajax.reload();
     },
 
-    clearTable: function() {
-        this.oTable.clear().draw();
+    clearTable: function () {
+        this.oTable.clear().columns.adjust().draw();
+        var t = this.oTable;
+        return t;
+    },
+
+    addDataToTable: function (_data) {
+        this.oTable.rows.add(_data).draw();
         var t = this.oTable;
         return t;
     },
@@ -1504,10 +1682,11 @@ $.widget("bs.ComboBox", {
             var option = $("<option></option>");
 
             var text = obj[opts.textField];
-            if ($.isArray(opts.textField)) {
+            if ($.isArray(opts.textField) || opts.textField.split(',').length > 0) {
                 text = '';
-                for (var t = 0; t < opts.textField.length; t++) {
-                    text = text + $.trim(obj[opts.textField[t]]) + ', ';
+                var array = $.isArray(opts.textField) ? opts.textField : opts.textField.split(',');
+                for (var t = 0; t < array.length; t++) {
+                    text = text + $.trim(obj[array[t]]) + ', ';
                 }
                 text = text.substring(0, text.length - 2);
             }
@@ -1791,7 +1970,9 @@ $.widget("bs.Page", {
         data: '',
         source: '',
         showLoading: true,
-        dialogOnly: false,
+        createPageFilter: true,
+        createPageTable: true,
+        createPageDialog: true,
         dialogStyle: 'fieldset',
         debug: false,
 
@@ -1799,6 +1980,7 @@ $.widget("bs.Page", {
         onBeforeCreateFilter: function (config) { },
         onFilterInitComplete: function (config) { },
         onAfterCreateFilter: function () { },
+        onFilterChange: function (filter) {},
         onBeforeCreateTable: function () { },
         onAfterCreateTable: function () { },
         onBeforeCreateDialog: function () { },
@@ -1848,28 +2030,32 @@ $.widget("bs.Page", {
             }
         }
 
-        this.options.onBeforeCreateFilter(json);
-        if (this.options.debug) console.time('_createFilter');
-        this._createFilter(json);
-        if (this.options.debug) console.timeEnd('_createFilter');
-        this.options.onAfterCreateFilter(json);
+        if (this.options.createPageFilter) {
+            this.options.onBeforeCreateFilter(json);
+            if (this.options.debug) console.time('_createFilter');
+            this._createFilter(json);
+            if (this.options.debug) console.timeEnd('_createFilter');
+            this.options.onAfterCreateFilter(json);
+        }
 
-        this.options.onBeforeCreateTable(json);
-        if (this.options.debug) console.time('_createTable');
-        this._createTable(json);
-        if (this.options.debug) console.timeEnd('_createTable');
-        this.options.onAfterCreateTable(json);
+        if (this.options.createPageTable) {
+            this.options.onBeforeCreateTable(json);
+            if (this.options.debug) console.time('_createTable');
+            this._createTable(json);
+            if (this.options.debug) console.timeEnd('_createTable');
+            this.options.onAfterCreateTable(json);
+        }
 
-        this.options.onBeforeCreateDialog(json);
-        if (this.options.debug) console.time('_createDialog');
-        this._createDialog(json);
-        if (this.options.debug) console.timeEnd('_createDialog');
+        if (this.options.createPageDialog) {
+            this.options.onBeforeCreateDialog(json);
+            if (this.options.debug) console.time('_createDialog');
+            this._createDialog(json);
+            if (this.options.debug) console.timeEnd('_createDialog');
+        }
 
-        if (this.config.Filter) {
-            this._initFilter(json);
-        }       
-
-        if (!this.config.Filter) {
+        if (this.config.Filter && this.options.createPageFilter) {
+            this._initFilter(json);           
+        }  else {
             $(this.element).show();
             this.options.onLoadComplete(json);
 
@@ -1948,8 +2134,8 @@ $.widget("bs.Page", {
         var table = $('<table id="' + config.Name + '_filter" width="100%" cellpadding="1" cellspacing="0" border="0" class="filter-form ui-widget ui-widget-content ui-corner-all" style="padding : 5px;"><tbody></tbody></table>');
         $('tbody', table).append(html.toString());
 
-        if (config.filterSelector) {
-            $(config.filterSelector).append(table);
+        if (this.options.filterSelector) {
+            $(this.options.filterSelector).append(table);
         } else {
             $('h2').after(table);
         }
@@ -1987,17 +2173,19 @@ $.widget("bs.Page", {
         var dialog = $('<div id="' + config.Name + '_dialog" title="' + config.Title + '" style="display:none;" class="modal-form"><p class="validateTips ui-corner-all"></p></div>');
 
         var tabsEle = $('<div id="' + config.Name + '_dialogtabs"><ul></ul></div>');
-        var idFields = [];
+        var idFields = [];        
         var controlFields = {
             dropDownFields: [],
             dateFields: [],
             selectMenuFields: [],
-            multiSelectFields: []
+            multiSelectFields: [],
+            noWrapFields:[]
         };
 
         var tabs = config.Tabs;
         for (var i = 0; i < tabs.length; i++) {
-            $('ul', tabsEle).append('<li id="' + tabs[i].TabName + 'Tab"><a href="#tabs-' + (i + 1) + '">' + tabs[i].TabName + '</a></li>');
+            var _tabId = $.trim(tabs[i].TabName.replace(/ /g, '')) + 'Tab';
+            $('ul', tabsEle).append('<li id="' + _tabId + '"><a href="#tabs-' + (i + 1) + '">' + tabs[i].TabName + '</a></li>');
 
             var tabContent = null;
             if (this.options.dialogStyle.toLowerCase() == 'fieldset') {
@@ -2079,21 +2267,37 @@ $.widget("bs.Page", {
             var field = controlFields.dateFields[dt];
             if (field.ControlType == 'hidden') continue;
 
-            $('#' + field.FieldName, dialog).datepicker({
-                showButtonPanel: true,
-                showOn: "button"
-            }).next('button').text('').button({
-                icons: {
-                    primary: 'ui-icon-calendar'
-                },
-                text: false
-            });
+            if (field.ControlType == 'timepicker') {
+                $('#' + field.FieldName, dialog).datetimepicker({
+                    showButtonPanel: true,
+                    showOn: 'button',
+                    timeFormat: 'HH:mm:ss',
+                    dateFormat: 'mm/dd/yy'
+                }).next('button').text('').button({
+                    icons: {
+                        primary: 'ui-icon-calendar'
+                    },
+                    text: false
+                });
+            } else {
+                $('#' + field.FieldName, dialog).datepicker({
+                    showButtonPanel: true,
+                    showOn: 'button'
+                }).next('button').text('').button({
+                    icons: {
+                        primary: 'ui-icon-calendar'
+                    },
+                    text: false
+                });
+            }
+
             
             if ( this._isReadOnly(field) ) {
                 $('#' + field.FieldName, dialog).next('button').button('disable');
             }
         }
 
+        config.NoWrapFields = controlFields.noWrapFields;
         this.dialog = dialog;
     },
 
@@ -2111,6 +2315,8 @@ $.widget("bs.Page", {
                     that.loading.remove();
                 }
 
+            }, onFilterChangeCallBack: function (filter) {
+                that.options.onFilterChange(filter);
             }
         });
     },
@@ -2154,7 +2360,7 @@ $.widget("bs.Page", {
                     break;
                 }
 
-                if (field.FieldData.Type.indexOf('date') != -1) {
+                if ($.page.common.isDateField(field.FieldData)) {
                     var isDateRage = this._getFieldProp(field.FieldData, 'filter-type') && this._getFieldProp(field.FieldData, 'filter-type') == 'date-range';
                     if (isDateRage) {
                         var from = $.evalJSON($.toJSON(field)); //cloning field
@@ -2287,7 +2493,7 @@ $.widget("bs.Page", {
         var tabContent = $('<div id="tabs-' + (index + 1) + '"></div>');        
         tabContent.html(html.toString());
 
-        this._applyControlProps(tab, tabContent);
+        this._applyControlProps(tab, tabContent, controlFields);
 
         return tabContent;
     },
@@ -2320,7 +2526,7 @@ $.widget("bs.Page", {
         elements.append(this._getFieldHTML(field, controlFields)).append('</td>');
     },
 
-    _applyControlProps: function (tab, tabContent) {
+    _applyControlProps: function (tab, tabContent, controlFields) {
         var controlPropFields = jQuery.grep(tab.Fields, function (f) {
             return (f.ControlProps);
         });
@@ -2328,22 +2534,33 @@ $.widget("bs.Page", {
         var l = controlPropFields.length;
         for (var p = 0; p < l; p++) {
             var field = controlPropFields[p];
-            var controlProps = field.ControlProps;
-            if (controlProps) {
-                try { // Try to parse controlprops            
-                    var props = controlProps && $.evalJSON(controlProps);
-                    $.each(props, function (key, val) {
-                        if (key != 'colSpan') {
-                            var ele = $('#' + field.FieldName, tabContent);
-                            if (ele.is('div')) { //element is wrap in a div, usually date elements
-                                $('input', ele).attr(key, val).prop(key, val);
-                            } else {
-                                ele.attr(key, val).prop(key, val);
-                            }
-                        }
-                    });
-                } catch (e) { /* not able to parse props*/ }
-            }
+            var ele = $('#' + field.FieldName, tabContent);
+            this._applyFieldProps(field, ele, controlFields);
+        }
+    },
+
+    _applyFieldProps: function (field, ele, controlFields) {
+        var controlProps = field.ControlProps;
+        if (controlProps) {
+            try { // Try to parse controlprops            
+                var props = controlProps && $.evalJSON(controlProps);
+                $.each(props, function (key, val) {
+                    if (key.toLowerCase() == 'nowrap') {
+                        controlFields.noWrapFields.push(clone(field));
+                    }
+
+                    //if element is wrap in a div, usually date elements
+                    ele = $(ele).is('div') ? $('input', ele) : $(ele);
+
+                    if (key.toLowerCase() == 'class') {
+                        $(ele).addClass(val);
+                    } else if (key == 'colSpan' || key == DEFAULT_VALUE) {
+                        //do nothing
+                    } else {
+                        $(ele).attr(key, val).prop(key, val);
+                    }
+                });
+            } catch (e) { /* not able to parse props*/ }
         }
     },
 
@@ -2366,14 +2583,13 @@ $.widget("bs.Page", {
         var html = '';
         var name = field.FieldName;
         var controlType = field.ControlType;
-        var type = field.Type;
 
         if (controlType == 'selectmenu') {
             controlFields.selectMenuFields.push(field);
             html = '<select name="' + name + '" id="' + name + '" class="ui-widget-content ui-corner-all"></select>';
         } else if (controlType == 'hidden') {
             html = '<input type="hidden" name="' + name + '" id="' + name + '"/>';
-        } else if (type == 'date' || type == 'datetime' || type == 'smalldatetime') {
+        } else if ($.page.common.isDateField(field)) {
             controlFields.dateFields.push(field);
             html = '<div><input type="text" name="' + name + '" id="' + name + '" class="text ui-widget-content ui-corner-all" /></div>';
         } else if (controlType == 'inputbox') {
@@ -2398,22 +2614,7 @@ $.widget("bs.Page", {
 
     _getFieldContent: function (field, controlFields) {
         var ele = $(this._getFieldHTML(field, controlFields));
-
-        var controlProps = field.ControlProps;
-        if (controlProps) {
-            try { // Try to parse controlprops            
-                var props = controlProps && $.evalJSON(controlProps);
-                $.each(props, function (key, val) {
-                    if (key != 'colSpan') {
-                        if ($(ele).is('div')) { //element is wrap in a div, usually date elements
-                            $('input', ele).attr(key, val).prop(key, val);
-                        } else {
-                            $(ele).attr(key, val).prop(key, val);
-                        }
-                    }
-                });
-            } catch (e) { /* not able to parse props*/ }
-        }
+        this._applyFieldProps(field, ele, controlFields);
 
         return ele;
     },
@@ -2423,15 +2624,7 @@ $.widget("bs.Page", {
     },
 
     _getFieldProp: function (field, prop) {
-        var controlProps = field.ControlProps;
-        if (controlProps) {
-            try { // Try to parse controlprops
-                var props = controlProps && $.evalJSON(controlProps);
-                if (props[prop]) return props[prop];
-            } catch (e) { /* not able to parse props*/ }
-        }
-
-        return null;
+        return $.page.getFieldProp(field, prop);
     },
 
     _isReadOnly : function (field) {
@@ -2466,7 +2659,8 @@ $.widget("bs.Filter", {
     options: {
         debug:false,
         pageConfig: null,
-        initCompleteCallBack: function (config) { }
+        initCompleteCallBack: function (config) { },
+        onFilterChangeCallBack: function (filter) { }
     },
 
     _create: function () {
@@ -2504,22 +2698,44 @@ $.widget("bs.Filter", {
             } else if (f.FieldData.ControlType == 'multiselect') {
                 var promise = $.page.loadMultiSelect($(this.element), f.FieldData);
                 promises.push(promise);
-            } else if (f.FieldData.Type.indexOf('date') != -1) {
-                $('#' + f.GridData.ColumnName, $(this.element)).datepicker({
-                    showButtonPanel: true,
-                    showOn: "button"
-                }).next('button').text('').button({
-                    icons: {
-                        primary: 'ui-icon-calendar'
-                    },
-                    text: false
-                });
+            } else if ($.page.common.isDateField(f.FieldData)) {
+                if (f.FieldData.ControlType == 'timepicker') {                    
+                    $('#' + f.GridData.ColumnName, $(this.element)).datetimepicker({
+                        showButtonPanel: true,
+                        showOn: 'button',
+                        timeFormat: 'HH:mm:ss',
+                        dateFormat: 'mm/dd/yy',
+                        onClose: function () {
+                            that._filterChange();
+                        }
+                    }).next('button').text('').button({
+                        icons: {
+                            primary: 'ui-icon-calendar'
+                        },
+                        text: false
+                    });
+
+                    $('#' + f.GridData.ColumnName, $(this.element)).addClass('hasTimePicker');
+                } else {
+                    $('#' + f.GridData.ColumnName, $(this.element)).datepicker({
+                        showButtonPanel: true,
+                        showOn: "button"
+                    }).next('button').text('').button({
+                        icons: {
+                            primary: 'ui-icon-calendar'
+                        },
+                        text: false
+                    });
+                }                
             }
         }
 
         $('#clearFilter', this.element).button({ icons: { primary: "ui-icon-cancel" } }).click(function () {
             $('input,select', this.element).val("");
             $('select.selectMenu', this.element).selectmenu('refresh', true);
+            $('select[firstoptionval]', this.element).each(function () {
+                $(this).val($(this).attr('firstoptionval')).selectmenu('refresh', true);
+            });
 
             if (scriptLoaded('multiselect')) {
                 $('select.multiselect', this.element).each(function(ele) {
@@ -2535,6 +2751,14 @@ $.widget("bs.Filter", {
             change: function (event, ui) { that._filterChange(); }
         });
 
+        if (scriptLoaded('multiselect')) {
+            $('select.multiselect', this.element).multiselect({
+                close: function () {
+                    that._filterChange();
+                }
+            });
+        }
+
         $('input[type=text]', this.element).change(function () {
             that._filterChange();
         }).keydown(function () {
@@ -2543,6 +2767,8 @@ $.widget("bs.Filter", {
                 event.preventDefault();
             }
         });
+
+        $('input.hasTimePicker', this.element).off('change');
 
         var that = this;
         //raise init complete
@@ -2591,7 +2817,9 @@ $.widget("bs.Filter", {
             if (index != -1 && uniqueCols.indexOf(key) == -1) oTable.columns(index).search(val);
         });
         
-        oTable.draw();        
+        oTable.draw();
+
+        this.options.onFilterChangeCallBack(newFilter);
     },
 
     _createFilter : function() {
@@ -2646,7 +2874,7 @@ $.widget("bs.Filter", {
             return $.ajax({
                 url: ddInfo.url,
             }).done(function (json) {
-                $('#' + field.FieldName, that.element).ComboBox('realod', {
+                $('#' + field.FieldName, that.element).ComboBox('reload', {
                     url: '', removedInvalid: false, addSelect: true, selectText: ddInfo.selectedText, sortByField: sortField,
                     valField: ddInfo.valField, textField: ddInfo.textField, error: field.Label, list: json.aaData                    
                 });
@@ -2683,6 +2911,24 @@ $.widget("bs.Filter", {
 
 $.page = {};
 
+$.page.common = {};
+
+$.page.common.isDateField = function (field) {
+    return field.Type.indexOf('date') != -1 || field.Type.indexOf('time') != -1;
+}
+
+$.page.getFieldProp = function (field, prop) {
+    var controlProps = field.ControlProps;
+    if (controlProps) {
+        try { // Try to parse controlprops
+            var props = controlProps && $.evalJSON(controlProps);
+            if (props[prop]) return props[prop];
+        } catch (e) { /* not able to parse props*/ }
+    }
+
+    return null;
+}
+
 $.page.initSelectMenu = function (selector) {
     $(selector).addClass('selectMenu').attr('load-complete', 'false');
     $(selector).empty().append($('<option></option>').attr('value', '').text('Loading..'));
@@ -2694,6 +2940,7 @@ $.page.initMultiselect = function (element, ddInfo) {
 
     element.addClass('multiselect').attr('load-complete', 'false').empty();
     element.append($('<option></option>').attr('value', '').text('Loading..'));
+
     if (ddInfo.filter && ddInfo.filter == true) {
         element.multiselect({ header: _header }).multiselectfilter();
     } else {
@@ -2766,6 +3013,7 @@ $.page.loadMultiSelect = function (dialog, multiSelect) {
 
 $.page.createSelectMenuOptions = function (element, json, ddInfo) {
     if (json.aaData && json.aaData.length > 0) {
+        element.selectmenu('setData', json.aaData);
         $.page.createSelectOptions(element, json, ddInfo);
 
         //adding empty option add the begining of the list
@@ -2776,8 +3024,7 @@ $.page.createSelectMenuOptions = function (element, json, ddInfo) {
         }
 
         $('<option>').attr('value', firstOptionValue).insertBefore(element.find('option:first'));
-        if ((ddInfo.selectedVal == '' && firstOptionValue == '' && ddInfo.selectedText == '') ||
-            (!ddInfo.selectedVal && !ddInfo.selectedText)) {
+        if (!ddInfo.selectedVal && !ddInfo.selectedText) {
             element.find('option:first').attr('selected', 'selected');
         }
 
@@ -2972,5 +3219,26 @@ $.widget("ui.selectmenu", $.ui.selectmenu, {
         if (key === "disabled") {
             this._setTabIndex();
         }
+    },
+    setData: function (_list) {
+        //mutator
+        this.list = _list;
+    },
+    getData: function () {
+        //accessor
+        return this.list;
     }
 });
+
+function getSelectmenuId(_selecmenu, _text) {
+    var _items = $(_selecmenu).selectmenu('getData');
+
+    for (var i = 0; i < _items.length; i++) {
+        var item = _items[i];
+        if (item.Text == _text) {
+            return item.ItemId;
+        }
+    }
+
+    return '';
+}

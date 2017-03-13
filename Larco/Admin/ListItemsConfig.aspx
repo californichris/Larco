@@ -25,13 +25,13 @@
 	            },
 	            initCompleteCallBack: function (oTable, oSettings, json, options) {
                     //Creating copy buton
-                    var btn = $('<button onclick="return false;" title="Copy">Copy</button>');
+	                var btn = $('<button onclick="return false;" title="Copy" class="disable">Copy</button>');
 	                btn.button().click(function (event) {
 	                    $('table.display').Catalog('editEntity', oTable, options);
 	                    $('#ItemId').val('');
 	                    $('#Value').val(parseInt($('#Value').val()) + 1);
 	                    $('#Text').focus().val('');
-	                });
+	                }).button('disable');
 
 	                $('table.display').Catalog('getButtonSection').append(btn);
 	            }

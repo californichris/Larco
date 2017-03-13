@@ -1,5 +1,6 @@
-﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Entradas.aspx.cs" Inherits="BS.Larco.Inventarios.Entradas" %>
+﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Salidas.aspx.cs" Inherits="BS.Larco.Inventarios.Salidas" %>
 <asp:Content ID="Content1" ContentPlaceHolderID="HeadContent" runat="server">
+<script type="text/javascript" src="<%= Page.ResolveUrl("~/Scripts/jquery.mask.js") %>"></script>
 <style type="text/css">
     div.ui-tabs-panel{
         padding-top:2px!important;
@@ -9,15 +10,17 @@
     }
 </style>
 <script type="text/javascript">
-    const PAGE_NAME = 'Entradas';
+    const PAGE_NAME = 'Salidas';
     const TABLE_SELECTOR = '#' + PAGE_NAME + '_table';
     const DIALOG_SELECTOR = '#' + PAGE_NAME + '_dialog';
     const BUTTONS_SELECTOR = '#' + PAGE_NAME + 'table_wrapper_buttons button.disable';
 
-    const DETALLE_PAGE_NAME = 'EntradasDetalle';
+    const DETALLE_PAGE_NAME = 'SalidasDetalle';
     const DETALLE_TABLE_SELECTOR = '#' + DETALLE_PAGE_NAME + '_table';
     const DETALLE_DIALOG_SELECTOR = '#' + DETALLE_PAGE_NAME + '_dialog';
     const DETALLE_BUTTONS_SELECTOR = '#' + DETALLE_PAGE_NAME + 'table_wrapper_buttons button.disable';
+
+    const ENTRADAS_SALIDAS_PAGE_NAME = 'EntradasSalidas';
 
     var CURRENT_DETAIL = [];
 
@@ -43,15 +46,16 @@
                 var valid = validateDialog(config, tips);
                 log(valid + ', validating length:' + CURRENT_DETAIL);
                 if (valid && CURRENT_DETAIL.length <= 0) {
-                    tips.text('Tienes que agregar al menos un material a la Entrada.').addClass('ui-state-highlight');
+                    tips.text('Tienes que agregar al menos un material a la Salida.').addClass('ui-state-highlight');
                     valid = false;
                 }
 
                 return valid;
             },
             initCompleteCallBack: function () {
-                createEntradasDetalle();
-                $(DIALOG_SELECTOR + ' ul.ui-tabs-nav').remove();
+                createSalidasDetalle();
+				$(DIALOG_SELECTOR + ' ul.ui-tabs-nav').remove();
+                addOrdenHandler();
             },
             newEntityCallBack: function (oTable, options) {
                 $(DETALLE_TABLE_SELECTOR).DataTable().clear().draw();
@@ -62,34 +66,41 @@
                 var data = getSelectedRowData(oTable);
                 $(TABLE_SELECTOR).Catalog('editEntity', oTable, options);
 
-                reloadEntradasDetalle(data);
+                reloadSalidasDetalle(data);
             },
             deleteEntityCallBack: function (oTable, options) {
-                deleteEntrada( getSelectedRowData(oTable) );
+                deleteSalida( getSelectedRowData(oTable) );
             },
             saveEntityCallBack: function (oTable, options) {
-                saveEntrada( getSaveEntradaTransEntities() );
+                saveSalida(getSaveSalidaTransEntities());
             }
         });
     }
 
-    function saveEntrada(entities) {
-        log(entities);
-
-        $.when(executeTransaction(entities)).done(function (json) {
-            if (json.ErrorMsg == SUCCESS) {
-                $(TABLE_SELECTOR).DataTable().ajax.reload();
-                $(BUTTONS_SELECTOR).button('disable');
-                $(DIALOG_SELECTOR).dialog('close');
-            } else if (json.ErrorMsg.indexOf('already exists') != -1) {
-                showError($(DIALOG_SELECTOR + ' p.validateTips'), 'Ya existe una Entrada.');
-            } else {
-                showError($(DIALOG_SELECTOR + ' p.validateTips'), 'No fue posible actualizar la Entrada.');
+    function saveSalida(entities) {
+        var entity = getObject(DIALOG_SELECTOR);
+        $.when(getOrden(entity.SAL_Orden)).done(function (_json) {
+            if (_json.aaData.length <= 0) {
+                alert('La Orden de Trabajo no existe');
+                return;
             }
+
+            $.when(executeTransaction(entities)).done(function (json) {
+                if (json.ErrorMsg == SUCCESS) {
+                    $(TABLE_SELECTOR).DataTable().ajax.reload();
+                    $(BUTTONS_SELECTOR).button('disable');
+                    $(DIALOG_SELECTOR).dialog('close');
+                } else if (json.ErrorMsg.indexOf('already exists') != -1) {
+                    showError($(DIALOG_SELECTOR + ' p.validateTips'), 'Ya existe una Salida.');
+                } else {
+                    showError($(DIALOG_SELECTOR + ' p.validateTips'), 'No fue posible actualizar la Salida.');
+                }
+            });
+
         });
     }
 
-    function getSaveEntradaTransEntities() {
+    function getSaveSalidaTransEntities() {
         var entities = [];
 
         var entity = getObject(DIALOG_SELECTOR);
@@ -98,12 +109,12 @@
 
         entities.push(entity);
 
-        if (entity.ENT_ID == '') { // is a new Entrada
+        if (entity.SAL_ID == '') { // is a new Salida
             for (var i = 0; i < CURRENT_DETAIL.length; i++) {
                 var detail = CURRENT_DETAIL[i];
 
-                if (parseFloat(detail.ED_ID) < 0) {
-                    detail.ED_ID = '';
+                if (parseFloat(detail.SD_ID) < 0) {
+                    detail.SD_ID = '';
                 }
 
                 entities.push(detail);
@@ -113,14 +124,18 @@
         return entities;
     }
 
-    function deleteEntrada(data) {
-        if (confirm('Estas seguro que quieres borrar esta Entrada?') == false)
+    function deleteSalida(data) {
+        if (confirm('Estas seguro que quieres borrar esta Salida?') == false)
             return false;
 
-        var entities = getDeleteEntradaTransEntities(data)
-        log(entities);
+        var entity = { SAL_ID: data.SAL_ID };
 
-        executeDeleteTransaction(entities);
+        $.when(getSalidasDetalle(entity)).done(function (json1) {
+            var _salidasDetalle = json1.aaData;
+
+            var entities = getDeleteSalidasTransEntities(data, _salidasDetalle);
+            executeDeleteTransaction(entities);
+        });
     }
 
     function executeDeleteTransaction(entities) {
@@ -129,37 +144,40 @@
                 $(TABLE_SELECTOR).DataTable().ajax.reload();
                 $(BUTTONS_SELECTOR).button('disable');
             } else if (json.ErrorMsg.indexOf('because is being used.') != -1) {
-                alert('No fue posible borrar la Entrada, porque ya se registro al menos una salida para alguno de los materiales.');
+                alert('No fue posible borrar la Salida, porque esta ligada a una entrada.');
                 log(json.ErrorMsg);
             } else {
-                alert('No fue posible borrar la Entrada.');
+                alert('No fue posible borrar la Salida.');
                 log(json.ErrorMsg);
             }
         });
     }
 
-    function getDeleteEntradaTransEntities(data) {
+    function getDeleteSalidasTransEntities(data, salidaDetalle) {
         var entities = [];
 
         addTransAttrs(data, 'Delete', PAGE_NAME);
 
-        entities.push({ ENT_ID: data.ENT_ID, OperationType: 'DeleteEntities', PageName: DETALLE_PAGE_NAME });
+        if (salidaDetalle) {
+            for (var i = 0; i < salidaDetalle.length; i++) {
+                entities.push({ SD_ID: salidaDetalle[i].SD_ID, OperationType: 'DeleteEntities', PageName: ENTRADAS_SALIDAS_PAGE_NAME });
+            }
+        }
+        
+        entities.push({ SAL_ID: data.SAL_ID, OperationType: 'DeleteEntities', PageName: DETALLE_PAGE_NAME });
         entities.push(data);
 
         return entities;
     }
 
-    function reloadEntradasDetalle(data) {
-        var entity = { ENT_ID: data.ENT_ID };
+    function reloadSalidasDetalle(data) {
+        var entity = { SAL_ID: data.SAL_ID };
 
-        $.when(getEntradasDetalle(entity)).done(function (json1) {
+        $.when(getSalidasDetalle(entity)).done(function (json1) {
             CURRENT_DETAIL = json1.aaData;
             CURRENT_DETAIL = $.map(CURRENT_DETAIL, function (item, i) {
                 item.OperationType = 'Save';
                 item.PageName = DETALLE_PAGE_NAME;
-                item.Prev_Cantidad = item.ED_Cantidad;
-                item.Total = parseFloat(parseFloat(item.ED_Cantidad) * parseFloat(item.ED_Costo)).toFixed(2);
-                item.Salida = parseFloat(item.ED_Cantidad) - parseFloat(item.ED_Restante);
 
                 return item;
             });
@@ -170,16 +188,16 @@
         });
     }
 
-    function getEntradasDetalle(entity) {
+    function getSalidasDetalle(entity) {
         return $.ajax({
             url: AJAX + '/PageInfo/GetPageEntityList?pageName=' + DETALLE_PAGE_NAME + '&searchType=AND&entity=' + $.toJSON(entity)
         });
     }
 
-    function createEntradasDetalle() {
-        $('#tabs-1').append('<div id="EntradasDetalle_Container"><br/></div>');
+    function createSalidasDetalle() {
+        $('#tabs-1').append('<div id="SalidasDetalle_Container"><br/></div>');
 
-        $('#EntradasDetalle_Container').Page({
+        $('#SalidasDetalle_Container').Page({
             source: AJAX + '/PageInfo/GetPageConfig?pageName=' + DETALLE_PAGE_NAME,
             dialogStyle: 'table',
             onLoadComplete: function (config) {
@@ -200,21 +218,15 @@
                         for (var i = 0; i < CURRENT_DETAIL.length; i++) {
                             var item = CURRENT_DETAIL[i];
                             if (item.MAT_ID == data.MAT_ID) {
-                                tips.text('Ya se agrego el material [' + item.MAT_Descripcion + '] a esta Entrada.').addClass('ui-state-highlight');
+                                tips.text('Ya se agrego el material [' + item.MAT_Descripcion + '] a esta Salida.').addClass('ui-state-highlight');
                                 valid = false;
                                 break;
                             }
                         }
 
-                        if (valid && parseFloat(data.ED_Cantidad) <= 0) {
+                        if (valid && parseFloat(data.SD_Cantidad) <= 0) {
                             tips.text('La Cantidad tiene que ser mayor que 0.').addClass('ui-state-highlight');
-                            $('#ED_Cantidad').addClass("ui-state-error");
-                            valid = false;
-                        }
-
-                        if (valid && parseFloat(data.ED_Costo) <= 0) {
-                            tips.text('El Costo tiene que ser mayor que 0.').addClass('ui-state-highlight');
-                            $('#ED_Costo').addClass("ui-state-error");
+                            $('#SD_Cantidad').addClass("ui-state-error");
                             valid = false;
                         }
 
@@ -223,87 +235,83 @@
                     newEntityCallBack: function (oTable, options) {
                         $('#MAT_ID').ComboBox('enable');
                         $(DETALLE_TABLE_SELECTOR).Catalog('newEntity', oTable, options);
-                        $(DETALLE_DIALOG_SELECTOR + ' #ENT_ID').val($(DIALOG_SELECTOR + ' #ENT_ID').val());
+                        $(DETALLE_DIALOG_SELECTOR + ' #SAL_ID').val($(DIALOG_SELECTOR + ' #SAL_ID').val());
                     },
+                    /*editEntityCallBack: function (oTable, options) {
+                        $('#MAT_ID').ComboBox('disable');                        
+
+                        var data = getSelectedRowData(oTable);
+                        $(DETALLE_TABLE_SELECTOR).Catalog('editEntity', oTable, options);
+
+                        $('#SD_Cantidad').focus();
+                    },*/
                     deleteEntityCallBack: function (oTable, options) {
-                        if (confirm('Estas seguro que quieres borrar esta entrada?') == false)
+                        if (confirm('Estas seguro que quieres borrar esta salida?') == false)
                             return false;
 
                         var data = getSelectedRowData(oTable);
 
-                        if (data.ENT_ID == '') { //is NEW Entrada
+                        if (data.SAL_ID == '') { //is NEW Entrada
                             data.OperationType = 'Delete';
                             updateCurrentDetail(data);
                         } else {
-                            deleteEntradaDetalle(data);
+                            deleteSalidaDetalle(data);
                         }                        
                     },
                     saveEntityCallBack: function (oTable, options) {
                         var data = getObject(DETALLE_DIALOG_SELECTOR);
-                        if (data.ENT_ID == '') { //is NEW Entrada
-                            saveEntradaDetalleInMemory(data);
-                        } else {
-                            saveEntradaDetalle(data);
-                        }                        
+                        $.when(getExistencia(data)).done(function (json) {
+                            if (json.ErrorMsg || json.aaData.length <= 0) {
+                                alert('No fue posible validar la existencia en almacen de este material.');
+                                return;
+                            }
+
+                            var existencia = json.aaData[0].MAT_Cantidad;
+                            if (parseFloat(data.SD_Cantidad) > parseFloat(existencia)) {
+                                alert('La cantidad especificada es mayor que la cantidad en el almacen[' + existencia + '].');
+                                return;
+                            }
+
+                            if (data.SAL_ID == '') { //is NEW Entrada
+                                saveSalidaDetalleInMemory(data);
+                            } else {
+                                saveSalidaDetalle(data);
+                            }
+
+                        });
                     },
                 });
+
             }
         });
     }
 
-    function deleteEntradaDetalle(entity) {
-        $.ajax({
-            type: 'POST',
-            url: AJAX + '/PageInfo/DeletePageEntity?pageName=' + DETALLE_PAGE_NAME,
-            data: 'entity=' + encodeURIComponent($.toJSON(entity))
-        }).done(function (json) {
+    function deleteSalidaDetalle(entity) {
+        $.when(executeTransaction(getDeleteSalidaDetalleTransEntities(entity))).done(function (json) {
             if (json.ErrorMsg == SUCCESS) {
-                reloadEntradasDetalle(entity);
+                reloadSalidasDetalle(entity);
                 $(DETALLE_TABLE_SELECTOR + '_wrapper button.disable').button('disable');
             } else {
-                if (json.ErrorMsg.indexOf('because is being used.') != -1) {
-                    alert('No fue posible borrar el material de la Entrada, porque ya se registro una salida para este material.');
-                    log(json.ErrorMsg);
-                }
+                alert(json.ErrorMsg);
             }
         });
     }
 
-    function saveEntradaDetalle(entity) {
-        entity.ED_Restante = entity.ED_Cantidad;
+    function saveSalidaDetalle(entity) {
         $.ajax({
             type: 'POST',
             url: AJAX + '/PageInfo/SavePageEntity?pageName=' + DETALLE_PAGE_NAME,
             data: 'entity=' + encodeURIComponent($.toJSON(entity))
         }).done(function () {
-            reloadEntradasDetalle(entity);
+            reloadSalidasDetalle(entity);
             $(DETALLE_DIALOG_SELECTOR).dialog('close');
         });
     }
 
-    function saveEntradaDetalleInMemory(data) {
-        if (data.ED_ID == '') {//new
-            data.ED_ID = getUniqueId();
-            data.ED_Restante = data.ED_Cantidad;
-            data.Salida = 0;
-            data.Prev_Cantidad = data.ED_Cantidad;
+    function saveSalidaDetalleInMemory(data) {
+        if (data.SD_ID == '') {//new
+            data.SD_ID = getUniqueId();
         }
-
-        //calculate restante
-        var diff = parseFloat(data.ED_Cantidad) - parseFloat(data.Prev_Cantidad);
-        data.ED_Restante = parseFloat(data.ED_Restante) + parseFloat(diff);
-
-        //calculate salida
-        data.Salida = parseFloat(data.ED_Cantidad) - parseFloat(data.ED_Restante);
-
-        if (parseFloat(data.ED_Restante) < 0) {
-            $(DETALLE_DIALOG_SELECTOR + ' p.validateTips').text('La cantida tiene que ser al menos ' + data.Salida + ', ya se le dio salida a esta cantidad de material').addClass("ui-state-highlight");
-
-            return false;
-        }
-
-        //update prev_cantidad to current after validation
-        data.Prev_Cantidad = data.ED_Cantidad;
 
         var material = getMaterialData(data);
 
@@ -313,10 +321,9 @@
             data.MAT_Numero = material.MAT_Numero;
         }
 
-        data.Total = parseFloat(parseFloat(data.ED_Cantidad) * parseFloat(data.ED_Costo)).toFixed(2);
         data.OperationType = 'Save';
         data.PageName = DETALLE_PAGE_NAME;
-        data.ENT_ID = $('#ENT_ID').val();
+        data.SAL_ID = $('#SAL_ID').val();
 
         log(data);
         updateCurrentDetail(data);
@@ -329,7 +336,7 @@
         var i = 0;
         for (i = 0; i < CURRENT_DETAIL.length; i++) {
             var item = CURRENT_DETAIL[i];
-            if (item.ED_ID == data.ED_ID) {                
+            if (item.SD_ID == data.SD_ID) {                
                 CURRENT_DETAIL[i] = data;
 
                 found = true;
@@ -368,6 +375,44 @@
                 return matList[i];
             }
         }
+    }
+
+    function getDeleteSalidaDetalleTransEntities(data) {
+        var entities = [];
+
+        addTransAttrs(data, 'Delete', DETALLE_PAGE_NAME);
+        entities.push({ SD_ID: data.SD_ID, OperationType: 'DeleteEntities', PageName: ENTRADAS_SALIDAS_PAGE_NAME });
+        entities.push(data);
+
+        return entities;
+    }
+
+    function getExistencia(data) {
+        var entity = { MAT_ID: data.MAT_ID };
+        return $.ajax({
+            url: AJAX + '/PageInfo/GetPageEntityList?pageName=Materiales&searchType=AND&entity=' + $.toJSON(entity)
+        });
+    }
+
+    function getOrden(_ite_nombre) {
+        var entity = { ITE_Nombre: _ite_nombre };
+        return $.ajax({
+            url: AJAX + '/PageInfo/GetPageEntityList?pageName=ValidateOrden&searchType=AND&entity=' + $.toJSON(entity)
+        });
+    }
+
+    function addOrdenHandler() {
+        var year = Date.today().toString('yy');
+
+        $('#SAL_Orden').mask('99-999-999-99', {
+            placeholder: year + '-___-___-__',
+            selectOnFocus: true
+        });
+
+        $('#SAL_OrdenFilter').mask('99-999-999-99', {
+            placeholder: year + '-___-___-__',
+            selectOnFocus: true
+        });
     }
 
 	</script>

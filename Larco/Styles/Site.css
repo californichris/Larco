@@ -308,7 +308,8 @@ div.links
     width: 97.5%!important;
 }
 
-.modal-form tr.columns-4 input.hasDatepicker {width:80%;}
+.modal-form tr.columns-3 input.hasDatepicker {width:80%;}
+.modal-form tr.columns-4 input.hasDatepicker {width:81%;}
 
 /* IE 6 doesn't support max-height
  * we use height instead, but this forces the menu to always be this tall
@@ -377,26 +378,6 @@ div.links
 	color: #696969;
 }
 
-
-/*
-.ui-widget table.dataTable 
-{
-    font-size: 12px;
-    font-family: "Helvetica Neue", "Lucida Grande", "Segoe UI", Arial, Helvetica, Verdana, sans-serif;
-    color: #696969;
-}
-
-.ui-widget table.dataTable tr.odd
-{
-    background-color: #F2F8FC;
-    border: 1px;
-}
-
-.ui-widget table.dataTable tr.even
-{
-   background-color: white;
-    border: 1px;
-}*/
 
 #divBingMap 
 {
