@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Web;
 using System.Web.Script.Serialization;
 using System.Web.UI;
-using System.Web.UI.WebControls;
 using BS.Common.Dao;
 using BS.Common.Entities;
 using BS.Common.Utils;
+
 namespace Larco
 {
     public partial class SiteMaster : System.Web.UI.MasterPage
@@ -72,7 +70,7 @@ namespace Larco
             {
                 BS.Common.Entities.Page.Page usersPage = DAOFactory.Instance.GetPageInfoDAO().GetPageConfig("", "Users");
                 Entity entity = EntityUtils.CreateEntity(usersPage);
-                entity.SetProperty("UserLogin", userName);
+                entity.SetProperty("USE_Login", userName);
 
                 IList<Entity> list = DAOFactory.Instance.GetCatalogDAO().FindEntities(entity);
                 if (list.Count == 1)
@@ -81,7 +79,7 @@ namespace Larco
                 }
 
                 Entity user = (Entity)Session["CurrentUser"];
-                Session["CurrentUserName"] = user.GetProperty("UserName");
+                Session["CurrentUserName"] = user.GetProperty("USE_Name");
             }
                         
             return (Entity) Session["CurrentUser"];

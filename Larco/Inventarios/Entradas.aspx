@@ -41,7 +41,6 @@
             dialogWidth: 1050,
             validate: function (tips) {
                 var valid = validateDialog(config, tips);
-                log(valid + ', validating length:' + CURRENT_DETAIL);
                 if (valid && CURRENT_DETAIL.length <= 0) {
                     tips.text('Tienes que agregar al menos un material a la Entrada.').addClass('ui-state-highlight');
                     valid = false;
@@ -74,8 +73,6 @@
     }
 
     function saveEntrada(entities) {
-        log(entities);
-
         $.when(executeTransaction(entities)).done(function (json) {
             if (json.ErrorMsg == SUCCESS) {
                 $(TABLE_SELECTOR).DataTable().ajax.reload();
@@ -118,8 +115,6 @@
             return false;
 
         var entities = getDeleteEntradaTransEntities(data)
-        log(entities);
-
         executeDeleteTransaction(entities);
     }
 
@@ -163,8 +158,6 @@
 
                 return item;
             });
-
-            log(CURRENT_DETAIL);
 
             $(DETALLE_TABLE_SELECTOR).DataTable().clear().rows.add(CURRENT_DETAIL).draw();
         });
@@ -306,7 +299,6 @@
         data.Prev_Cantidad = data.ED_Cantidad;
 
         var material = getMaterialData(data);
-
         if (material) {
             data.MAT_Descripcion = material.MAT_Descripcion;
             data.MAT_ProvNumero = material.MAT_ProvNumero;
@@ -318,9 +310,7 @@
         data.PageName = DETALLE_PAGE_NAME;
         data.ENT_ID = $('#ENT_ID').val();
 
-        log(data);
         updateCurrentDetail(data);
-
         $(DETALLE_DIALOG_SELECTOR).dialog('close');
     }
 
@@ -345,32 +335,9 @@
             }
         }
         
-        /*var updatedDetail = $.map(CURRENT_DETAIL, function (item, i) {
-            if (item.OperationType != 'Delete') return item;
-        });*/
-
-        log(CURRENT_DETAIL);
-        //log(updatedDetail);
-
         $(DETALLE_TABLE_SELECTOR).DataTable().clear().rows.add(CURRENT_DETAIL).draw();
     }
-
-    function getUniqueId() {
-        var id = new Date().getTime();
-        return '' + (-1 * id);
-    }
-
-    function getMaterialData(material) {
-        var matList = $('#MAT_ID').ComboBox('getList');
-
-        for (var i = 0; i < matList.length; i++) {
-            if (material.MAT_ID == matList[i].MAT_ID) {
-                return matList[i];
-            }
-        }
-    }
-
-	</script>
+</script>
 </asp:Content>
 <asp:Content ID="Content2" ContentPlaceHolderID="MainContent" runat="server">
     <h2></h2><br />

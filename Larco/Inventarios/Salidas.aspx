@@ -44,7 +44,6 @@
             dialogWidth: 1050,
             validate: function (tips) {
                 var valid = validateDialog(config, tips);
-                log(valid + ', validating length:' + CURRENT_DETAIL);
                 if (valid && CURRENT_DETAIL.length <= 0) {
                     tips.text('Tienes que agregar al menos un material a la Salida.').addClass('ui-state-highlight');
                     valid = false;
@@ -182,8 +181,6 @@
                 return item;
             });
 
-            log(CURRENT_DETAIL);
-
             $(DETALLE_TABLE_SELECTOR).DataTable().clear().rows.add(CURRENT_DETAIL).draw();
         });
     }
@@ -237,14 +234,6 @@
                         $(DETALLE_TABLE_SELECTOR).Catalog('newEntity', oTable, options);
                         $(DETALLE_DIALOG_SELECTOR + ' #SAL_ID').val($(DIALOG_SELECTOR + ' #SAL_ID').val());
                     },
-                    /*editEntityCallBack: function (oTable, options) {
-                        $('#MAT_ID').ComboBox('disable');                        
-
-                        var data = getSelectedRowData(oTable);
-                        $(DETALLE_TABLE_SELECTOR).Catalog('editEntity', oTable, options);
-
-                        $('#SD_Cantidad').focus();
-                    },*/
                     deleteEntityCallBack: function (oTable, options) {
                         if (confirm('Estas seguro que quieres borrar esta salida?') == false)
                             return false;
@@ -314,7 +303,6 @@
         }
 
         var material = getMaterialData(data);
-
         if (material) {
             data.MAT_Descripcion = material.MAT_Descripcion;
             data.MAT_ProvNumero = material.MAT_ProvNumero;
@@ -325,9 +313,7 @@
         data.PageName = DETALLE_PAGE_NAME;
         data.SAL_ID = $('#SAL_ID').val();
 
-        log(data);
         updateCurrentDetail(data);
-
         $(DETALLE_DIALOG_SELECTOR).dialog('close');
     }
 
@@ -352,29 +338,7 @@
             }
         }
         
-        /*var updatedDetail = $.map(CURRENT_DETAIL, function (item, i) {
-            if (item.OperationType != 'Delete') return item;
-        });*/
-
-        log(CURRENT_DETAIL);
-        //log(updatedDetail);
-
         $(DETALLE_TABLE_SELECTOR).DataTable().clear().rows.add(CURRENT_DETAIL).draw();
-    }
-
-    function getUniqueId() {
-        var id = new Date().getTime();
-        return '' + (-1 * id);
-    }
-
-    function getMaterialData(material) {
-        var matList = $('#MAT_ID').ComboBox('getList');
-
-        for (var i = 0; i < matList.length; i++) {
-            if (material.MAT_ID == matList[i].MAT_ID) {
-                return matList[i];
-            }
-        }
     }
 
     function getDeleteSalidaDetalleTransEntities(data) {
@@ -414,8 +378,7 @@
             selectOnFocus: true
         });
     }
-
-	</script>
+</script>
 </asp:Content>
 <asp:Content ID="Content2" ContentPlaceHolderID="MainContent" runat="server">
     <h2></h2><br />

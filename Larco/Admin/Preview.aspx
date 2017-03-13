@@ -27,7 +27,10 @@
 	        $('table.display').Catalog({
 	            pageConfig: config,
 	            showExport: true,
-                serverSide: true
+	            serverSide: true,
+	            validate: function (tips) {
+	                return validateDialog(config, tips);
+	            }
 	        });
 	    }
 

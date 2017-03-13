@@ -147,3 +147,18 @@ function addItemTasks(entities, entity, tasks) {
         entities.push(itemTask);
     }
 }
+
+function getUniqueId() {
+    var id = new Date().getTime();
+    return '' + (-1 * id);
+}
+
+function getMaterialData(material) {
+    var matList = $('#MAT_ID').ComboBox('getList');
+
+    for (var i = 0; i < matList.length; i++) {
+        if (material.MAT_ID == matList[i].MAT_ID) {
+            return matList[i];
+        }
+    }
+}
