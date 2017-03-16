@@ -9,13 +9,84 @@
         #grid-columns li .ui-icon-pencil, #tabs li .ui-icon-pencil { float: left; margin: 0.4em 0.2em 0 0; cursor: pointer; }
         #grid-columns li .ui-icon-plus, #tabs li .ui-icon-plus { float: left; margin: 0.4em 0.2em 0 0; cursor: pointer; }
         
-        #grid-columns li .ui-icon-plus, #grid-columns li .ui-icon-pencil, #tabs ul.connectedSortable li .ui-icon-pencil { margin: 0 0 0 0; float: right; position: relative; top: -36px;}
-        #filter-fields li .ui-icon-close, #grid-columns li .ui-icon-close, #tabs ul.connectedSortable li .ui-icon-close { margin: 0 0 0 0; float: right; position: relative; top: -36px;}
-        #grid-columns ul.connectedSortable li .ui-icon-plus, #tabs ul.connectedSortable li .ui-icon-plus, #tabs ul.connectedSortable li .ui-icon-notice { margin: 0 0 0 0; float: right; position: relative; top: -36px;}
+        #grid-columns li .ui-icon-plus, #grid-columns li .ui-icon-pencil, #tabs ul.connectedSortable li .ui-icon-pencil { margin: 0 0 0 0; float: right; position: relative; top: 0px;}
+        #filter-fields li .ui-icon-close, #grid-columns li .ui-icon-close, #tabs ul.connectedSortable li .ui-icon-close { margin: 0 0 0 0; float: right; position: relative; top: 0px;}
+        #grid-columns ul.connectedSortable li .ui-icon-plus, #tabs ul.connectedSortable li .ui-icon-plus, #tabs ul.connectedSortable li .ui-icon-notice { margin: 0 0 0 0; float: right; position: relative; top: 0px;}
         
         div.field_drag_handle {cursor:move; opacity:0.7; position: relative;top: -16px; left:50%; width:20px; height: 20px;} 
         div.jsonformat, div.tableformat { padding:4px;}    
-        div.container .ui-selectmenu-button { width:98%!important;}                 
+        div.container .ui-selectmenu-button { width:98%!important;}     
+        
+        img.nowrap {float:left;}
+        
+        div.nowrap {
+            overflow: hidden;text-overflow: ellipsis;
+            float:left;
+            display:inline;
+        } 
+
+        div.tabcontainer table td {
+            padding:0px;
+        }
+        
+        div.tabcontainer div.scroller {
+            overflow: hidden;
+            width:737px;
+        }
+
+        div.tabcontainer div.scroller ul {
+            border-bottom-right-radius: 0px;
+            border-top-right-radius: 0px;
+            border-right: 0px;
+            width: 1476px;
+            height:32px;
+        }
+
+        div.tabcontainer div.scroller ul {
+            
+        }
+
+        div.tabcontainer div.tabscroll {
+            height:35px;
+        }
+
+        div.tabcontainer #tabscrollsection {
+            border-left:0px;
+            border-right:0px;
+        }
+        
+        div.tabcontainer div.searchContainer  {
+            border-left:0px;
+            border-bottom-right-radius: 6px;
+            border-top-right-radius: 6px;
+        }
+
+        div.tabcontainer div.searchContainer input.text {
+            float: right;
+            margin: 5px;
+            padding:2px;
+        }
+
+        div.tabcontainer button.scrollbtn{
+            margin-top:5px;
+            width:20px;
+            float:right;
+            margin-left:0px;
+            margin-right:0px;
+            height:30px;              
+        }
+
+        div.tabcontainer button.left{
+            border-bottom-right-radius: 0px;
+            border-top-right-radius: 0px;         
+        }
+
+        div.tabcontainer button.right {
+            border-bottom-left-radius: 0px;
+            border-top-left-radius: 0px;
+            border-left:0px;                      
+        }
+                   
     </style>
     <%: Scripts.Render("~/Scripts/page_config_js") %>  
 </asp:Content>
@@ -33,6 +104,7 @@
                                 <th align="left">Name</th>
                                 <th align="left">Title</th>
                                 <th align="left">Table Name</th>
+                                <th align="left">Conn Name</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -58,8 +130,8 @@
                                 <input type="text" name="Name" id="Name" class="text ui-widget-content ui-corner-all" />
                                 <label for="Title">Title :</label>
                                 <input type="text" name="Title" id="Title" class="text ui-widget-content ui-corner-all" />
-                                <label for="Connection" style="display: none;">Connection :</label>
-                                <input type="text" style="display: none;" name="Connection" id="Connection" class="text ui-widget-content ui-corner-all" readonly />
+                                <label for="ConnName">Connection Name :</label>
+                                <select name="ConnName" id="ConnName" class="ui-widget-content ui-corner-all"></select>
                                 <label for="TableName">Table Name :</label>
                                 <select name="TableName" id="TableName" class="ui-widget-content ui-corner-all"></select>
                                 <input type="hidden" name="PageId" id="PageId" />
@@ -67,7 +139,30 @@
                         </div>
                     </div>
                     <div id="configtabs-2">
-                        <div id="tabs" style="height: 440px;"></div>
+                        <div id="tabs" style="height: 440px;">
+                            <div class="tabcontainer">
+                                <table width="100%" cellpading="0" cellspacing="0" style="padding:0px;">
+                                    <tr>
+                                        <td width="737px">
+                                            <div id="tabsection" class="scroller">
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div id="tabscrollsection" style="display:none;" class="tabscroll ui-widget-header">
+                                                <button id="tabscrollright" class="scrollbtn right">Scroll Right</button>
+                                                <button id="tabscrollleft" class="scrollbtn left">Scroll Left</button>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div id="tabssearchsection" style="display:none;" class="tabscroll searchContainer ui-widget-header">
+                                                <input type="search" id="searchFields" class="text ui-corner-all" placeholder="Quick Search" aria-controls="pages">
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>
+
+                            </div>
+                        </div>
                     </div>
                     <div id="configtabs-3"  style="overflow-y:scroll; height:500px;">
                         <table cellpadding="0" cellspacing="0" border="0" width="100%">
@@ -148,25 +243,32 @@
                                         <option value="datetime">datetime</option>
                                         <option value="datetime2">datetime2</option>
                                         <option value="decimal">decimal</option>
+                                        <option value="encrypt">encrypt</option>
+                                        <option value="escapetext">escapetext</option>
                                         <option value="int">int</option>
                                         <option value="nchar">nchar</option>
+                                        <option value="number">number</option>
                                         <option value="nvarchar">nvarchar</option>
                                         <option value="money">money</option>
                                         <option value="real">real</option>
                                         <option value="smalldatetime">smalldatetime</option>
                                         <option value="smallint">smallint</option>
+                                        <option value="timestamp(6)">timestamp</option>
                                         <option value="tinyint">tinyint</option>
                                         <option value="varchar">varchar</option>
+                                        <option value="varchar2">varchar2</option>
+										<option value="varbinary">varbinary</option>
                                     </select>
                                     <label for="ControlType">Control Type :</label>
                                     <select id="ControlType" name="ControlType" class="ui-corner-all">
-                                        <option value="checkbox">checkbox</option>
+                                        <option value="checkbox">checkbox</option>                                        
                                         <option value="dropdownlist">dropdownlist</option>
                                         <option value="hidden">hidden</option>
                                         <option value="inputbox">inputbox</option>
                                         <option value="multiline">multiline</option>
                                         <option value="multiselect">multiselect</option>
                                         <option value="selectmenu">selectmenu</option>
+                                        <option value="timepicker">timepicker</option>
                                     </select>                                    
                                 </fieldset>
                             </td>

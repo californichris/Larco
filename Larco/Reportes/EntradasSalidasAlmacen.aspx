@@ -1,10 +1,10 @@
-﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="SalidasAlmacen.aspx.cs" Inherits="BS.Larco.Reportes.SalidasAlmacen" %>
+﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="EntradasSalidasAlmacen.aspx.cs" Inherits="BS.Larco.Reportes.EntradasSalidasAlmacen" %>
 <%@ Import Namespace="System.Web.Optimization" %>
 <asp:Content ID="Content1" ContentPlaceHolderID="HeadContent" runat="server">
     <%: Styles.Render("~/Styles/extra_widgets_css") %>
     <%: Scripts.Render("~/Scripts/extra_widgets_js") %>  
     <script type="text/javascript">
-        const PAGE_NAME = 'SalidasAlmacen';
+        const PAGE_NAME = 'EntradasContraSalidas';
         const TABLE_SEL = '#' + PAGE_NAME + '_table'
         const FILTER_SEL = '#' + PAGE_NAME + '_filter';
 
@@ -33,7 +33,7 @@
                 showExport: true,
                 //scrollY: '600px',
                 scrollX: '100%',
-                scrollXInner: '130%',
+                scrollXInner: '200%',
             });
         }
 

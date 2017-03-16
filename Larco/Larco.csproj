@@ -91,6 +91,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Admin\QueryHelper.aspx" />
     <Content Include="Admin\RefreshCache.aspx" />
     <Content Include="Catalogos\Clientes.aspx" />
     <Content Include="Catalogos\Empleados.aspx" />
@@ -126,6 +127,7 @@
     <Content Include="Logon.aspx" />
     <Content Include="Logout.aspx" />
     <Content Include="Reportes\EntradasAlmacen.aspx" />
+    <Content Include="Reportes\EntradasSalidasAlmacen.aspx" />
     <Content Include="Reportes\RelacionFechaEntrega.aspx" />
     <Content Include="Reportes\RelacionOrdenCompra.aspx" />
     <Content Include="Reportes\SalidasAlmacen.aspx" />
@@ -159,6 +161,7 @@
     <Content Include="Scripts\jquery.multiselect.js" />
     <Content Include="Scripts\larco_common.js" />
     <Content Include="Scripts\pageconfig.js" />
+    <Content Include="Scripts\prism.js" />
     <Content Include="Scripts\spin.js" />
     <Content Include="Sistema\Usuarios.aspx" />
     <Content Include="Styles\blitzer\dataTables.jqueryui.css" />
@@ -197,6 +200,7 @@
     <Content Include="Styles\jquery.jqplot.css" />
     <Content Include="Styles\jquery.multiselect.css" />
     <Content Include="Styles\jquery.multiselect.filter.css" />
+    <Content Include="Styles\prism.css" />
     <Content Include="Styles\Site.css" />
     <Content Include="UnderConstruction.aspx" />
     <Content Include="Web.config">
@@ -210,6 +214,13 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Admin\QueryHelper.aspx.cs">
+      <DependentUpon>QueryHelper.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Admin\QueryHelper.aspx.designer.cs">
+      <DependentUpon>QueryHelper.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Admin\RefreshCache.aspx.cs">
       <DependentUpon>RefreshCache.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -375,6 +386,13 @@
     </Compile>
     <Compile Include="Reportes\EntradasAlmacen.aspx.designer.cs">
       <DependentUpon>EntradasAlmacen.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Reportes\EntradasSalidasAlmacen.aspx.cs">
+      <DependentUpon>EntradasSalidasAlmacen.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Reportes\EntradasSalidasAlmacen.aspx.designer.cs">
+      <DependentUpon>EntradasSalidasAlmacen.aspx</DependentUpon>
     </Compile>
     <Compile Include="Reportes\RelacionFechaEntrega.aspx.cs">
       <DependentUpon>RelacionFechaEntrega.aspx</DependentUpon>

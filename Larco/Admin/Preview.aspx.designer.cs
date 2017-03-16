@@ -7,9 +7,11 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace BS.Common {
-    
-    
-    public partial class Preview {
+namespace BS.Common
+{
+
+
+    public partial class Preview
+    {
     }
 }

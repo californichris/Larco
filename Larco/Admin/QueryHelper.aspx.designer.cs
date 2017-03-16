@@ -11,7 +11,7 @@ namespace BS.Common
 {
 
 
-    public partial class PageConfig
+    public partial class QueryHelper
     {
     }
 }

@@ -13,6 +13,7 @@ var SUCCESS = 'Success';
 var TABLE_DISPLAY_LENGTH = 25;
 var SESSION_EXPIRED = 'Session expired.';
 var DEFAULT_VALUE = 'defaultVal';
+var FILTER_DEFAULT_VALUE = 'filterDefaultVal';
 
 $.ajaxSetup({
     dataType: 'json'
@@ -1391,7 +1392,7 @@ $.widget("bs.Catalog", {
         //TODO: create method to set focus to first element on the dialog
         $('input:visible:first', $($('div.ui-tabs-panel', this._dialog)[0])).focus();
 
-        if (this.options.viewOnly) disableDialog('#' + this._dialog.attr('id'));
+        if (options.viewOnly) disableDialog('#' + this._dialog.attr('id'));
 
         return this._dialog;
     },
@@ -1412,7 +1413,7 @@ $.widget("bs.Catalog", {
         $('#dialogtabs', this._dialog).tabs('option', 'active', 0);
         $('input:visible:first', $($('div.ui-tabs-panel', this._dialog)[0])).focus();
 
-        if (this.options.viewOnly) disableDialog('#' + this._dialog.attr('id'));
+        if (options.viewOnly) disableDialog('#' + this._dialog.attr('id'));
     },
 
     deleteEntity: function (oTable, options) {
@@ -1543,6 +1544,10 @@ $.widget("bs.Catalog", {
     getTable: function () {
         var t = this.oTable;
         return t;
+    },
+
+    getCatalogOptions: function () {
+        return this.options;
     },
 
     getDialog: function () {
@@ -2267,12 +2272,26 @@ $.widget("bs.Page", {
             var field = controlFields.dateFields[dt];
             if (field.ControlType == 'hidden') continue;
 
+            var _DateFormat = 'mm/dd/yy';
+            var _TimeFormat = 'HH:mm:ss';
+
             if (field.ControlType == 'timepicker') {
+                var controlPros = $.evalJSON(field.ControlProps);
+
+                var dateFormatConfigValue = controlPros['date-format'];
+                if (dateFormatConfigValue)
+                    _DateFormat = dateFormatConfigValue;
+
+                var timeFormatConfigValue = controlPros['time-format'];
+                if (timeFormatConfigValue)
+                    _TimeFormat = timeFormatConfigValue;
+
+
                 $('#' + field.FieldName, dialog).datetimepicker({
                     showButtonPanel: true,
                     showOn: 'button',
-                    timeFormat: 'HH:mm:ss',
-                    dateFormat: 'mm/dd/yy'
+                    timeFormat: _TimeFormat,
+                    dateFormat: _DateFormat
                 }).next('button').text('').button({
                     icons: {
                         primary: 'ui-icon-calendar'
@@ -2681,6 +2700,9 @@ $.widget("bs.Filter", {
             return f.FieldData.ControlType == 'multiselect' ? f.FieldData : null;
         });
 
+        var _filterDateFormat = 'mm/dd/yy';
+        var _filterTimeFormat = 'HH:mm:ss';
+        
         $.page.initSelectMenu(selectMenus.join(','));
         this._initComboBoxes(ddlMenus);
         this._initMultiSelects(multiselects);
@@ -2699,12 +2721,23 @@ $.widget("bs.Filter", {
                 var promise = $.page.loadMultiSelect($(this.element), f.FieldData);
                 promises.push(promise);
             } else if ($.page.common.isDateField(f.FieldData)) {
-                if (f.FieldData.ControlType == 'timepicker') {                    
+                if (f.FieldData.ControlType == 'timepicker') {
+                    var field = f.FieldData;
+
+                    var controlPros = $.evalJSON(field.ControlProps);
+                    var dateFormatConfigValue = controlPros['date-format'];
+                    if (dateFormatConfigValue)
+                        _filterDateFormat = dateFormatConfigValue;
+
+                    var timeFormatConfigValue = controlPros['time-format'];
+                    if (timeFormatConfigValue)
+                        _filterTimeFormat = timeFormatConfigValue;
+
                     $('#' + f.GridData.ColumnName, $(this.element)).datetimepicker({
                         showButtonPanel: true,
                         showOn: 'button',
-                        timeFormat: 'HH:mm:ss',
-                        dateFormat: 'mm/dd/yy',
+                        timeFormat: _filterTimeFormat,
+                        dateFormat: _filterDateFormat,
                         onClose: function () {
                             that._filterChange();
                         }
@@ -2776,13 +2809,13 @@ $.widget("bs.Filter", {
             this._FILTER = this._createFilter(this.element);
 
             if (this.options.debug) console.log('Filter = ' + $.toJSON(this._FILTER));
-
+            that._setDefaultValues(that.options.pageConfig);
             that.options.initCompleteCallBack(that.options.pageConfig);
         } else {
             $.when.apply($, promises).done(function () {
                 that._FILTER = that._createFilter(that.element);
                 if (that.options.debug) console.log('Filter = ' + $.toJSON(that._FILTER));
-
+                that._setDefaultValues(that.options.pageConfig);
                 that.options.initCompleteCallBack(that.options.pageConfig);
             });
         }
@@ -2888,6 +2921,45 @@ $.widget("bs.Filter", {
             var field = fields[i];
             var ddInfo = $.evalJSON(field.DropDownInfo);
             $.page.initMultiselect($('#' + field.FieldName), ddInfo);
+        }
+    },
+
+    _setDefaultValues: function (config) {
+        if (!(config && config.Filter && config.Filter.Fields)) return;
+        var fields = [];
+
+        var _results = jQuery.grep(config.Filter.Fields, function (field, i) {
+            var _data = field.FieldData.ControlProps;
+            return (_data.toLowerCase().indexOf(FILTER_DEFAULT_VALUE.toLowerCase()) != -1)
+        });
+
+        fields = fields.concat(_results);
+        for (var f = 0; f < fields.length; f++) {
+            this._setFieldValue(fields[f]);
+        }
+    },
+
+    _setFieldValue: function (_field) {
+        var field = _field.FieldData;
+        var controlPros = $.evalJSON(field.ControlProps);
+        var _value = controlPros[FILTER_DEFAULT_VALUE];
+        if (!_value) return;
+
+        if (startsWith(_value, 'js:')) {
+            _value = _value.substring(3);
+            _value = eval('(' + _value + ')');
+        }
+
+        var _field = $('#' + field.FieldName);
+
+        if (field.ControlType == 'selectmenu' && $('#' + field.FieldName).hasClass('selectMenu')) {
+            _field.val(_value).selectmenu('refresh');
+        } else if (field.ControlType == 'dropdownlist') {
+            _field.ComboBox('value', _value);
+        } else if (field.ControlType == 'checkbox') {
+            _field.prop('checked', isTrue(_value));
+        } else {
+            _field.val(_value);
         }
     },
 

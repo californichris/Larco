@@ -10,26 +10,84 @@ $(document).ready(function () {
     $('#Type').addClass('selectMenu').selectmenu();
     $('#ControlType').addClass('selectMenu').selectmenu();
 
+    $('#searchFields').on('input', function () {
+        var _search = $('#searchFields').val().toUpperCase();
+        var not = false;
+        if (_search.substring(0, 1) == '!') {
+            not = true;
+            _search = _search.substring(1);
+        }
+
+        $('#tabs li.field').css('opacity', 1);
+
+        var results = jQuery.grep($('#tabs li.field'), function (field, i) {
+            var _data = $.evalJSON($(field).attr('data'));
+            var found = false;
+
+            if (_search == 'ISID') {
+                found = !isTrue(_data.IsId);
+            } else if (_search == 'REQUIRED') {
+                found = !isTrue(_data.Required);                
+            } else if (_search == 'EXPORTABLE') {
+                found = !isTrue(_data.Exportable);
+            } else if (_search == 'INSERTABLE') {
+                found = !isTrue(_data.Insertable);
+            } else if (_search == 'UPDATABLE') {
+                found = !isTrue(_data.Updatable);
+            } else {
+                found = _data.FieldName.toUpperCase().indexOf(_search) == -1 && _data.Label.toUpperCase().indexOf(_search) == -1 &&
+                    _data.DBFieldName.toUpperCase().indexOf(_search) == -1 && _data.Type.toUpperCase().indexOf(_search) == -1 &&
+                    _data.ControlType.toUpperCase().indexOf(_search) == -1 && _data.JoinInfo.toUpperCase().indexOf(_search) == -1 &&
+                    _data.DropDownInfo.toUpperCase().indexOf(_search) == -1 && _data.ControlProps.toUpperCase().indexOf(_search) == -1;
+            }
+
+            found = not ? !found : found;
+
+            return found;
+        });
+
+        $(results).css('opacity',.25);
+    });
+
     var configTabs = $('#configtabs').tabs({
         activate: function (event, ui) {
             $('.add-btns, .filter-btns').hide();
 
             if ('Dialog' == ui.newTab.find('a').text()) {
                 $('.add-btns').show();
+                if ($('#configtabs-2 ul.connectedSortable li.ui-state-default table').length > 0) {
+                    var _width = $($('#configtabs-2 ul.connectedSortable li.ui-state-default table')[0]).width()
+                    $('#configtabs-2 ul.connectedSortable li.ui-state-default table div.nowrap').width((_width - 64 - 25));
+                }
+
+                $('#tabs').trigger('tabchange');
             } else if ('Filter' == ui.newTab.find('a').text()) {
                 $('.filter-btns').show();
             }
         }
     });
 
-    $('#TableName').ComboBox({
-        url: AJAX_CONTROLER_URL + '/PageInfo/GetTables',
-        sortByField: 'Name', valField: 'Name', textField: 'Name', removedInvalid: false,
-        onCreateComplete: function () {
-            $('#TableName_combobox_wrapper').css('width', '96.5%');
-        }
+    $.page.initSelectMenu('#ConnName');
+    $.when($.getData(AJAX_CONTROLER_URL + '/PageInfo/GetConnections')).done(function (json) {
+        var ddInfo = {};
+        ddInfo.fieldName = 'ConnName'
+        ddInfo.valField = 'ConnName';
+        ddInfo.textField = 'ConnName';
+        ddInfo.onChange = connNameChange;
+
+        $.page.createSelectMenuOptions($('#ConnName'), json, ddInfo);
     });
 
+    $.when($.getData(AJAX_CONTROLER_URL + '/PageInfo/GetTables?ConnName=')).done(function (json) {
+        $('#TableName').ComboBox({
+            list: json.aaData,
+            sortByField: 'Name', valField: 'Name', textField: 'Name', removedInvalid: false,
+            onCreateComplete: function () {
+                $('#TableName_combobox_wrapper').css('width', '96.5%');
+            }
+        });
+    });
+    
 
     var btnsTab = $('<li style="width:770px"></li>');
     btnsTab.append('<table width="100%" cellpadding="0" cellspacing="0" border="0"><tbody><tr><td valign="middle" align="right"></td></tr></tbody></table>');
@@ -56,6 +114,15 @@ $(document).ready(function () {
         window.open('preview.aspx?pageName=' + $('#Name').val(), '_blank');
     });
 
+    $('#tabscrollleft').button({ icons: { primary: "ui-icon-triangle-1-w" }, text: false }).click(function () {
+        var _scroll = $('#tabsection').scrollLeft() - 380;
+        $('#tabsection').animate({ scrollLeft: _scroll }, 900);
+    });
+    $('#tabscrollright').button({ icons: { primary: "ui-icon-triangle-1-e" }, text: false }).click(function () {
+        var _scroll = $('#tabsection').scrollLeft() + 380;
+        $('#tabsection').animate({ scrollLeft: _scroll }, 900);
+    });
+
     //Create page catalog
     catalog = $('#pages').Catalog({
         fieldId: 'PageId',
@@ -63,7 +130,8 @@ $(document).ready(function () {
         columns: [
 	        { "mDataProp": "Name", "sName": "Name", "bVisible": true, "bSearchable": true },
 	        { "mDataProp": "Title", "sName": "Title", "bVisible": true, "bSearchable": true },
-	        { "mDataProp": "TableName", "sName": "TableName", "bVisible": true, "bSearchable": true }
+	        { "mDataProp": "TableName", "sName": "TableName", "bVisible": true, "bSearchable": true },
+            { "mDataProp": "ConnName", "sName": "ConnName", "bVisible": true, "bSearchable": true }
 	    ],
         displayLength: 18,
         source: AJAX_CONTROLER_URL + "/PageInfo/GetPageList",
@@ -85,7 +153,7 @@ $(document).ready(function () {
             carousel.data('carousel').moveToItem(1);
             var row = getSelectedRowData(oTable);
             populateDialog(row, '#page_dialog');
-            configTabs.tabs('option', 'active', 0);
+            configTabs.tabs('option', 'active', 0);            
 
             $.getJSON(
                 AJAX_CONTROLER_URL + '/PageInfo/GetPageConfig?pageId=' + row['PageId']
@@ -103,6 +171,9 @@ $(document).ready(function () {
                     return;
                 }
             });
+        },
+        initCompleteCallBack: function (oTable, oSettings, json, options) {
+            appendPreviewBtnToMainTable(oTable);
         }
     });
 
@@ -124,6 +195,7 @@ $(document).ready(function () {
         page.Name = $('#Name').val();
         page.Title = $('#Title').val();
         page.TableName = $('#TableName').ComboBox('value');
+        page.ConnName = $('#ConnName').val();
         page.Tabs = [];
 
         //setting grid columns order
@@ -183,7 +255,7 @@ $(document).ready(function () {
             });
         }
 
-        $.post(AJAX_CONTROLER_URL + '/PageInfo/SavePage', 'entity=' + encodeURIComponent($.toJSON(page)))
+        $.post(AJAX_CONTROLER_URL + '/PageInfo/SavePage', 'entity=' + encodeURIComponent(JSON.stringify(page)))
         .done(function (json) {
             if (json.ErrorMsg == SUCCESS) {
                 showSuccess(tips, 'Page configuration succesfully saved.', true);
@@ -207,38 +279,16 @@ $(document).ready(function () {
         catalog.Catalog('reloadTable');
         carousel.data('carousel').moveToItem(0);
 
-        if (tabs != null) { //removed events
-            tabs.undelegate(".ui-tabs-nav span.ui-icon-close", "click");
-            tabs.undelegate(".ui-tabs-nav span.ui-icon-pencil", "click");
-
-            tabs.undelegate(".connectedSortable span.ui-icon-close", "click");
-            tabs.undelegate(".connectedSortable span.ui-icon-pencil", "click");
-            tabs.undelegate(".connectedSortable span.ui-icon-plus", "click");
-
-            tabs.tabs('destroy');
-            tabs = null;
-
-            $('#grid-columns').sortable('destroy');
-            $('#grid-columns').html('');
-            $('#grid-columns').append('<li id="grid-columns-empty">No fields have been added to the grid.</li>');
-
-            $("#grid-columns").undelegate("li span.ui-icon-close", "click");
-            $("#grid-columns").undelegate("li span.ui-icon-pencil", "click");
-            $("#grid-columns").undelegate("li span.ui-icon-plus", "click");
-
-            $('#filter-fields').sortable('destroy');
-            $('#filter-fields').html('');
-            $('#filter-fields').append('<li id="filter-fields-empty">No fields have been added to the filter.</li>');
-
-            $("#filter-fields").undelegate("li span.ui-icon-close", "click");
-        }
+        removeTabEvents();
 
         if (tab_items != null) {
             tab_items = null;
         }
 
         $('#validateTips').removeClass('ui-state-highlight').text('');
-        $('#tabs').html('');
+
+        clearDialogSection();
+        $('#ConnName').val('').selectmenu('refresh');
     });
 
     //Bind an click handler to the add tab button
@@ -290,46 +340,18 @@ $(document).ready(function () {
         $('#field_list_dialog').dialog('open');
         $('#field_list').undelegate("span.ui-icon-plus", "click");
 
-        var newSource = AJAX_CONTROLER_URL + '/PageInfo/GetTableColumns?tableName=' + $('#TableName').val();
-        fieldTable.ajax.url(newSource).load( function() {
+        var newSource = AJAX_CONTROLER_URL + '/PageInfo/GetTableColumns?tableName=' + $('#TableName').val() + '&connName=' + $('#ConnName').val();
+        fieldTable.ajax.url(newSource).load(function () {
             $('#field_list').delegate("span.ui-icon-plus", "click", function (event) {              
                 var targetEle = event.target || event.srcElement;
                 var tr = targetEle;
                 if (targetEle.nodeName != 'TR') {
                     tr = $(targetEle).parentsUntil('tbody', 'tr')[0];//targetEle.parentNode; 
                 }
-                var name = $(tr).attr('Name');
 
-                var data = {};
-                var tableData = fieldTable.data();
-                for (var i = 0; i < tableData.length; i++) {
-                    if (tableData[i].Name == $(tr).attr('Name'))
-                        data = tableData[i];
-                }
-
-                if (!$.isEmptyObject(data)) {
-                    clearDialog('#field_dialog');
-
-                    //Setting default values before calling the saveField method
-                    $('#FieldName').val(data.Name);
-                    $('#DBFieldName').val(data.Name);
-                    $('#Label').val(data.Name);
-                    $('#Type').val(data.Type);
-                    $('#ControlType').val('inputbox');
-                    if (data.Type == 'bit') $('#ControlType').val('checkbox');
-                    $('#Required').prop('checked', data.Required == 'NO');
-                    $('#Exportable').prop('checked', true);
-                    $('#Insertable').prop('checked', true);
-                    $('#Updatable').prop('checked', true);
-                    $('#DropDownInfo').val('');
-                    $('#JoinInfo').val('');
-
-                    if (!validateField($('#field_list_dialog p.validateTips'))) return;
-
-                    saveField();
-                } else {
-                    log('Upps!! field not found in the list, this should never happend..');
-                }
+                var _name = $(tr).attr('Name');
+                var _data = fieldTable.data();
+                addDBFieldToDialog(_name, _data);                
             });
         });
     });
@@ -339,37 +361,70 @@ $(document).ready(function () {
     });
 });
 
+function connNameChange() {
+    var currVal = $('#TableName').ComboBox('value');
+    $.when($.getData(AJAX_CONTROLER_URL + '/PageInfo/GetTables?ConnName=' + $('#ConnName').val())).done(function (json) {
+        $('#TableName').ComboBox('reload', {
+            list: json.aaData,
+            onLoadComplete: function () {
+                $('#TableName').ComboBox('value', currVal);
+            }
+        });
+    });
+}
+
+function addDBFieldToDialog(name, _tableData) {
+    var data = {};
+    for (var i = 0; i < _tableData.length; i++) {
+        if (_tableData[i].Name == name)
+            data = _tableData[i];
+    }
+
+    if (!$.isEmptyObject(data)) {
+        clearDialog('#field_dialog');
+
+        //Setting default values before calling the saveField method
+        $('#FieldName').val(data.Name);
+        $('#DBFieldName').val(data.Name);
+        $('#Label').val(data.Name);
+        $('#Type').val(data.Type.toLowerCase());
+        $('#ControlType').val('inputbox');
+        if (data.Type == 'bit') $('#ControlType').val('checkbox');
+        $('#Required').prop('checked', data.Required == 'NO');
+        $('#Exportable').prop('checked', true);
+        $('#Insertable').prop('checked', true);
+        $('#Updatable').prop('checked', true);
+        $('#DropDownInfo').val('');
+        $('#JoinInfo').val('');
+
+        if (!validateField($('#field_list_dialog p.validateTips'))) return;
+
+        saveField();
+    } else {
+        log('Upps!! field not found in the list, this should never happend..');
+    }
+}
+
+function appendPreviewBtnToMainTable(oTable) {
+    var btn = $('<button onclick="return false;" class="disable" title="Preview Page">Preview</button>');
+    btn.button({ icons: { primary: "ui-icon-play" } }).click(function (event) {
+        var data = getSelectedRowData(oTable);
+        window.open('preview.aspx?pageName=' + data.Name, '_blank');
+    }).button('disable');
+
+    $('#pages').Catalog('getButtonSection').append(btn);
+}
+
 function realodPage(pageId) {
     $('#field_list_dialog').dialog('close');
 
-    if (tabs != null) { //removed events
-        tabs.undelegate(".ui-tabs-nav span.ui-icon-close", "click");
-        tabs.undelegate(".ui-tabs-nav span.ui-icon-pencil", "click");
-
-        tabs.undelegate(".connectedSortable span.ui-icon-close", "click");
-        tabs.undelegate(".connectedSortable span.ui-icon-pencil", "click");
-        tabs.undelegate(".connectedSortable span.ui-icon-plus", "click");
-
-        tabs.tabs('destroy');
-        tabs = null;
-
-        $('#grid-columns').sortable('destroy');
-        $('#grid-columns').html('');
-
-        $("#grid-columns").undelegate("li span.ui-icon-close", "click");
-        $("#grid-columns").undelegate("li span.ui-icon-pencil", "click");
-
-        $('#filter-fields').sortable('destroy');
-        $('#filter-fields').html('');
-
-        $("#filter-fields").undelegate("li span.ui-icon-close", "click");
-    }
+    removeTabEvents();
 
     if (tab_items != null) {
         tab_items = null;
     }
 
-    $('#tabs').html('');
+    clearDialogSection();
     $('#page_dialog input, #page_dialog select').val('').removeClass('ui-state-error');
     $('#page_dialog input[type=checkbox]').prop('checked', false);
 
@@ -392,11 +447,52 @@ function realodPage(pageId) {
     });
 }
 
+function clearDialogSection() {
+    $('#tabs div.dialogtab').remove();
+    $('#tabsection').html('');
+    $('#tabscrollsection').hide();    
+}
+
+function removeTabEvents() {
+    if (tabs == null) return;
+
+    tabs.undelegate(".ui-tabs-nav span.ui-icon-close", "click");
+    tabs.undelegate(".ui-tabs-nav span.ui-icon-pencil", "click");
+
+    tabs.undelegate(".connectedSortable span.ui-icon-close", "click");
+    tabs.undelegate(".connectedSortable span.ui-icon-pencil", "click");
+    tabs.undelegate(".connectedSortable span.ui-icon-plus", "click");
+
+    tabs.tabs('destroy');
+    tabs = null;
+
+    $('#grid-columns').sortable('destroy');
+    $('#grid-columns').html('');
+    $('#grid-columns').append('<li id="grid-columns-empty">No fields have been added to the grid.</li>');
+
+    $("#grid-columns").undelegate("li span.ui-icon-close", "click");
+    $("#grid-columns").undelegate("li span.ui-icon-pencil", "click");
+    $("#grid-columns").undelegate("li span.ui-icon-plus", "click");
+
+    $('#filter-fields').sortable('destroy');
+    $('#filter-fields').html('');
+    $('#filter-fields').append('<li id="filter-fields-empty">No fields have been added to the filter.</li>');
+
+    $("#filter-fields").undelegate("li span.ui-icon-close", "click");
+}
+
 function createPage(json) {
     createTabs(json);
-    createFilter(json);
+    createFilter(json);    
     $('#Name').focus();
-    $('#Connection').val('Default');
+    connNameChange();
+
+    if ($('#configtabs-2 ul.connectedSortable li.ui-state-default table').length > 0) {
+        var _width = $($('#configtabs-2 ul.connectedSortable li.ui-state-default table')[0]).width()
+        $('#configtabs-2 ul.connectedSortable li.ui-state-default table div.nowrap').width((_width - 64 - 20));
+    }
+
+    $('#tabs').trigger('tabchange');
 }
 
 function createFilter(json) {
@@ -432,9 +528,10 @@ function createDialogs() {
                 click: function () {
                     var valid = true;
                     var tips = $('#tab_dialog p.validateTips');
-                    valid = valid && checkRequired(tips, $('#TabName'), "TabName");
-                    valid = valid && checkRequired(tips, $('#Cols'), "Cols");
-                    valid = valid && checkInt(tips, $('#Cols'), "Cols");
+                    valid = valid && checkRequired(tips, $('#TabName'), "Name");
+                    //valid = valid && checkAlpha(tips, $('#TabName'), "Name");
+                    valid = valid && checkRequired(tips, $('#Cols'), "Colums");
+                    valid = valid && checkInt(tips, $('#Cols'), "Colums");
 
                     if (!valid) return;
 
@@ -537,6 +634,18 @@ function createDialogs() {
         width: '480',
         height: '400',
         buttons: [
+            {
+                id: "add-all-fields", text: "Add All",
+                click: function () {
+                    var _data = $('#field_list').DataTable().data();
+                    var _rows = $('#field_list tbody tr');
+
+                    for (var i = 0; i < _rows.length; i++) {
+                        var _row = $(_rows[i]);
+                        addDBFieldToDialog(_row.attr('Name'), _data);
+                    }
+                }
+            },
             {
                 id: "button-close", text: "Close",
                 click: function () {
@@ -720,7 +829,7 @@ function createTabs(config) {
 
     var pageTabs = config.Tabs;
     var ul = $('<ul></ul>');
-    $('#tabs').append(ul);
+    $('#tabsection').append(ul);
             
     for (var i = 0; i < pageTabs.length; i++) {
         //cloning tab data to store it in the html element without fields data                
@@ -734,7 +843,6 @@ function createTabs(config) {
     }
 
     createTabEvents();
-
     createGridColumns(config);
 }
 
@@ -761,12 +869,16 @@ function createGridColumns(config) {
 }
 
 function createTab(ul, tab, index) {
-    var li = $('<li id="tabs-' + index + 'TabNav"><a href="#tabs-' + index + '">' + tab.TabName + '</a><span class="ui-icon ui-icon-pencil" title="Edit Tab">Edit Tab</span><span class="ui-icon ui-icon-close"  title="Delete Tab">Delete Tab</span></li>');
+    var li = $('<li id="tabs-' + index + 'TabNav"><a href="#tabs-' + index + '">' +
+        '<div style="width:115px;" class="nowrap" title="' + tab.TabName + '"><span style="white-space: nowrap">' + tab.TabName + '</span></div></a>' +
+        '<span class="ui-icon ui-icon-pencil" title="Edit Tab">Edit Tab</span>' +
+        '<span class="ui-icon ui-icon-close"  title="Delete Tab">Delete Tab</span>' +
+        '</li>');
     li.attr('data', $.toJSON(tab));
                 
     $(ul).append(li);
 
-    return $('<div id="tabs-' + index + '" style="height:370px;overflow: auto;"></div>');
+    return $('<div id="tabs-' + index + '" style="height:370px;overflow: auto;" class="dialogtab"></div>');
 }
 
 function appendTabContent(tabConfig, tabContent) {
@@ -778,15 +890,27 @@ function appendTabContent(tabConfig, tabContent) {
     for (var f = 0; f < tabConfig.Fields.length; f++) {
         var colNum = f % tabConfig.Cols;               
         $('#' + getColName(tabConfig.TabName, colNum), tabContent).append(createField(tabConfig.Fields[f]));
-    }                        
+    }
+
+    $('#tabs').trigger('tabchange');
 }
 
 function getColName(tabName, num) {
-    return tabName.replace(/ /g, '') + '_Col_' + num;
+    return tabName.replace(/[^A-Z0-9]/ig, '') + '_Col_' + num;
 }
 
 function createField(field) {
-    var li = $('<li class="ui-state-default">' + getImage(field) + '<span>' + field.Label + '</span><div class="field_drag_handle" title="Drag field from here"><span class="ui-icon ui-icon-grip-dotted-horizontal"></span></div><span class="ui-icon ui-icon-plus" title="Add Field to Grid">Add Field to Grid</span><span class="ui-icon ui-icon-pencil" title="Edit Field">Edit Field</span><span class="ui-icon ui-icon-close" title="Delete Field">Delete Field</span></li>');
+    var _label = field.Label;
+
+    var li = $('<li class="ui-state-default field">' +
+        '<table width="100%" cellspacing="0" cellpadding="0"><tr>' +
+        '<td>' + getImage(field) + '<div class="nowrap" title="' + _label + '"><span style="white-space: nowrap">' + _label + '</span></div></td>' +
+        '<td style="width: 64px;"><span class="ui-icon ui-icon-plus" title="Add Field to Grid">Add Field to Grid</span>' +
+        '<span class="ui-icon ui-icon-pencil" title="Edit Field">Edit Field</span>' +
+        '<span class="ui-icon ui-icon-close" title="Delete Field">Delete Field</span></td>' +
+        '</tr></table>' +
+        '<div class="field_drag_handle" title="Drag field from here"><span class="ui-icon ui-icon-grip-dotted-horizontal"></span></div>' +
+        '</li>');
 
     if (field.Required == 'True' || field.Required == '1') {
         $('<span class="ui-icon ui-icon-notice" title="Required">*</span>').insertAfter(li.find('span.ui-icon-close'));
@@ -804,18 +928,22 @@ function createField(field) {
 }
 
 function createColumn(data) {
-    var li = $('<li class="ui-state-default"><span>' + data.ColumnLabel + '</span><div class="field_drag_handle" title="Drag column from here to sort">' +
-                               '<span class="ui-icon ui-icon-grip-dotted-horizontal"></span></div><span class="ui-icon ui-icon-pencil" title="Edit Column">Edit Column</span>' +
-                               '<span class="ui-icon ui-icon-close" title="Remove Column from Grid">Remove Column from Grid</span>' +
-                               '<span class="ui-icon ui-icon-plus" title="Add Column to Filter">Add Column to Filter</span>' +
-                               '</li>');
+    var li = $('<li class="ui-state-default">' +
+            '<table width="100%" cellspacing="0" cellpadding="0"><tr>' +
+            '<td><div class="nowrap" style="width:422px;" title="' + data.ColumnLabel + '"><span style="white-space: nowrap">' + data.ColumnLabel + '</span></div></td>' +
+            '<td style="width: 64px;"><span class="ui-icon ui-icon-pencil" title="Edit Column">Edit Column</span>' +
+            '<span class="ui-icon ui-icon-close" title="Remove Column from Grid">Remove Column from Grid</span>' +
+            '<span class="ui-icon ui-icon-plus" title="Add Column to Filter">Add Column to Filter</span></td>' +
+            '</tr></table>' +
+            '<div class="field_drag_handle" title="Drag column from here to sort"><span class="ui-icon ui-icon-grip-dotted-horizontal"></span></div>' +
+            '</li>');
 
     li.attr('data', $.toJSON(data));
     return li;
 }
 
 function getImage(field) {
-    var html = '<img title="TITLE" src="../Images/IMAGE_NAME" style="opacity: 0.5;padding-right:2px;">';
+    var html = '<img class="nowrap" title="TITLE" src="../Images/IMAGE_NAME" style="opacity: 0.5;padding-right:2px;">';
 
     if (field.ControlType == 'selectmenu') {
         return html.replace('TITLE', 'SelectMenu').replace('IMAGE_NAME', 'select.gif');
@@ -838,7 +966,7 @@ function saveTab() {
     
     if(tabs == null) {
         var ul = $('<ul></ul>');
-        $('#tabs').append(ul);
+        $('#tabsection').append(ul);
 
         var tabContent = createTab(ul, tab, 1);
         appendTabContent(tab, tabContent);
@@ -888,7 +1016,8 @@ function saveTab() {
             }
             
             li.attr('data', $.toJSON(tab));
-            $('a', li).text(tab.TabName);
+            $('a span', li).text(tab.TabName);
+            $('a div.nowrap', li).attr('title', tab.TabName);
         }
     }           
 }
@@ -897,7 +1026,9 @@ function validateField(tips) {
     var valid = true;
     //var tips = $('#field_dialog p.validateTips');
     valid = valid && checkRequired(tips, $('#FieldName'), "Name");
+    valid = valid && checkAlpha(tips, $('#FieldName'), "Name");
     valid = valid && checkRequired(tips, $('#Label'), "Label");
+    valid = valid && checkAlpha(tips, $('#DBFieldName'), "DB Name");
     valid = valid && checkRequired(tips, $('#Type'), "Type");
     valid = valid && checkRequired(tips, $('#ControlType'), "Control Type");
 
@@ -919,6 +1050,8 @@ function validateField(tips) {
 
 function saveField() {       
     var field = getObject('#field_dialog');
+    var _label = field.Label;
+
     if ($('#FieldNav').val() == '') {
         var activeTab = $(tabs.find('.ui-tabs-nav li')[tabs.tabs("option", "active")]);
         var tabName = activeTab.find('a').attr('href');
@@ -930,24 +1063,46 @@ function saveField() {
         $(ul).append(createField(field));
     } else {
         var li = $($('#FieldNav').val());
-        $('span:first-child',li).text(field.Label);
+        $('span:first-child', li).text(_label);
+        $('div.nowrap', li).attr('title', _label);
         li.attr('data', $.toJSON(field));
         $('span.ui-icon-notice', li).remove();
         if (field.Required == 'True' || field.Required == '1') {
             $('adding notice icon');
             $('<span class="ui-icon ui-icon-notice" title="Required">*</span>').insertAfter(li.find('span.ui-icon-close'));
         }
+
         li.find('img').replaceWith($(getImage(field)));
     }
 }
 
 function createTabEvents() {
-    tabs = $("#tabs").tabs();
-    tabs.find( ".ui-tabs-nav" ).sortable({
-        axis: "x",
+    tabs = $('#tabs').tabs();
+    tabs.find( '.ui-tabs-nav' ).sortable({
+        axis: 'x',
         stop: function() {
-            tabs.tabs( "refresh" );
-            tab_items = $("ul:first li", tabs);
+            tabs.tabs( 'refresh' );
+            tab_items = $('ul:first li', tabs);
+        }
+    });
+
+    tabs.on('tabchange', function () {
+        if (exists('#tabsection ul')) {
+            $('.tabscroll').show();
+        } else {
+            $('.tabscroll').hide();
+        }
+
+        if ($('#tabsection ul.ui-tabs-nav li:visible').length > 4) {
+            $('#tabscrollsection').show();
+
+            var _width = $('#tabsection ul.ui-tabs-nav li:visible').length * 184;
+            $('div.tabcontainer div.scroller ul').width(_width);
+        } else {
+            $('#tabscrollsection').hide();
+
+            $('div.tabcontainer div.scroller ul').width(737);
+            $('#tabsection').scrollLeft(0);
         }
     });
 
@@ -988,6 +1143,8 @@ function createTabEvents() {
 
             $(tabContentId).hide();
         }
+
+        $('#tabs').trigger('tabchange');// after delete
     });
 
     // edit icon: edit the tab on click
@@ -1025,6 +1182,7 @@ function createTabEvents() {
         var li = $(this).closest("li");
         var data = $.evalJSON(li.attr('data'));
         populateDialog(data, '#field_dialog');
+
 
         $('#FieldNav').val('#' + li.attr('id'));
         createJsonTable('#ji-container', true);
@@ -1068,7 +1226,17 @@ function createTabEvents() {
 
 
     // make fields sortable
-    $("ul.connectedSortable").sortable({ connectWith: ".connectedSortable", cursor: "move", handle: "div.field_drag_handle" }).disableSelection();
+    $("ul.connectedSortable").sortable({
+        connectWith: ".connectedSortable", cursor: "move", handle: "div.field_drag_handle",
+        update: function (event, ui) {
+            //TODO: create a method that execute the following code
+            //Adjust width of visible fields
+            if ($('#configtabs-2 div.dialogtab:visible ul.connectedSortable li.ui-state-default table').length > 0) {
+                var _width = $($('#configtabs-2 div.dialogtab:visible ul.connectedSortable li.ui-state-default table')[0]).width()
+                $('#configtabs-2 div.dialogtab:visible ul.connectedSortable li.ui-state-default table div.nowrap').width((_width - 64 - 20));
+            }
+        }
+    }).disableSelection();
 
     $("#grid-columns").sortable();
     $("#grid-columns").disableSelection();
@@ -1104,7 +1272,7 @@ function createTabEvents() {
         $('#column_prop_dialog').dialog('open');
     });
 
-    // edit icon: edit the column on click
+    // plus icon: edit the column on click
     $("#grid-columns").delegate("li span.ui-icon-plus", "click", function (event) {
         event.stopPropagation();
 
@@ -1150,10 +1318,16 @@ function createTabEvents() {
 function createFilterField(data) {
     var field = $.evalJSON($('#configtabs-2 li[fieldid=' + data.FieldId + ']').attr('data'));
 
-    var li = $('<li class="ui-state-default"><span>' + field.Label + '</span><div class="field_drag_handle" title="Drag filter field from here"><span class="ui-icon ui-icon-grip-dotted-horizontal"></span></div><span class="ui-icon ui-icon-close" title="Delete field from filter.">Delete field from filter.</span></li>');    
+    var li = $('<li class="ui-state-default">' +
+            '<table width="100%" cellspacing="0" cellpadding="0"><tr>' +
+            '<td><div class="nowrap" style="width:470px;" title="' + field.Label + '"><span style="white-space: nowrap">' + field.Label + '</span></div></td>' +
+            '<td style="width: 16px;"><span class="ui-icon ui-icon-close" title="Delete field from filter.">Delete field from filter.</span></td>' +
+            '</tr></table>' +
+            '<div class="field_drag_handle" title="Drag filter field from here"><span class="ui-icon ui-icon-grip-dotted-horizontal"></span></div>' +
+            '</li>');
+
     li.attr('id', data.FieldId + '-filter-field');
     li.attr('filter-fieldid', data.FieldId);
-    //li.attr('data', $.toJSON(field)).uniqueId();
 
     return li;
 }

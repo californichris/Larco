@@ -7,11 +7,11 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace BS.Common
+namespace BS.Larco.Reportes
 {
 
 
-    public partial class PageConfig
+    public partial class EntradasSalidasAlmacen
     {
     }
 }

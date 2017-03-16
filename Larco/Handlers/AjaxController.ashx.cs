@@ -30,18 +30,18 @@ namespace BS.Common.handler
         {
             LoggerHelper.Info("Start");
             string response = HandleAjaxRequest(context.Request);
-
+            
             string csv = context.Request.Params["csv"];
             if (!string.IsNullOrEmpty(csv) && bool.Parse(csv))
             {
                 HandleExport(context, response);
-            }
+            }                        
             else
             {
                 context.Response.ContentType = "application/json";
                 context.Response.Write(response);
             }
-
+            
             LoggerHelper.Info("End");
         }
 
@@ -64,7 +64,7 @@ namespace BS.Common.handler
                     context.Response.Buffer = true;
                     context.Response.Charset = "";
                     context.Response.ContentType = "application/vnd.ms-excel";
-
+                    
                     StringWriter sw = new StringWriter();
                     HtmlTextWriter hw = new HtmlTextWriter(sw);
 
@@ -121,14 +121,14 @@ namespace BS.Common.handler
             context.Response.End();
         }
 
-        private GridView CSVtoGridView(string response)
+        public virtual GridView CSVtoGridView(string response)
         {
             string[] Lines = response.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
             string[] Fields;
             Fields = Lines[0].Split(new string[] { "\",\"" }, StringSplitOptions.None);
             int Cols = Fields.GetLength(0);
             DataTable dt = new DataTable();
-
+                        
             for (int i = 0; i < Cols; i++)
             {
                 dt.Columns.Add(Fields[i].Replace("\"", ""), typeof(string));
@@ -167,7 +167,7 @@ namespace BS.Common.handler
             string csv = context.Request.Params["csv"];
             string exportType = context.Request.Params["exportType"];
             string fileName = "data_" + DateTime.Now.ToString("hhmmssfff") + ".";
-
+            
             if (string.IsNullOrEmpty(exportType))
             {
                 fileName += "csv";
@@ -234,7 +234,7 @@ namespace BS.Common.handler
             }
             finally
             {
-                //LoggerHelper.Debug("Ajax Response = [" + ajaxResponse + "]");
+                LoggerHelper.Debug("Ajax Response = [" + ajaxResponse + "]");
             }
 
             return ajaxResponse;

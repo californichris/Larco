@@ -1,8 +1,8 @@
 ﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="RelacionOrdenCompra.aspx.cs" Inherits="BS.Larco.Reportes.RelacionOrdenCompra" %>
 <%@ Import Namespace="System.Web.Optimization" %>
 <asp:Content ID="Content1" ContentPlaceHolderID="HeadContent" runat="server">
-    <%: Styles.Render("~/Styles/multiselect_css") %>
-    <%: Scripts.Render("~/Scripts/multiselect_js") %>  
+    <%: Styles.Render("~/Styles/extra_widgets_css") %>
+    <%: Scripts.Render("~/Scripts/extra_widgets_js") %>  
     <script type="text/javascript">
         const PAGE_NAME = 'RelacionOrdenCompra';
         const TABLE_SEL = '#' + PAGE_NAME + '_table'

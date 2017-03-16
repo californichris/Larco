@@ -34,7 +34,7 @@ namespace BS.Common
                 .Include(SCRIPTS_PATH + "jqplot/jqplot.canvasOverlay.js");
             bundles.Add(jqplotJSBundle);
 
-            var multiSelectJSBundle = new ScriptBundle(SCRIPTS_PATH + "multiselect_js")
+            var multiSelectJSBundle = new ScriptBundle(SCRIPTS_PATH + "extra_widgets_js")
                 .Include(SCRIPTS_PATH + "jquery.multiselect.js")
                 .Include(SCRIPTS_PATH + "jquery.multiselect.filter.js");
             bundles.Add(multiSelectJSBundle);
@@ -54,7 +54,7 @@ namespace BS.Common
                 .Include(STYLES_APP_ROOT + "jquery.jqplot.css");
             bundles.Add(jqplotBundle);
 
-            var multiSelectCSSBundle = new StyleBundle(STYLES_APP_ROOT + "multiselect_css")
+            var multiSelectCSSBundle = new StyleBundle(STYLES_APP_ROOT + "extra_widgets_css")
                 .Include(STYLES_APP_ROOT + "jquery.multiselect.css")
                 .Include(STYLES_APP_ROOT + "jquery.multiselect.filter.css");
             bundles.Add(multiSelectCSSBundle);

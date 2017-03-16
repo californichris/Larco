@@ -1,8 +1,8 @@
 ﻿<%@ Page Title="Reporte de Porcentaje de Scrap" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="ScrapPorcentaje.aspx.cs" Inherits="BS.Larco.Reportes.ScrapPorcentaje" %>
 <%@ Import Namespace="System.Web.Optimization" %>
 <asp:Content ID="Content1" ContentPlaceHolderID="HeadContent" runat="server">
-    <%: Styles.Render("~/Styles/multiselect_css","~/Styles/jqplot_css") %>
-    <%: Scripts.Render("~/Scripts/multiselect_js","~/Scripts/jqplot_js") %>  
+    <%: Styles.Render("~/Styles/extra_widgets_css","~/Styles/jqplot_css") %>
+    <%: Scripts.Render("~/Scripts/extra_widgets_js","~/Scripts/jqplot_js") %>  
     <script type="text/javascript">
         $(document).ready(function () {
             var loading = createLoading();
