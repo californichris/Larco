@@ -23,10 +23,11 @@ namespace Larco
                 if (user != null)
                 {
                     modules = GetUserModules(user);
-                    Session["CurrentUserName"] = user.GetProperty("UserName");
+                    Session["CurrentUserName"] = user.GetProperty("USER_NAME");
                 }
 
-                if (!UserHavePermissions(modules))
+                //if (!UserHavePermissions(modules))
+                if (false)
                 {
                     LoggerHelper.Debug("user don't have permissions to access this page redirenting.");
                     Response.Redirect(Request.ApplicationPath + "/InvalidAccess.aspx");
@@ -40,8 +41,8 @@ namespace Larco
                     if (user != null)
                     {
 
-                        menuGlobals.Append("const USER_ID = '").Append(user.GetProperty("UserId")).Append("';\n");
-                        menuGlobals.Append("const USER_NAME = '").Append(user.GetProperty("UserName")).Append("';\n");
+                        menuGlobals.Append("const USER_ID = '").Append(user.GetProperty("USE_ID")).Append("';\n");
+                        menuGlobals.Append("const USER_NAME = '").Append(user.GetProperty("USER_NAME")).Append("';\n");
                     }
 
                     //Modules data
@@ -148,13 +149,13 @@ namespace Larco
             {
                 BS.Common.Entities.Page.Page userRolePage = DAOFactory.Instance.GetPageInfoDAO().GetPageConfig("", "UserRoles");
                 Entity userRoleEntity = EntityUtils.CreateEntity(userRolePage);
-                userRoleEntity.SetProperty("UserId", user.GetProperty("UserId"));
+                userRoleEntity.SetProperty("USE_ID", user.GetProperty("USE_ID"));
                 IList<Entity> roles = DAOFactory.Instance.GetCatalogDAO().FindEntities(userRoleEntity);
 
                 string _userRoles = "";
                 foreach (Entity role in roles)
                 {
-                    _userRoles += role.GetProperty("RoleId") + ",";                    
+                    _userRoles += role.GetProperty("Group_ID") + ",";                    
                 }
 
                 if (_userRoles.Length > 0)
@@ -167,7 +168,7 @@ namespace Larco
                 BS.Common.Entities.Page.Page pageRoleMods = DAOFactory.Instance.GetPageInfoDAO().GetPageConfig("", "RoleModules");
 
                 Entity roleModEntity = EntityUtils.CreateEntity(pageRoleMods);
-                roleModEntity.SetProperty("RoleId", "LIST_" + _userRoles);
+                roleModEntity.SetProperty("Group_ID", "LIST_" + _userRoles);
                 IList<Entity> roleMods = DAOFactory.Instance.GetCatalogDAO().FindEntities(roleModEntity);
 
                 //TODO: sort by moduleId then removed duplicates

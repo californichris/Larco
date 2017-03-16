@@ -24,8 +24,8 @@ namespace BS.Larco
         {
             BS.Common.Entities.Page.Page usersPage = DAOFactory.Instance.GetPageInfoDAO().GetPageConfig("", "Users");
             Entity entity = EntityUtils.CreateEntity(usersPage);
-            entity.SetProperty("UserLogin",userName);
-            entity.SetProperty("UserPassword", passWord);
+            entity.SetProperty("USE_Login",userName);
+            entity.SetProperty("USE_Password", passWord);
 
             IList<Entity> list = DAOFactory.Instance.GetCatalogDAO().FindEntities(entity);
             if (list.Count == 1)
