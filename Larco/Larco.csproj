@@ -53,6 +53,7 @@
       <HintPath>\\epenstor1b\group\IT\Dyonyx\Dyonyx\EPEFramework\Binaries\itextsharp.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
+    <Reference Include="Microsoft.JScript" />
     <Reference Include="Microsoft.Practices.EnterpriseLibrary.Common, Version=5.0.414.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>C:\Program Files\Microsoft Enterprise Library 4.0 - May 2008\Bin\Microsoft.Practices.EnterpriseLibrary.Common.dll</HintPath>
@@ -100,6 +101,7 @@
     <Content Include="Catalogos\Productos.aspx" />
     <Content Include="Catalogos\Rutas.aspx" />
     <Content Include="Catalogos\Tareas.aspx" />
+    <Content Include="Catalogos\Templates.aspx" />
     <Content Include="Default.aspx" />
     <Content Include="Global.asax" />
     <Content Include="Herramientas\EditorOrdenes.aspx" />
@@ -163,6 +165,29 @@
     <Content Include="Scripts\pageconfig.js" />
     <Content Include="Scripts\prism.js" />
     <Content Include="Scripts\spin.js" />
+    <Content Include="Scripts\tinymce\jquery.tinymce.min.js" />
+    <Content Include="Scripts\tinymce\license.txt" />
+    <Content Include="Scripts\tinymce\plugins\anchor\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\code\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\contextmenu\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\image\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\link\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\preview\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\print\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\table\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\textcolor\plugin.min.js" />
+    <Content Include="Scripts\tinymce\skins\lightgray\content.inline.min.css" />
+    <Content Include="Scripts\tinymce\skins\lightgray\content.min.css" />
+    <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce-small.svg" />
+    <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce.svg" />
+    <Content Include="Scripts\tinymce\skins\lightgray\img\anchor.gif" />
+    <Content Include="Scripts\tinymce\skins\lightgray\img\loader.gif" />
+    <Content Include="Scripts\tinymce\skins\lightgray\img\object.gif" />
+    <Content Include="Scripts\tinymce\skins\lightgray\img\trans.gif" />
+    <Content Include="Scripts\tinymce\skins\lightgray\skin.ie7.min.css" />
+    <Content Include="Scripts\tinymce\skins\lightgray\skin.min.css" />
+    <Content Include="Scripts\tinymce\themes\modern\theme.min.js" />
+    <Content Include="Scripts\tinymce\tinymce.min.js" />
     <Content Include="Sistema\Usuarios.aspx" />
     <Content Include="Styles\blitzer\dataTables.jqueryui.css" />
     <Content Include="Styles\blitzer\images\ui-bg_diagonals-thick_75_f3d8d8_40x40.png" />
@@ -279,6 +304,13 @@
     <Compile Include="Catalogos\Tareas.aspx.designer.cs">
       <DependentUpon>Tareas.aspx</DependentUpon>
     </Compile>
+    <Compile Include="Catalogos\Templates.aspx.cs">
+      <DependentUpon>Templates.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Catalogos\Templates.aspx.designer.cs">
+      <DependentUpon>Templates.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Dao\DAOFactory.cs" />
     <Compile Include="Dao\ILarcoDAO.cs" />
     <Compile Include="Dao\Sql\LarcoSqlDAO.cs" />
@@ -315,6 +347,9 @@
     </Compile>
     <Compile Include="Admin\Preview.aspx.designer.cs">
       <DependentUpon>Preview.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Handlers\AjaxDownloadHandler.ashx.cs">
+      <DependentUpon>AjaxDownloadHandler.ashx</DependentUpon>
     </Compile>
     <Compile Include="Herramientas\EditorOrdenes.aspx.cs">
       <DependentUpon>EditorOrdenes.aspx</DependentUpon>
@@ -471,7 +506,14 @@
     <Folder Include="Stock\" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Handlers\AjaxDownloadHandler.ashx" />
     <None Include="Properties\PublishProfiles\Larco.pubxml" />
+    <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce-small.eot" />
+    <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce-small.ttf" />
+    <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce-small.woff" />
+    <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce.eot" />
+    <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce.ttf" />
+    <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce.woff" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

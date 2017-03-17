@@ -9,8 +9,9 @@
     <%: Styles.Render("~/Styles/site_master_css", "~/Styles/blitzer/jquery_css") %>
     <%: Scripts.Render("~/Scripts/site_master_js") %>    
     <script type="text/javascript">
-        var AJAX_CONTROLER_URL = '<%= ResolveUrl("~/AjaxController.ashx") %>';
-        var AJAX = AJAX_CONTROLER_URL; //just a shortcut to the controller
+        const AJAX_CONTROLER_URL = '<%= ResolveUrl("~/AjaxController.ashx") %>';
+        const DOWNLOAD_HANDLER = '<%= ResolveUrl("~/AjaxDownloadHandler.ashx") %>';
+        const AJAX = AJAX_CONTROLER_URL;
         var CURRENT_PATH = "<%= Request.Path.Substring(0, Request.Path.LastIndexOf('/')) %>";
         var APP_PATH = "<%= Request.ApplicationPath %>";
         var APP_HOST = "<%= Request.Url.Host %>";

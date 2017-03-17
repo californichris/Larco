@@ -1,5 +1,6 @@
 ﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Entradas.aspx.cs" Inherits="BS.Larco.Inventarios.Entradas" %>
 <asp:Content ID="Content1" ContentPlaceHolderID="HeadContent" runat="server">
+<script type="text/javascript" src="<%= Page.ResolveUrl("~/Scripts/tinymce/tinymce.min.js") %>"></script>
 <style type="text/css">
     div.ui-tabs-panel{
         padding-top:2px!important;
@@ -19,6 +20,8 @@
     const DETALLE_DIALOG_SELECTOR = '#' + DETALLE_PAGE_NAME + '_dialog';
     const DETALLE_BUTTONS_SELECTOR = '#' + DETALLE_PAGE_NAME + 'table_wrapper_buttons button.disable';
 
+    const TINYMCE_ELE = 'Template';
+
     var CURRENT_DETAIL = [];
 
     $(document).ready(function () {
@@ -29,6 +32,18 @@
                 $('h2').text(config.Title);
                 document.title = config.Title;
                 initializeCatalog(config);
+
+                tinymce.init({
+                    selector: '#' + TINYMCE_ELE,
+                    height: 275,
+                    plugins: [
+                                'link image anchor code preview table contextmenu textcolor print'
+                    ],
+                    menubar: false,
+                    toolbar_items_size: 'small',
+                    toolbar1: 'bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | styleselect formatselect fontselect fontsizeselect | cut copy paste | bullist numlist',
+                    toolbar2: 'undo redo | link unlink image code preview | forecolor backcolor | table | print'
+                });
             }
         });
     });
@@ -51,6 +66,9 @@
             initCompleteCallBack: function () {
                 createEntradasDetalle();
                 $(DIALOG_SELECTOR + ' ul.ui-tabs-nav').remove();
+
+                //createDownloadDocumentsButton();
+                createPrintButton();
             },
             newEntityCallBack: function (oTable, options) {
                 $(DETALLE_TABLE_SELECTOR).DataTable().clear().draw();
@@ -337,9 +355,156 @@
         
         $(DETALLE_TABLE_SELECTOR).DataTable().clear().rows.add(CURRENT_DETAIL).draw();
     }
+
+    function createDownloadDocumentsButton() {
+        var ul = $('<ul class="export-menu ui-corner-all" style="display:none;"></ul>').attr('id', 'export-menu-documents');
+        //ul.append('<li class="ui-corner-all"><a href="#" id="export-memo" template-name="Memorandum" title="Download Memorandum">Memorandum</a></li>');
+        ul.append('<li class="ui-corner-all"><a href="#" id="export-entradas-almacen" template-name="EntradasAlmacen" title="Download Entrdas Alamacen">Entradas Almacen</a></li>');
+
+        $('body').append(ul);
+        $(ul).menu();
+
+        $('a', ul).click(function () {
+            var _entity = getSelectedRowData($(TABLE_SELECTOR).DataTable());
+            _entity.Date = Date.today().toString('MMM dd, yyyy');
+
+            var templateName = $(this).attr('template-name');
+
+            var _url = DOWNLOAD_HANDLER + '/Larco/CreateDocument?pageName=Entradas&csv=true&exportType=word&templateType=Document&templateName=' + templateName + '&entity=' + $.toJSON(_entity);
+
+            $(this).attr('href', _url);
+        });
+
+        var expbtn = $('<button id="exportDocuments" title="Download Documentos" class="disable">Documentos</button>');
+        var buttonOpts = { text: true };
+        buttonOpts.icons = { primary: "ui-icon-arrowthickstop-1-s", secondary: "ui-icon-triangle-1-s" };
+
+        expbtn.button(buttonOpts).click(function (event) {
+            var menu = $(ul).show().position({
+                my: "left top",
+                at: "left bottom",
+                of: this
+            });
+
+            $(document).one("click", function () {
+                menu.hide();
+            });
+
+            return false;
+
+        }).button('disable');
+
+        $(TABLE_SELECTOR + '_wrapper_buttons').append(expbtn);
+    }
+
+    function createPrintButton() {
+        var expbtn = $('<button id="printEntrada" title="Print Entrada" class="disable">Print</button>');
+        var buttonOpts = { text: true };
+        buttonOpts.icons = { primary: "ui-icon-print" };
+
+        expbtn.button(buttonOpts).click(function (event) {
+            var data = getSelectedRowData($(TABLE_SELECTOR).DataTable());
+            data.Date = Date.today().toString('MMM dd, yyyy');
+            var entity = { ENT_ID: data.ENT_ID };
+
+            $.when(getTemplate(), getEntradasDetalle(entity)).done(function (json1, json2) {
+                var template = json1[0].aaData[0];
+                var content = template[TINYMCE_ELE];
+                content = addDetail(content, data, json2[0].aaData);
+                calculateTotals(data);
+                content = replaceEntityValues(content, data);
+
+                tinymce.get(TINYMCE_ELE).setContent(unescape(content));
+
+                $('#template_container').html('');
+                $('#mceu_27 button').click();
+            });
+
+            return false;
+        }).button('disable');
+
+        $(TABLE_SELECTOR + '_wrapper_buttons').append(expbtn);
+    }
+
+    function calculateTotals(data) {
+        var iva = parseFloat(data.ENT_IVA) || 10.00;
+        data.IVA = parseFloat(parseFloat(data.SubTotal) * parseFloat(iva / 100)).toFixed(2);
+        data.GrandTotal = parseFloat(parseFloat(data.SubTotal) + parseFloat(data.IVA)).toFixed(2);
+    }
+
+    function replaceEntityValues(template, data) {
+        var keys = Object.keys(data)
+        for (var i = 0; i < keys.length; i++) {
+            var key = keys[i];
+            var re = new RegExp('#' + key + '#', 'g');
+            template = template.replace(re, data[key]);
+        }
+
+        return template;
+    }
+
+    function addDetail(content, data, detailList) {
+        const DETAIL_MIN = 35;
+        var container = $('#template_container');
+        container.html('').html(content);
+
+        var templateRow = $('#printdetail tbody', container).html();
+        templateRow = templateRow.replace('id="templaterow"', '');
+
+        $('#printdetail tbody', container).html('');
+        var subtotal = 0.0;
+        for (var i = 0; i < detailList.length; i++) {
+            var detail = detailList[i];
+            detail.Total = parseFloat(parseFloat(detail.ED_Cantidad) * parseFloat(detail.ED_Costo)).toFixed(2);
+
+            $('#printdetail tbody', container).append(replaceEntityValues(templateRow, detail));
+            subtotal += parseFloat(detail.Total);
+        }
+
+        if (detailList.length < DETAIL_MIN) {
+            addEmptyRows(templateRow, (DETAIL_MIN - detailList.length))
+        }
+
+        data.SubTotal = subtotal.toFixed(2);
+        return container.html();
+    }
+
+    function getEmptyObject() {
+        var empty = {};
+        empty.MAT_Numero = '&nbsp;';
+        empty.MAT_ProvNumero = '&nbsp;';
+        empty.MAT_Descripcion = '&nbsp;';
+        empty.ED_Cantidad = '&nbsp;';
+        empty.ED_Costo = '&nbsp;';
+        empty.Total = '&nbsp;';
+
+        return empty;
+    }
+
+    function addEmptyRows(templateRow, rows) {
+        log(rows);
+        var container = $('#template_container');
+        var emptyRow = getEmptyObject();
+        for (var i = 0; i < rows; i++) {
+            $('#printdetail tbody', container).append(replaceEntityValues(templateRow, emptyRow));
+        }
+    }
+
+    function getTemplate() {
+        var entity = { TemplateName: 'EntradasAlmacen' };
+        return $.ajax({
+            url: AJAX + '/PageInfo/GetPageEntityList?pageName=Templates&searchType=AND&entity=' + $.toJSON(entity)
+        });
+    }
+
 </script>
 </asp:Content>
 <asp:Content ID="Content2" ContentPlaceHolderID="MainContent" runat="server">
     <h2></h2><br />
     <div class="catalog"></div>
+    <div style="display:none;" id="plugin_container">
+        <textarea cols="20" rows="10" id="Template"></textarea>
+    </div>
+    <div style="display:none;" id="template_container">       
+    </div>
 </asp:Content>

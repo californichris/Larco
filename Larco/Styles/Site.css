@@ -305,7 +305,7 @@ div.links
 }
 
 .modal-form table.table-style td[colspan="2"] input.text, .modal-form table.table-style td[colspan="2"] textarea {
-    width: 97.5%!important;
+    width: 97.5%!important;    
 }
 
 .modal-form tr.columns-3 input.hasDatepicker {width:80%;}
