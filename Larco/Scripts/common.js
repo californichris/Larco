@@ -723,7 +723,7 @@ function disableDialog(selector) {
     $(selector + ' button.ui-button[role=button]').button('disable');
     $(selector + ' a.ui-button[role=button]').button('disable');
     $(selector + ' .custom-combobox-input').css('width', '96.5%');
-    if (scriptLoaded('multiselect')) $(selector + ' select.multiselect').multiselect('disable');    
+    if (scriptLoaded('multiselect') || scriptLoaded('extra_widget')) $(selector + ' select.multiselect').multiselect('disable');    
 }
 
 function enableDialog(selector) {
@@ -733,7 +733,7 @@ function enableDialog(selector) {
     $(selector + ' button.ui-button[role=button]').button('enable');
     $(selector + ' a.ui-button[role=button]').button('enable');
     $(selector + ' .custom-combobox-input').css('width', '99%');
-    if (scriptLoaded('multiselect')) $(selector + ' select.multiselect').multiselect('enable');
+    if (scriptLoaded('multiselect') || scriptLoaded('extra_widget')) $(selector + ' select.multiselect').multiselect('enable');
 }
 
 function clearDialog(selector) {
@@ -2770,7 +2770,7 @@ $.widget("bs.Filter", {
                 $(this).val($(this).attr('firstoptionval')).selectmenu('refresh', true);
             });
 
-            if (scriptLoaded('multiselect')) {
+            if (scriptLoaded('multiselect') || scriptLoaded('extra_widget')) {
                 $('select.multiselect', this.element).each(function(ele) {
                     $(this).multiselect('uncheckAll');
                     $.page.refreshMultiselect($(this));                
@@ -2784,7 +2784,7 @@ $.widget("bs.Filter", {
             change: function (event, ui) { that._filterChange(); }
         });
 
-        if (scriptLoaded('multiselect')) {
+        if (scriptLoaded('multiselect') || scriptLoaded('extra_widget')) {
             $('select.multiselect', this.element).multiselect({
                 close: function () {
                     that._filterChange();
