@@ -407,7 +407,7 @@
             data.Date = Date.today().toString('MMM dd, yyyy');
             var entity = { ENT_ID: data.ENT_ID };
 
-            $.when(getTemplate(), getEntradasDetalle(entity)).done(function (json1, json2) {
+            $.when(getTemplate('EntradasAlmacen'), getEntradasDetalle(entity)).done(function (json1, json2) {
                 var template = json1[0].aaData[0];
                 var content = template[TINYMCE_ELE];
                 content = addDetail(content, data, json2[0].aaData);
@@ -430,17 +430,6 @@
         var iva = parseFloat(data.ENT_IVA) || 10.00;
         data.IVA = parseFloat(parseFloat(data.SubTotal) * parseFloat(iva / 100)).toFixed(2);
         data.GrandTotal = parseFloat(parseFloat(data.SubTotal) + parseFloat(data.IVA)).toFixed(2);
-    }
-
-    function replaceEntityValues(template, data) {
-        var keys = Object.keys(data)
-        for (var i = 0; i < keys.length; i++) {
-            var key = keys[i];
-            var re = new RegExp('#' + key + '#', 'g');
-            template = template.replace(re, data[key]);
-        }
-
-        return template;
     }
 
     function addDetail(content, data, detailList) {
@@ -479,22 +468,6 @@
         empty.Total = '&nbsp;';
 
         return empty;
-    }
-
-    function addEmptyRows(templateRow, rows) {
-        log(rows);
-        var container = $('#template_container');
-        var emptyRow = getEmptyObject();
-        for (var i = 0; i < rows; i++) {
-            $('#printdetail tbody', container).append(replaceEntityValues(templateRow, emptyRow));
-        }
-    }
-
-    function getTemplate() {
-        var entity = { TemplateName: 'EntradasAlmacen' };
-        return $.ajax({
-            url: AJAX + '/PageInfo/GetPageEntityList?pageName=Templates&searchType=AND&entity=' + $.toJSON(entity)
-        });
     }
 
 </script>

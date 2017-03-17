@@ -162,3 +162,29 @@ function getMaterialData(material) {
         }
     }
 }
+
+function replaceEntityValues(template, data) {
+    var keys = Object.keys(data)
+    for (var i = 0; i < keys.length; i++) {
+        var key = keys[i];
+        var re = new RegExp('#' + key + '#', 'g');
+        template = template.replace(re, data[key]);
+    }
+
+    return template;
+}
+
+function addEmptyRows(templateRow, rows) {
+    var container = $('#template_container');
+    var emptyRow = getEmptyObject();
+    for (var i = 0; i < rows; i++) {
+        $('#printdetail tbody', container).append(replaceEntityValues(templateRow, emptyRow));
+    }
+}
+
+function getTemplate(templateName) {
+    var entity = { TemplateName: templateName };
+    return $.ajax({
+        url: AJAX + '/PageInfo/GetPageEntityList?pageName=Templates&searchType=AND&entity=' + $.toJSON(entity)
+    });
+}

@@ -1,6 +1,7 @@
 ﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Salidas.aspx.cs" Inherits="BS.Larco.Inventarios.Salidas" %>
 <asp:Content ID="Content1" ContentPlaceHolderID="HeadContent" runat="server">
 <script type="text/javascript" src="<%= Page.ResolveUrl("~/Scripts/jquery.mask.js") %>"></script>
+<script type="text/javascript" src="<%= Page.ResolveUrl("~/Scripts/tinymce/tinymce.min.js") %>"></script>
 <style type="text/css">
     div.ui-tabs-panel{
         padding-top:2px!important;
@@ -21,6 +22,7 @@
     const DETALLE_BUTTONS_SELECTOR = '#' + DETALLE_PAGE_NAME + 'table_wrapper_buttons button.disable';
 
     const ENTRADAS_SALIDAS_PAGE_NAME = 'EntradasSalidas';
+    const TINYMCE_ELE = 'Template';
 
     var CURRENT_DETAIL = [];
 
@@ -32,6 +34,18 @@
                 $('h2').text(config.Title);
                 document.title = config.Title;
                 initializeCatalog(config);
+
+                tinymce.init({
+                    selector: '#' + TINYMCE_ELE,
+                    height: 275,
+                    plugins: [
+                                'link image anchor code preview table contextmenu textcolor print'
+                    ],
+                    menubar: false,
+                    toolbar_items_size: 'small',
+                    toolbar1: 'bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | styleselect formatselect fontselect fontsizeselect | cut copy paste | bullist numlist',
+                    toolbar2: 'undo redo | link unlink image code preview | forecolor backcolor | table | print'
+                });
             }
         });
     });
@@ -54,7 +68,8 @@
             initCompleteCallBack: function () {
                 createSalidasDetalle();
 				$(DIALOG_SELECTOR + ' ul.ui-tabs-nav').remove();
-                addOrdenHandler();
+				addOrdenHandler();
+				createPrintButton();
             },
             newEntityCallBack: function (oTable, options) {
                 $(DETALLE_TABLE_SELECTOR).DataTable().clear().draw();
@@ -378,9 +393,76 @@
             selectOnFocus: true
         });
     }
+
+    function createPrintButton() {
+        var expbtn = $('<button id="printSalida" title="Print Salida" class="disable">Print</button>');
+        var buttonOpts = { text: true };
+        buttonOpts.icons = { primary: "ui-icon-print" };
+
+        expbtn.button(buttonOpts).click(function (event) {
+            var data = getSelectedRowData($(TABLE_SELECTOR).DataTable());
+            data.Date = Date.today().toString('MMM dd, yyyy');
+            var entity = { SAL_ID: data.SAL_ID };
+
+            $.when(getTemplate('SalidasAlmacen'), getSalidasDetalle(entity)).done(function (json1, json2) {
+                var template = json1[0].aaData[0];
+                var content = template[TINYMCE_ELE];
+                content = addDetail(content, data, json2[0].aaData);                
+                content = replaceEntityValues(content, data);
+
+                tinymce.get(TINYMCE_ELE).setContent(unescape(content));
+
+                $('#template_container').html('');
+                $('#mceu_27 button').click();
+            });
+
+            return false;
+        }).button('disable');
+
+        $(TABLE_SELECTOR + '_wrapper_buttons').append(expbtn);
+    }
+
+    function addDetail(content, data, detailList) {
+        const DETAIL_MIN = 40;
+        var container = $('#template_container');
+        container.html('').html(content);
+
+        var templateRow = $('#printdetail tbody', container).html();
+        templateRow = templateRow.replace('id="templaterow"', '');
+
+        $('#printdetail tbody', container).html('');
+        var subtotal = 0.0;
+        for (var i = 0; i < detailList.length; i++) {
+            var detail = detailList[i];
+
+            $('#printdetail tbody', container).append(replaceEntityValues(templateRow, detail));
+            subtotal += parseFloat(detail.SD_Cantidad);
+        }
+
+        if (detailList.length < DETAIL_MIN) {
+            addEmptyRows(templateRow, (DETAIL_MIN - detailList.length))
+        }
+
+        data.GrandTotal = subtotal.toFixed(2);
+        return container.html();
+    }
+
+    function getEmptyObject() {
+        var empty = {};
+        empty.MAT_Descripcion = '&nbsp;';
+        empty.SD_Cantidad = '&nbsp;';
+
+        return empty;
+    }
+
 </script>
 </asp:Content>
 <asp:Content ID="Content2" ContentPlaceHolderID="MainContent" runat="server">
     <h2></h2><br />
     <div class="catalog"></div>
+    <div style="display:none;" id="plugin_container">
+        <textarea cols="20" rows="10" id="Template"></textarea>
+    </div>
+    <div style="display:none;" id="template_container">       
+    </div>
 </asp:Content>
