@@ -265,16 +265,22 @@
                     saveEntityCallBack: function (oTable, options) {
                         var data = getObject(DETALLE_DIALOG_SELECTOR);
                         $.when(getExistencia(data)).done(function (json) {
-                            if (json.ErrorMsg || json.aaData.length <= 0) {
+                            if (json.ErrorMsg) {
                                 alert('No fue posible validar la existencia en almacen de este material.');
                                 return;
                             }
 
-                            var existencia = json.aaData[0].MAT_Cantidad;
+                            var existencia = 0.0;
+                            if (json.aaData.length > 0) {
+                                existencia = json.aaData[0].Existencia;
+                            }
+
                             if (parseFloat(data.SD_Cantidad) > parseFloat(existencia)) {
                                 alert('La cantidad especificada es mayor que la cantidad en el almacen[' + existencia + '].');
                                 return;
                             }
+
+                            data.SD_Saldo = parseFloat(existencia) - parseFloat(data.SD_Cantidad);
 
                             if (data.SAL_ID == '') { //is NEW Entrada
                                 saveSalidaDetalleInMemory(data);
@@ -313,9 +319,7 @@
     }
 
     function saveSalidaDetalleInMemory(data) {
-        if (data.SD_ID == '') {//new
-            data.SD_ID = getUniqueId();
-        }
+        data.SD_ID = getUniqueId();
 
         var material = getMaterialData(data);
         if (material) {
@@ -369,7 +373,7 @@
     function getExistencia(data) {
         var entity = { MAT_ID: data.MAT_ID };
         return $.ajax({
-            url: AJAX + '/PageInfo/GetPageEntityList?pageName=Materiales&searchType=AND&entity=' + $.toJSON(entity)
+            url: AJAX + '/PageInfo/GetPageEntityList?pageName=ExistenciaMateriales&searchType=AND&entity=' + $.toJSON(entity)
         });
     }
 
@@ -434,9 +438,11 @@
         var subtotal = 0.0;
         for (var i = 0; i < detailList.length; i++) {
             var detail = detailList[i];
+            var detail = detailList[i];
+            detail.Total = parseFloat(parseFloat(detail.SD_Cantidad) * parseFloat(detail.ES_Costo)).toFixed(2);
 
             $('#printdetail tbody', container).append(replaceEntityValues(templateRow, detail));
-            subtotal += parseFloat(detail.SD_Cantidad);
+            subtotal += parseFloat(detail.Total);
         }
 
         if (detailList.length < DETAIL_MIN) {
@@ -451,6 +457,9 @@
         var empty = {};
         empty.MAT_Descripcion = '&nbsp;';
         empty.SD_Cantidad = '&nbsp;';
+        empty.MAT_Numero = '&nbsp;';
+        empty.ES_Costo = '&nbsp;';
+        empty.Total = '&nbsp;';
 
         return empty;
     }

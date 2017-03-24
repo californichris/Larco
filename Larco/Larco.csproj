@@ -130,6 +130,7 @@
     <Content Include="Logout.aspx" />
     <Content Include="Reportes\EntradasAlmacen.aspx" />
     <Content Include="Reportes\EntradasSalidasAlmacen.aspx" />
+    <Content Include="Reportes\EntradasSalidasAlmacenConta.aspx" />
     <Content Include="Reportes\RelacionFechaEntrega.aspx" />
     <Content Include="Reportes\RelacionOrdenCompra.aspx" />
     <Content Include="Reportes\SalidasAlmacen.aspx" />
@@ -428,6 +429,13 @@
     </Compile>
     <Compile Include="Reportes\EntradasSalidasAlmacen.aspx.designer.cs">
       <DependentUpon>EntradasSalidasAlmacen.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Reportes\EntradasSalidasAlmacenConta.aspx.cs">
+      <DependentUpon>EntradasSalidasAlmacenConta.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Reportes\EntradasSalidasAlmacenConta.aspx.designer.cs">
+      <DependentUpon>EntradasSalidasAlmacenConta.aspx</DependentUpon>
     </Compile>
     <Compile Include="Reportes\RelacionFechaEntrega.aspx.cs">
       <DependentUpon>RelacionFechaEntrega.aspx</DependentUpon>

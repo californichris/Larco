@@ -53,6 +53,7 @@
             pageConfig: config,
             serverSide: true,
             showExport: true,
+            showDelete: false,            
             dialogWidth: 1050,
             validate: function (tips) {
                 var valid = validateDialog(config, tips);
@@ -200,6 +201,7 @@
                     pageConfig: config,
                     source: [],
                     showEdit: false,
+                    showDelete: false,
                     paginate: false,
                     scrollY: '250px',
                     info: false,
@@ -251,14 +253,39 @@
                     },
                     saveEntityCallBack: function (oTable, options) {
                         var data = getObject(DETALLE_DIALOG_SELECTOR);
-                        if (data.ENT_ID == '') { //is NEW Entrada
-                            saveEntradaDetalleInMemory(data);
-                        } else {
-                            saveEntradaDetalle(data);
-                        }                        
+
+                        $.when(getExistencia(data)).done(function (json) {
+                            if (json.ErrorMsg) {
+                                alert('No fue posible validar la existencia en almacen de este material.');
+                                return;
+                            }
+                            var existencia = 0.0;
+                            if(json.aaData.length > 0) {
+                                existencia = json.aaData[0].Existencia;
+                            }
+
+                            data.ED_Saldo = parseFloat(existencia) + parseFloat(data.ED_Cantidad);
+
+                            if (data.ENT_ID == '') { //is NEW Entrada
+                                saveEntradaDetalleInMemory(data);
+                            } else {
+                                data.ED_Restante = data.ED_Cantidad;
+                                saveEntradaDetalle(data);
+                            }
+
+                        });
+
+                       
                     },
                 });
             }
+        });
+    }
+
+    function getExistencia(data) {
+        var entity = { MAT_ID: data.MAT_ID };
+        return $.ajax({
+            url: AJAX + '/PageInfo/GetPageEntityList?pageName=ExistenciaMateriales&searchType=AND&entity=' + $.toJSON(entity)
         });
     }
 
@@ -281,7 +308,6 @@
     }
 
     function saveEntradaDetalle(entity) {
-        entity.ED_Restante = entity.ED_Cantidad;
         $.ajax({
             type: 'POST',
             url: AJAX + '/PageInfo/SavePageEntity?pageName=' + DETALLE_PAGE_NAME,
@@ -293,27 +319,9 @@
     }
 
     function saveEntradaDetalleInMemory(data) {
-        if (data.ED_ID == '') {//new
-            data.ED_ID = getUniqueId();
-            data.ED_Restante = data.ED_Cantidad;
-            data.Salida = 0;
-            data.Prev_Cantidad = data.ED_Cantidad;
-        }
-
-        //calculate restante
-        var diff = parseFloat(data.ED_Cantidad) - parseFloat(data.Prev_Cantidad);
-        data.ED_Restante = parseFloat(data.ED_Restante) + parseFloat(diff);
-
-        //calculate salida
-        data.Salida = parseFloat(data.ED_Cantidad) - parseFloat(data.ED_Restante);
-
-        if (parseFloat(data.ED_Restante) < 0) {
-            $(DETALLE_DIALOG_SELECTOR + ' p.validateTips').text('La cantida tiene que ser al menos ' + data.Salida + ', ya se le dio salida a esta cantidad de material').addClass("ui-state-highlight");
-
-            return false;
-        }
-
-        //update prev_cantidad to current after validation
+        data.ED_ID = getUniqueId();
+        data.ED_Restante = data.ED_Cantidad;
+        data.Salida = 0;
         data.Prev_Cantidad = data.ED_Cantidad;
 
         var material = getMaterialData(data);

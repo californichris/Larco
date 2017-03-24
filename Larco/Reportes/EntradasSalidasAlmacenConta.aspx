@@ -1,10 +1,10 @@
-﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="EntradasSalidasAlmacen.aspx.cs" Inherits="BS.Larco.Reportes.EntradasSalidasAlmacen" %>
+﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="EntradasSalidasAlmacenConta.aspx.cs" Inherits="BS.Larco.Reportes.EntradasSalidasAlmacenConta" %>
 <%@ Import Namespace="System.Web.Optimization" %>
 <asp:Content ID="Content1" ContentPlaceHolderID="HeadContent" runat="server">
     <%: Styles.Render("~/Styles/extra_widgets_css") %>
     <%: Scripts.Render("~/Scripts/extra_widgets_js") %>  
     <script type="text/javascript">
-        const PAGE_NAME = 'EntradasContraSalidas';
+        const PAGE_NAME = 'EntradasSalidasConta';
         const TABLE_SEL = '#' + PAGE_NAME + '_table'
         const FILTER_SEL = '#' + PAGE_NAME + '_filter';
 
@@ -34,6 +34,7 @@
                 //scrollY: '600px',
                 scrollX: '100%',
                 scrollXInner: '250%',
+                sorting: [[2, 'asc'], [1, 'asc'], [0, 'asc']],
             });
         }
 

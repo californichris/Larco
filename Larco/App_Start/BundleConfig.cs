@@ -4,60 +4,72 @@ namespace BS.Common
 {
     public static class BundleConfig
     {
+        public static readonly string ScriptsPath = "~/Scripts/";
+        public static readonly string StylesPath = "~/Styles/";
+
+        public static readonly string QueryHelperJsVirtualPath = ScriptsPath + "query_helper_js";
+        public static readonly string QueryHelperCSSVirtualPath = StylesPath + "query_helper_css";
+        
         public static void RegisterScriptBundles(BundleCollection bundles)
         {
-            const string SCRIPTS_PATH = "~/Scripts/";
-
-            var siteMasterBundle = new ScriptBundle(SCRIPTS_PATH + "site_master_js")
-                .Include(SCRIPTS_PATH + "jquery.js")
-                .Include(SCRIPTS_PATH + "jquery-ui.js")
-                .Include(SCRIPTS_PATH + "jquery.dataTables.js")
-                .Include(SCRIPTS_PATH + "jquery.json-2.4.js")
-                .Include(SCRIPTS_PATH + "common.js")
-                .Include(SCRIPTS_PATH + "larco_common.js")
-                .Include(SCRIPTS_PATH + "date.js")
-                .Include(SCRIPTS_PATH + "spin.js");
+            var siteMasterBundle = new ScriptBundle(ScriptsPath + "site_master_js")
+                .Include(ScriptsPath + "jquery.js")
+                .Include(ScriptsPath + "jquery-ui.js")
+                .Include(ScriptsPath + "jquery.dataTables.js")
+                .Include(ScriptsPath + "jquery.json-2.4.js")
+                .Include(ScriptsPath + "common.js")
+                .Include(ScriptsPath + "larco_common.js")
+                .Include(ScriptsPath + "date.js")
+                .Include(ScriptsPath + "spin.js");
             bundles.Add(siteMasterBundle);
 
-            var pageConfigBundle = new ScriptBundle(SCRIPTS_PATH + "page_config_js")
-                .Include(SCRIPTS_PATH + "jquery.carousel.js")
-                .Include(SCRIPTS_PATH + "pageconfig.js");
+            var queryHelperBundle = new ScriptBundle(QueryHelperJsVirtualPath)
+                 .Include(ScriptsPath + "jquery.carousel.js")
+                 .Include(ScriptsPath + "prism.js");
+            bundles.Add(queryHelperBundle);
+
+            var pageConfigBundle = new ScriptBundle(ScriptsPath + "page_config_js")
+                .Include(ScriptsPath + "jquery.carousel.js")
+                .Include(ScriptsPath + "pageconfig.js");
             bundles.Add(pageConfigBundle);
 
-            var jqplotJSBundle = new ScriptBundle(SCRIPTS_PATH + "jqplot_js")
-                .Include(SCRIPTS_PATH + "dashboard_common.js")
-                .Include(SCRIPTS_PATH + "jqplot/jquery.jqplot.js")
-                .Include(SCRIPTS_PATH + "jqplot/jqplot.pieRenderer.js")
-                .Include(SCRIPTS_PATH + "jqplot/jqplot.barRenderer.js")
-                .Include(SCRIPTS_PATH + "jqplot/jqplot.categoryAxisRenderer.js")
-                .Include(SCRIPTS_PATH + "jqplot/jqplot.pointLabels.js")
-                .Include(SCRIPTS_PATH + "jqplot/jqplot.canvasOverlay.js");
+            var jqplotJSBundle = new ScriptBundle(ScriptsPath + "jqplot_js")
+                .Include(ScriptsPath + "dashboard_common.js")
+                .Include(ScriptsPath + "jqplot/jquery.jqplot.js")
+                .Include(ScriptsPath + "jqplot/jqplot.pieRenderer.js")
+                .Include(ScriptsPath + "jqplot/jqplot.barRenderer.js")
+                .Include(ScriptsPath + "jqplot/jqplot.categoryAxisRenderer.js")
+                .Include(ScriptsPath + "jqplot/jqplot.pointLabels.js")
+                .Include(ScriptsPath + "jqplot/jqplot.canvasOverlay.js");
             bundles.Add(jqplotJSBundle);
 
-            var multiSelectJSBundle = new ScriptBundle(SCRIPTS_PATH + "extra_widgets_js")
-                .Include(SCRIPTS_PATH + "jquery.multiselect.js")
-                .Include(SCRIPTS_PATH + "jquery.multiselect.filter.js");
+            var multiSelectJSBundle = new ScriptBundle(ScriptsPath + "extra_widgets_js")
+                .Include(ScriptsPath + "jquery.multiselect.js")
+                .Include(ScriptsPath + "jquery.multiselect.filter.js");
             bundles.Add(multiSelectJSBundle);
 
-            const string STYLES_APP_ROOT = "~/Styles/";
-            var cssBundle = new StyleBundle(STYLES_APP_ROOT + "site_master_css")
-                .Include(STYLES_APP_ROOT + "Site.css");
+            var cssBundle = new StyleBundle(StylesPath + "site_master_css")
+                .Include(StylesPath + "Site.css");
             bundles.Add(cssBundle);
 
-            var styleBundle = new StyleBundle(STYLES_APP_ROOT + "blitzer/jquery_css")
-                .Include(STYLES_APP_ROOT + "blitzer/jquery-ui.css")
-                .Include(STYLES_APP_ROOT + "blitzer/jquery-horizontal-menu.css")
-                .Include(STYLES_APP_ROOT + "blitzer/dataTables.jqueryui.css");                       
+            var styleBundle = new StyleBundle(StylesPath + "blitzer/jquery_css")
+                .Include(StylesPath + "blitzer/jquery-ui.css")
+                .Include(StylesPath + "blitzer/jquery-horizontal-menu.css")
+                .Include(StylesPath + "blitzer/dataTables.jqueryui.css");                       
             bundles.Add(styleBundle);
 
-            var jqplotBundle = new StyleBundle(STYLES_APP_ROOT + "jqplot_css")
-                .Include(STYLES_APP_ROOT + "jquery.jqplot.css");
+            var jqplotBundle = new StyleBundle(StylesPath + "jqplot_css")
+                .Include(StylesPath + "jquery.jqplot.css");
             bundles.Add(jqplotBundle);
 
-            var multiSelectCSSBundle = new StyleBundle(STYLES_APP_ROOT + "extra_widgets_css")
-                .Include(STYLES_APP_ROOT + "jquery.multiselect.css")
-                .Include(STYLES_APP_ROOT + "jquery.multiselect.filter.css");
+            var multiSelectCSSBundle = new StyleBundle(StylesPath + "extra_widgets_css")
+                .Include(StylesPath + "jquery.multiselect.css")
+                .Include(StylesPath + "jquery.multiselect.filter.css");
             bundles.Add(multiSelectCSSBundle);
+
+            var queryHelperCSSBundle = new StyleBundle(QueryHelperCSSVirtualPath)
+                .Include(StylesPath + "prism.css");
+            bundles.Add(queryHelperCSSBundle);
         }
     }
 }
