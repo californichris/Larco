@@ -233,6 +233,7 @@
 
                         return valid;
                     },
+                    initCompleteCallBack: detalleInitComplete,
                     newEntityCallBack: function (oTable, options) {
                         $('#MAT_ID').ComboBox('enable');
                         $(DETALLE_TABLE_SELECTOR).Catalog('newEntity', oTable, options);
@@ -280,6 +281,10 @@
                 });
             }
         });
+    }
+
+    function detalleInitComplete(oTable, oSettings, json, options) {
+        attachProveedorIdEventHandler()
     }
 
     function getExistencia(data) {

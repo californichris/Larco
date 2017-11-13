@@ -26,8 +26,8 @@ namespace Larco
                     Session["CurrentUserName"] = user.GetProperty("USER_NAME");
                 }
 
-                //if (!UserHavePermissions(modules))
-                if (false)
+                if (!UserHavePermissions(modules))
+                //if (false)
                 {
                     LoggerHelper.Debug("user don't have permissions to access this page redirenting.");
                     Response.Redirect(Request.ApplicationPath + "/InvalidAccess.aspx");

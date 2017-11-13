@@ -244,6 +244,7 @@
 
                         return valid;
                     },
+                    initCompleteCallBack: detalleInitComplete,
                     newEntityCallBack: function (oTable, options) {
                         $('#MAT_ID').ComboBox('enable');
                         $(DETALLE_TABLE_SELECTOR).Catalog('newEntity', oTable, options);
@@ -294,6 +295,10 @@
 
             }
         });
+    }
+
+    function detalleInitComplete(oTable, oSettings, json, options) {
+        attachProveedorIdEventHandler()
     }
 
     function deleteSalidaDetalle(entity) {
@@ -438,11 +443,9 @@
         var subtotal = 0.0;
         for (var i = 0; i < detailList.length; i++) {
             var detail = detailList[i];
-            var detail = detailList[i];
-            detail.Total = parseFloat(parseFloat(detail.SD_Cantidad) * parseFloat(detail.ES_Costo)).toFixed(2);
 
             $('#printdetail tbody', container).append(replaceEntityValues(templateRow, detail));
-            subtotal += parseFloat(detail.Total);
+            subtotal += parseFloat(detail.SD_Cantidad);
         }
 
         if (detailList.length < DETAIL_MIN) {

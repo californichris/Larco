@@ -148,9 +148,38 @@ function addItemTasks(entities, entity, tasks) {
     }
 }
 
+function attachProveedorIdEventHandler() {
+    $('#MAT_ProvNumero').keydown(function (event) {
+        var tips = $(DETALLE_DIALOG_SELECTOR + ' p.validateTips');
+        tips.text('').removeClass('ui-state-highlight');
+        if ($.trim($('#MAT_ProvNumero').val()) && event.which == 13) {
+            var provID = $.trim($('#MAT_ProvNumero').val());
+            var material = getMaterialDataByProvId(provID);
+
+            if (material) {
+                $('#MAT_ID').ComboBox('value', material.MAT_ID);
+                $('#ED_Cantidad,#SD_Cantidad').focus();
+            } else {
+                $('#MAT_ID').ComboBox('value', '');
+                tips.text('No se encontro ningun material con numero de provedor: ' + provID).addClass('ui-state-highlight');
+            }
+        }
+    });
+}
+
 function getUniqueId() {
     var id = new Date().getTime();
     return '' + (-1 * id);
+}
+
+function getMaterialDataByProvId(provID) {
+    var matList = $('#MAT_ID').ComboBox('getList');
+
+    var results = $.grep(matList, function (item) {
+        return item.MAT_ProvNumero == provID;
+    });
+
+    return results.length > 0 ? results[0] : null;
 }
 
 function getMaterialData(material) {
@@ -161,6 +190,8 @@ function getMaterialData(material) {
             return matList[i];
         }
     }
+
+    return null;
 }
 
 function replaceEntityValues(template, data) {
