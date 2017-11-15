@@ -22,13 +22,18 @@
 
         function initializeCatalog(config) {
             $(TABLE_SEL).Catalog({
-                serverSide: true, pageConfig: config,
-                processing: true, paginate: true,
+                serverSide: true,
+                pageConfig: config,
+                processing: true,
+                paginate: true,
                 //viewOnly:true,
-                showEdit: false, showNew: false,
-                showDelete: false, showExport: true,
+                showEdit: false,
+                showNew: false,
+                showDelete: false,
+                showExport: true,
                 //scrollY: '600px',
-                scrollX: '100%', scrollXInner: '130%',
+                scrollX: '100%',
+                scrollXInner: '130%',
             });
         }
 
