@@ -75,6 +75,7 @@
                 $(DETALLE_TABLE_SELECTOR).DataTable().clear().draw();
                 CURRENT_DETAIL = [];
                 $(TABLE_SELECTOR).Catalog('newEntity', oTable, options);
+                $('#SAL_Fecha').val(Date.today().toString('MM/dd/yyyy'));
             },
             editEntityCallBack: function (oTable, options) {
                 var data = getSelectedRowData(oTable);
