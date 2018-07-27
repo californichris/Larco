@@ -27,7 +27,7 @@ namespace BS.Larco
             entity.SetProperty("USE_Login",userName);
             entity.SetProperty("USE_Password", passWord);
 
-            IList<Entity> list = DAOFactory.Instance.GetCatalogDAO().FindEntities(entity);
+            IList<Entity> list = DAOFactory.Instance.GetCatalogDAO().FindEntities(entity, FilterInfo.SearchType.AND);
             if (list.Count == 1)
             {
                 Session["CurrentUser"] = list[0];
