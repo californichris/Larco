@@ -36,3 +36,4 @@ PublishProfiles*/
 packages/
 Ankh.NoLoad
 Import\ Schema\ Logs/
+.vs/
