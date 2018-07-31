@@ -66,7 +66,7 @@ namespace BS.Larco
             }
             else
             {
-                Response.Redirect("Logon.aspx", true);
+                Response.Redirect("Logon.aspx?invalid=true", true);
             }                
         }
     }

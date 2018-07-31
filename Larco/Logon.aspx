@@ -34,6 +34,17 @@
 	        padding: 4px;
         }
 	</style>
+    <script type="text/javascript" src="<%= Page.ResolveUrl("~/Scripts/jquery.js") %>"></script>
+    <script type="text/javascript">
+        var INVALID = '<%= HttpUtility.HtmlEncode(Request.QueryString["invalid"]) %>';
+        $(document).ready(function () {
+            $('#lblMsg').text('');
+            if (INVALID) {
+                $('#lblMsg').text('Credenciales invalidas.');
+            }
+        });
+    </script>
+
 </head>
 <body>
     <form id="form1" runat="server">
