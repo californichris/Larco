@@ -1,4 +1,4 @@
-﻿<%@ Page Title="Query Helper" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="QueryHelper.aspx.cs" Inherits="BS.Common.QueryHelper" %>
+﻿<%@ Page Title="Query Helper" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="QueryHelper.aspx.cs" Inherits="EPE.Common.QueryHelper" %>
 <%@ Import Namespace="System.Web.Optimization" %>
 <asp:Content ID="Content1" ContentPlaceHolderID="HeadContent" runat="server">
 <%: Styles.Render("~/Styles/query_helper_css","~/Styles/extra_widgets_css") %>

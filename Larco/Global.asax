@@ -1,1 +1,1 @@
-﻿<%@ Application Codebehind="Global.asax.cs" Inherits="Larco.Global" Language="C#" %>
+<%@ Application Codebehind="Global.asax.cs" Inherits="BS.Larco.Global" Language="C#" %>

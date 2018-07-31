@@ -5,11 +5,11 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
-using BS.Common.Ajax;
-using BS.Common.Dao;
-using BS.Common.Entities;
-using BS.Common.Entities.Page;
-using BS.Common.Utils;
+using EPE.Common.Ajax;
+using EPE.Common.Dao;
+using EPE.Common.Entities;
+using EPE.Common.Entities.Page;
+using EPE.Common.Utils;
 using BS.Larco.Dao;
 
 namespace BS.Larco.Ajax
@@ -169,7 +169,7 @@ namespace BS.Larco.Ajax
             string templateName = request.Params["templateName"];
             string templateType = request.Params["templateType"];
             IPageInfoDAO pageDAO = (IPageInfoDAO)FactoryUtils.GetDAO(ConfigurationManager.AppSettings["IPageInfoDAO"]);
-            BS.Common.Entities.Page.Page pageLetter = pageDAO.GetPageConfig("", "Templates");
+            EPE.Common.Entities.Page.Page pageLetter = pageDAO.GetPageConfig("", "Templates");
 
             Entity entityLetter = EntityUtils.CreateEntity(pageLetter);
             entityLetter.SetProperty("TemplateName", templateName);

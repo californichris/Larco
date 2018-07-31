@@ -1,4 +1,4 @@
-﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Preview.aspx.cs" Inherits="BS.Common.Preview" %>
+﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Preview.aspx.cs" Inherits="EPE.Common.Preview" %>
 <%@ Import Namespace="System.Web.Optimization" %>
 <asp:Content ID="Content1" ContentPlaceHolderID="HeadContent" runat="server">
     <%: Styles.Render("~/Styles/extra_widgets_css") %>
@@ -27,10 +27,7 @@
 	        $('table.display').Catalog({
 	            pageConfig: config,
 	            showExport: true,
-	            serverSide: true,
-	            validate: function (tips) {
-	                return validateDialog(config, tips);
-	            }
+                serverSide: true
 	        });
 	    }
 

@@ -7,11 +7,11 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace EPE.Common
+namespace CIAC.Admin
 {
 
 
-    public partial class QueryHelper
+    public partial class CurrentUsers
     {
     }
 }

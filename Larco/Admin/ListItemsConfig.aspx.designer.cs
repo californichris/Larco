@@ -7,7 +7,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace BS.Common
+namespace EPE.Common
 {
 
 

@@ -93,6 +93,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Admin\CurrentUsers.aspx" />
     <Content Include="Admin\QueryHelper.aspx" />
     <Content Include="Admin\RefreshCache.aspx" />
     <Content Include="Catalogos\Clientes.aspx" />
@@ -103,6 +104,7 @@
     <Content Include="Catalogos\Rutas.aspx" />
     <Content Include="Catalogos\Tareas.aspx" />
     <Content Include="Catalogos\Templates.aspx" />
+    <Content Include="ConfigScripts\PageConfig.sql" />
     <Content Include="Default.aspx" />
     <Content Include="Global.asax" />
     <Content Include="Herramientas\EditorOrdenes.aspx" />
@@ -111,6 +113,7 @@
     <Content Include="Herramientas\Ventas.aspx" />
     <Content Include="Images\checkbox.gif" />
     <Content Include="Images\database.png" />
+    <Content Include="Images\epelogo120x102.png" />
     <Content Include="Images\favicon.ico" />
     <Content Include="Images\hidden.gif" />
     <Content Include="Images\larco.jpg" />
@@ -156,11 +159,13 @@
     <Content Include="Scripts\jquery-ui.js" />
     <Content Include="Scripts\jquery.carousel.js" />
     <Content Include="Scripts\jquery.dataTables.js" />
+    <Content Include="Scripts\jquery.fileDownload.js" />
     <Content Include="Scripts\jquery.hotkeys.js" />
     <Content Include="Scripts\jquery.js" />
     <Content Include="Scripts\jquery.json-2.4.js" />
     <Content Include="Scripts\jquery.mask.js" />
     <Content Include="Scripts\jquery.maskedinput.js" />
+    <Content Include="Scripts\jquery.maskMoney.js" />
     <Content Include="Scripts\jquery.multiselect.filter.js" />
     <Content Include="Scripts\jquery.multiselect.js" />
     <Content Include="Scripts\larco_common.js" />
@@ -227,6 +232,7 @@
     <Content Include="Styles\jquery.jqplot.css" />
     <Content Include="Styles\jquery.multiselect.css" />
     <Content Include="Styles\jquery.multiselect.filter.css" />
+    <Content Include="Styles\pageconfig.css" />
     <Content Include="Styles\prism.css" />
     <Content Include="Styles\Site.css" />
     <Content Include="UnderConstruction.aspx" />
@@ -241,6 +247,11 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Admin\CurrentUsers.aspx.cs">
+      <DependentUpon>CurrentUsers.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Admin\CurrentUsers.aspx.designer.cs" />
     <Compile Include="Admin\QueryHelper.aspx.cs">
       <DependentUpon>QueryHelper.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -256,6 +267,9 @@
       <DependentUpon>RefreshCache.aspx</DependentUpon>
     </Compile>
     <Compile Include="Ajax\Larco.cs" />
+    <Compile Include="Ajax\PageInfo.cs" />
+    <Compile Include="Ajax\Users.cs" />
+    <Compile Include="App_Start\BaseBundleConfig.cs" />
     <Compile Include="App_Start\BundleConfig.cs" />
     <Compile Include="Catalogos\Clientes.aspx.cs">
       <DependentUpon>Clientes.aspx</DependentUpon>
@@ -496,12 +510,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\BSFramework\BSFramework.csproj">
-      <Project>{d0b8bc3a-75ea-4dca-8874-c2a2cc9f092c}</Project>
-      <Name>BSFramework</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="Site.Master" />
   </ItemGroup>
   <ItemGroup>
@@ -525,6 +533,12 @@
     <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce.eot" />
     <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce.ttf" />
     <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce.woff" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\Dyonyx\Code\Libraries\dotNet\EPEFramework\EPEFramework.csproj">
+      <Project>{d0b8bc3a-75ea-4dca-8874-c2a2cc9f092c}</Project>
+      <Name>EPEFramework</Name>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

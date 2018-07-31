@@ -1,1 +1,1 @@
-﻿<%@ WebHandler Language="C#" CodeBehind="AjaxDownloadHandler.ashx.cs" Class="EPE.EnergyDiversion.Handlers.AjaxDownloadHandler" %>
+﻿<%@ WebHandler Language="C#" CodeBehind="AjaxDownloadHandler.ashx.cs" Class="EPE.Common.handler.AjaxDownloadHandler" %>

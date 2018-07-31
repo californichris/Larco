@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
-using BS.Common.Dao;
-using BS.Common.Entities;
+using EPE.Common.Entities;
+using EPE.Common.Dao;
 
 namespace BS.Larco.Dao
 {

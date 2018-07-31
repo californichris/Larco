@@ -1,1 +1,1 @@
-﻿<%@ WebHandler Language="C#" CodeBehind="AjaxController.ashx.cs" Class="BS.Common.handler.AjaxController" %>
+﻿<%@ WebHandler Language="C#" CodeBehind="AjaxController.ashx.cs" Class="EPE.Common.handler.AjaxController" %>

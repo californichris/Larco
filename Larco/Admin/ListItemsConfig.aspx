@@ -1,4 +1,4 @@
-﻿<%@ Page Title="Page List Items Config" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="ListItemsConfig.aspx.cs" Inherits="BS.Common.ListItemsConfig" %>
+﻿<%@ Page Title="Page List Items Config" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="ListItemsConfig.aspx.cs" Inherits="EPE.Common.ListItemsConfig" %>
 <asp:Content ID="Content1" ContentPlaceHolderID="HeadContent" runat="server">
 	<script type="text/javascript">
 
@@ -29,7 +29,7 @@
 	                btn.button().click(function (event) {
 	                    $('table.display').Catalog('editEntity', oTable, options);
 	                    $('#ItemId').val('');
-	                    $('#Value').val(parseInt($('#Value').val()) + 1);
+	                    $('#Value').val(parseInt($('#Value').val()) + 10);
 	                    $('#Text').focus().val('');
 	                }).button('disable');
 

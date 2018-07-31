@@ -1,6 +1,6 @@
 ﻿/**
 * @required    jquery-1.9.1.js or higher
-* @description Beltran Soft Common functions 
+* @description EPE Common functions 
 * @version     1.0
 * @file        common.js
 * @author      Christian Beltran
@@ -9,11 +9,20 @@
 * @copyright Copyright 2013, all rights reserved.
 *
 */
-var SUCCESS = 'Success';
+const SUCCESS = 'Success';
 var TABLE_DISPLAY_LENGTH = 25;
-var SESSION_EXPIRED = 'Session expired.';
-var DEFAULT_VALUE = 'defaultVal';
-var FILTER_DEFAULT_VALUE = 'filterDefaultVal';
+const SESSION_EXPIRED = 'Session expired.';
+const DEFAULT_VALUE = 'defaultVal';
+const FILTER_DEFAULT_VALUE = 'filterDefaultVal';
+var MASK_MONEY_DEFAULT_OPTS = { prefix: '$', allowNegative: true, allowZero: true };
+const POST_TYPE_PARAMS = ['entity', 'aggregateInfo'];
+
+const OPERATION_TYPES = {
+    SAVE: 'Save',
+    DELETE: 'Delete',
+    UPDATE: 'Update',
+    DELETE_ENTITIES: 'DeleteEntities'
+}
 
 $.ajaxSetup({
     dataType: 'json'
@@ -39,8 +48,7 @@ $.createCache = function (requestFunction) {
 $.getData = $.createCache(function (defer, url) {
     //creating the ajax request
     $.ajax({
-        url: url,
-        dataType: 'json'
+        url: url
     }).done(function (json) {
         defer.resolve(json);
     }).fail(defer.reject);
@@ -81,6 +89,30 @@ function log(msg) {
     }
 }
 
+function addOperationAttrs(entity, pageName, operationtype) {
+    entity.PageName = pageName;
+    entity.OperationType = operationtype;
+
+    return entity;
+}
+
+function addSaveOperationAttrs(entity, pageName) {
+    return addOperationAttrs(entity, pageName, OPERATION_TYPES.SAVE);
+}
+
+function addDeleteOperationAttrs(entity, pageName) {
+    return addOperationAttrs(entity, pageName, OPERATION_TYPES.DELETE);
+}
+
+function addDeleteEntitiesOperationAttrs(entity, pageName) {
+    return addOperationAttrs(entity, pageName, OPERATION_TYPES.DELETE_ENTITIES);
+}
+
+
+function addUpdateOperationAttrs(entity, pageName) {
+    return addOperationAttrs(entity, pageName, OPERATION_TYPES.UPDATE);
+}
+
 /**
  * Prevents form for being submitted
  */
@@ -90,6 +122,21 @@ function preventSubmitting() {
     } else {
         event.returnValue = false; // <= IE10 
     }
+}
+
+function getGridColsIndexes(config) {
+    var colNames = $.map(config.GridFields, function (col) { return col.ColumnName; }).join(',');
+    return _getGridColsIndexes(colNames, config);
+}
+
+function _getGridColsIndexes(colNames, config) {
+    var gridIndexes = {};
+    var columnNames = colNames.split(',');
+    for (var i = 0; i < columnNames.length; i++) {
+        gridIndexes[columnNames[i]] = getArrayIndexForKey(config.GridFields, 'ColumnName', columnNames[i]);
+    }
+
+    return gridIndexes;
 }
 
 function getArrayIndexForKey(arr, key, val) {
@@ -270,6 +317,20 @@ function showError(tips, msg, removed) {
     }, 1500);
 }
 
+function showMessage(msg, options) {
+    if (exists('#common_message_box')) $('#common_message_box').remove();
+    var opts = $.extend({
+        modal: true, closeOnEscape: false, open: function (event, ui) {
+            $('.ui-dialog-titlebar-close', $('#common_message_box').parent()).hide();
+        }
+    }, options);
+    return $('<div id="common_message_box">').html(msg).dialog(opts);
+}
+
+function hideMessage(_dialog) {
+    _dialog.dialog('close').dialog('destroy');;
+}
+
 function isAlpha(value) {
     return !/[~`!@#$%\^&*+=\-\[\]\\';,/{}|\\":<>\?]/.test(value);//Alpha no special characters
 }
@@ -403,10 +464,15 @@ function isFloat(val) {
 function checkFloat(tips, field, fieldDesc, min, max) {
     if (checkEmpty(field)) return true;
 
-    var valid = /^-?(?:\d+|\d{1,3}(?:,\d{3})+)?(?:\.\d+)?$/.test(field.val());
+    var value = field.val();
+    if ($(field).hasClass('money') && maskMoneyScriptLoaded()) {
+        value = $(field).maskMoney('unmasked')[0];
+    };
+
+    var valid = /^-?(?:\d+|\d{1,3}(?:,\d{3})+)?(?:\.\d+)?$/.test(value);
     var desc = fieldDesc + " must be a decimal number.";
     if (valid) {
-        if ((typeof min != undefined && typeof max != undefined) && (parseFloat(field.val()) < min || parseFloat(field.val()) > max)) {
+        if ((typeof min != undefined && typeof max != undefined) && (parseFloat(value) < min || parseFloat(value) > max)) {
             desc = fieldDesc + " must be a decimal number between " + min.toFixed(2) + " and " + max.toFixed(2) + ".";
         } else {
             return true;
@@ -634,7 +700,7 @@ function validateDialog(config, tips, dialog) {
                 valid = valid && checkFloat(tips, element, field.Label);
             }
 
-            if (field.Type.indexOf('date') != -1 && field.ControlType == 'inputbox') {
+            if (field.Type.indexOf('date') != -1 && (field.ControlType == 'inputbox' || field.ControlType == 'timepicker')) {
                 valid = valid && checkDate(tips, element, field.Label);
             }
         }
@@ -649,9 +715,15 @@ function isTrue(value) {
     return value == '1' || value.toLowerCase() == 'true' || value.toUpperCase() == 'YES';
 }
 
+function isFalse(value) {
+    if (!value) return false;
+
+    return value == '0' || value.toLowerCase() == 'false' || value.toUpperCase() == 'FALSE';
+}
+
 function populateDialog(data, selector) {
-    var sel = selector + ' input,' + selector + ' select,' + selector + ' textarea';
-    $(sel).each(
+    var sel = 'input,select,textarea';
+    $(sel, $(selector)).each(
         function (index) {  
             var id = $(this).attr('name');
             if (id == null || id == '') {
@@ -666,6 +738,8 @@ function populateDialog(data, selector) {
                 //$(this).val($('#' + id + ' option[value=' + data[$('#' + id).attr('name')] + ']').text());
             } else if ($(this).hasClass('combobox')) {
                 $(this).ComboBox('value', data[id]);
+            } else if ($(this).hasClass('money') && maskMoneyScriptLoaded()) {
+                $(this).val(data[id]).maskMoney('mask');
             } else if ($(this).hasClass('selectMenu')) {
                 if (data[id] == '' && $('option:first', $(this)).val().toUpperCase() == 'NULL') {
                     $(this).val($('option:first', $(this)).val());
@@ -682,9 +756,9 @@ function populateDialog(data, selector) {
 }
 
 function getObject(selector) {
-    var sel = selector + ' input,' + selector + ' select,' + selector + ' textarea';
+    var sel = 'input,select,textarea';
     var obj = {};
-    $(sel).each(
+    $(sel, $(selector)).each(
         function (index) {
             var id = $(this).attr('name') || $(this).attr('id');
 
@@ -697,8 +771,16 @@ function getObject(selector) {
                 obj[id] = $(this).ComboBox('value');
             } else if ($(this).hasClass('custom-combobox-input')) {
                 //console.log('is a combobox input do nothing, value will be get from drop down');           
+            } else if ($(this).hasClass('money') && maskMoneyScriptLoaded()) {
+                obj[id] = $(this).maskMoney('unmasked')[0];
             } else {
                 obj[id] = $(this).val();
+            }
+
+            if ($(this).hasClass('uppercase')) {
+                obj[id] = obj[id].toUpperCase();
+            } else if ($(this).hasClass('lowercase')) {
+                obj[id] = obj[id].toLowerCase();
             }
 
             obj[id] = $.trim(obj[id]);
@@ -710,6 +792,10 @@ function getObject(selector) {
 
 function multiselectScriptLoaded() {
     return scriptLoaded('multiselect') || scriptLoaded('extra_widget');
+}
+
+function maskMoneyScriptLoaded() {
+    return scriptLoaded('maskMoney') || scriptLoaded('extra_widget');
 }
 
 function scriptLoaded(scriptName) {
@@ -826,10 +912,11 @@ $.widget("ui.dialog", $.ui.dialog, {
     }
 });
 
-$.widget("bs.Catalog", {
+$.widget("epe.Catalog", {
 
     options: {
         pageConfig: null,
+        debug:false,
         pageName: "",
         fieldId: "",
         source: "",
@@ -837,10 +924,9 @@ $.widget("bs.Catalog", {
         deleteRequest: "",
         exportRequest: "",
         mouseOver: true,
-        validate: function () { return true; },
-        showNew: true,
-        showEdit: true,
-        showDelete: true,
+        showNew: null,
+        showEdit: null,
+        showDelete: null,
         showIcons: true,
         showText: true,
         showExport: false,
@@ -856,6 +942,7 @@ $.widget("bs.Catalog", {
         displayLength: TABLE_DISPLAY_LENGTH,
         columns: [],
         sorting: [[0, 'asc']],
+        columnDefs:[],
         ordering:true,
         info: true,
         language: {},
@@ -868,20 +955,42 @@ $.widget("bs.Catalog", {
         scrollCollapse: false,
         autoWidth: true,
         editOnDoubleClick: true,
+        iDeferLoading: null,
+        appendNextPrevButtons: false,
+        appendNextPrevButtonsAfter: null,
 
         //callback functions
+        validate: function () { return true; },
         rowCallback: function (nRow, aData, iDisplayIndex) { return nRow; },
         initCompleteCallBack: function (oTable, oSettings, json, options) { },
         drawCallBack: function (oTable, oSettings) { },
         selectRowCallBack: function (oTable) { },
         doubleClickCallBack: function (oTable) { },
         beforeServerDataCall: null,
+        beforeLoadingTableCallBack: null,
         newEntityCallBack: null,
         editEntityCallBack: null,
         deleteEntityCallBack: null,
         saveEntityCallBack: null,
         afterSaveEntityCallBack: null,
-        onErrorCallBack: null
+        onErrorCallBack: null,
+        beforeInitTable: null
+    },
+
+    _getCreateOptions: function () {
+        if (this.options.showNew == null) {
+            this.options.showNew = (typeof NEW_ACCESS == 'undefined' ? true : NEW_ACCESS);
+        }
+
+        if (this.options.showEdit == null) {
+            this.options.showEdit = (typeof EDIT_ACCESS == 'undefined' ? true : EDIT_ACCESS);
+        }
+
+        if (this.options.showDelete == null) {
+            this.options.showDelete = (typeof DELETE_ACCESS == 'undefined' ? true : DELETE_ACCESS);
+        }
+
+        return {};
     },
 
     _create: function () {
@@ -969,6 +1078,7 @@ $.widget("bs.Catalog", {
             searching: options.filter,
             ordering: options.ordering,
             rowId: options.fieldId,
+            iDeferLoading: options.iDeferLoading,
             rowCallback: function (nRow, aData, iDisplayIndex) {
                 return that._rowCallBack(nRow, aData, iDisplayIndex);
             },
@@ -986,6 +1096,7 @@ $.widget("bs.Catalog", {
                 options.drawCallBack(this, oSettings);
             },
             columns: options.columns,
+            columnDefs: options.columnDefs,
             order: $.evalJSON($.toJSON(options.sorting))
         };
 
@@ -1011,21 +1122,24 @@ $.widget("bs.Catalog", {
                         $('#' + options.pageName + '_filter').Filter('setFilter', newFilter);
                     }
 
-                    if (!jQuery.isEmptyObject(data)) {                        
-                        $('input[search-type=equals], select[search-type=equals], input[search-type=null], select[search-type=null]', $('#' + options.pageName + '_filter')).each(function (index) {
-                            if ($(this).attr('id').indexOf('Filter') != -1) {
-                                var _name = $(this).attr('id').replace('Filter', '');
+                    if (!jQuery.isEmptyObject(data)) {
+                        var elements = $('input, select', $('#' + options.pageName + '_filter'));
+                        for (var i = 0; i < elements.length; i++) {
+                            var ele = $(elements[i]);
+                            if (ele.attr('search-type') && ele.attr('id').indexOf('Filter') != -1) {
+                                var _name = ele.attr('id').replace('Filter', '');
                                 var index = getArrayIndexForKey(options.pageConfig.GridFields, 'ColumnName', _name);
                                 if (index != -1) {
-                                    data.columns[index].searchtype = $(this).attr('search-type');
+                                    data.columns[index].searchtype = ele.attr('search-type');
                                 }
                             }
-                        });
+                        }                       
                     }
 
                     if (options.beforeServerDataCall != null && typeof (options.beforeServerDataCall) == "function") {
                         options.beforeServerDataCall(data);
                     }
+
                     if (jQuery.isEmptyObject(data)) {
                         return data;
                     } else {
@@ -1036,6 +1150,10 @@ $.widget("bs.Catalog", {
                     if (!json.aaData) {
                         json = { "iTotalRecords": 0, "iTotalDisplayRecords": 0, "aaData": [] };
                     } 
+
+                    if (typeof options.beforeLoadingTableCallBack === 'function') {
+                        options.beforeLoadingTableCallBack(json);
+                    }
 
                     return json.aaData;
                 }
@@ -1049,9 +1167,18 @@ $.widget("bs.Catalog", {
         }
 
         /* Creating dataTable */
+        if (typeof options.beforeInitTable === 'function') {
+            options.beforeInitTable(dtOptions);
+        }
+        if (this.options.pageConfig != null) {
+            this.options.tableSelector = '#' + this.options.pageConfig.Name + '_table';
+        }
         this.dataTableOptions = dtOptions;
-        this.oTable = $(this.element).DataTable(dtOptions).table(0);
-        //this.oTable = tables.table(0);
+        this.oTable = $(this.element).DataTable(dtOptions).table(0);        
+
+        if (options.appendNextPrevButtons) {
+            this._appendNextPrevButtons();
+        }
 
         that.oTable.off('click');
 
@@ -1131,14 +1258,16 @@ $.widget("bs.Catalog", {
     _rowCallBack: function (nRow, aData, iDisplayIndex) {
         var options = this.options;
         if (options.pageConfig && options.pageConfig.NoWrapFields && options.pageConfig.NoWrapFields.length > 0) {
-            var wrap = '<div class="nowrap-col" style="width:COL_WIDTH;" title="DATA">DATA</div>';
+            var wrap = '<div class="nowrap-col" style="width:COL_WIDTH;" title="TITLE">DATA</div>';
             var noWrapFields = options.pageConfig.NoWrapFields;
             for (var f = 0; f < noWrapFields.length; f++) {
                 var field = noWrapFields[f];
                 var gridData = field.GridData;
                 var text = this._getWrapText(field, aData, gridData);
 
-                jQuery('td:eq(' + gridData.ColIndex + ')', nRow).html(wrap.replace(/DATA/g, text).replace('COL_WIDTH', gridData.Width + 'px'));
+                var title = text.replace(/"/g, '&quot;');
+                var html = wrap.replace(/DATA/g, text).replace('TITLE', title).replace('COL_WIDTH', gridData.Width + 'px');
+                jQuery('td:eq(' + gridData.ColIndex + ')', nRow).html(html);
             }
         }
 
@@ -1234,17 +1363,14 @@ $.widget("bs.Catalog", {
                 }
 
                 if (options.serverSide) {
-                    //getting last data send and setting length to -1 so it will retrieved all filtered records
-                    var _params = $('#' + id).DataTable().ajax.params() || '';                    
-                    _params = decodeURIComponent(_params);
-                    _params = _params.replace(/"length":\d+,/gi, '"length":-1,')
-                    _params = that._removeUnnecessaryFilterAttributes(_params);
-                    if (options.encodeExport) _params = encodeURIComponent(_params);
-                    
-                    _url = _url + '&filterInfo=' + _params;
-                } 
-
-                $(this).attr('href', _url);
+                    var requestData = that._getExportRequest(options);                   
+                    if (expType != 'csv') {
+                        requestData.url = requestData.url + '&exportType=' + expType;
+                    }
+                    $.fileDownload(requestData.url, { httpMethod: 'POST', data: requestData.data });
+                } else {
+                    $.fileDownload(_url, { httpMethod: 'POST' });
+                }                
             });
 
             var expbtn = $('<button id="export' + id + '" title="Export">Export</button>');
@@ -1281,19 +1407,8 @@ $.widget("bs.Catalog", {
 
             expbtn.button(buttonOpts).click(function (event) {
                 if (options.serverSide) {
-                    //getting last url
-                    var _url = options.exportRequest;
-
-                    //getting last data send and setting length to -1 so it will retrieved all filtered records
-                    var _params = $('#' + id).DataTable().ajax.params() || '';
-                    _params = decodeURIComponent(_params);
-                    _params = _params.replace(/"length":\d+,/gi, '"length":-1,')
-                    _params = that._removeUnnecessaryFilterAttributes(_params);
-                    if (options.encodeExport) _params = encodeURIComponent(_params);
-
-                    _url = _url + '&filterInfo=' + _params;
-
-                    $(this).attr('href', _url);
+                    var requestData = that._getExportRequest(options);
+                    $.fileDownload(requestData.url, { httpMethod: 'POST', data: requestData.data });
                 } else {
                     var href = options.exportRequest;
                     $(this).attr('href', href);
@@ -1312,18 +1427,83 @@ $.widget("bs.Catalog", {
         return buttonsWrapper;
     },
 
-    _removeUnnecessaryFilterAttributes: function(_params) {
+    getExportRequest: function (options) {
+        return this._getExportRequest(options);
+    },
+
+    _getExportRequest: function (options) {
+        var _url = options.exportRequest;
+        var filterInfo = this._getFilterInfo(options);
+        var requestData = this._getExportRequestData(_url);
+        requestData.data += '&' + filterInfo;
+
+        return requestData;
+    },
+
+    _getFilterInfo:function(options) {
+        var _params = $('#' + options.pageName + '_table').DataTable().ajax.params() || '';
+        _params = decodeURIComponent(_params);
         if (_params) {
-            var paramsObj = $.evalJSON(_params.replace('filterInfo=',''));
-            for (var i = 0; i < paramsObj.columns.length; i++) {
-                var col = paramsObj.columns[i];
-                delete col['orderable'];
-                delete col.search['regex']
+            var paramsObj = $.evalJSON(_params.replace('filterInfo=', ''));
+            paramsObj.length = -1; //setting length to -1 so it will retrieved all filtered records
+            _params = this._removeUnnecessaryFilterAttributes(paramsObj);
+            if (options.encodeExport) _params = encodeURIComponent(_params);
+        }
+
+        return 'filterInfo=' + _params;
+    },
+
+    _getExportRequestData: function (_url) {
+        var requestData = {url : _url, data : ''};
+        var newReqData = { url: '', data: '' };
+        var params = requestData.url.split('?');
+        if (params.length > 0) {
+            var urlQuerySection = params[1];
+            var requestParams = urlQuerySection.split('&');
+            if (requestParams && requestParams.length > 0) {
+                this._calculateNewRequestData(params[0], requestParams, newReqData);
             }
 
-            delete paramsObj.search['regex']
-            _params = '' + $.toJSON(paramsObj);
+            requestData.url = newReqData.url;
+            requestData.data = newReqData.data;
         }
+
+        return requestData;
+    },
+
+    _calculateNewRequestData: function (urlPath, requestParams, newReqData) {
+        for (var i = 0; i < requestParams.length; i++) {
+            var paramPair = this._getRequestParamPair(requestParams[i]);
+            if (POST_TYPE_PARAMS.indexOf(paramPair.key) != -1) {
+                if (newReqData.data.length > 0) newReqData.data += '&';
+                newReqData.data += paramPair.key + '=' + paramPair.value;
+            } else {
+                if (newReqData.url.length > 0) newReqData.url += '&';
+                newReqData.url += paramPair.key + '=' + paramPair.value;
+            }
+        }
+
+        if (newReqData.url.length > 0) newReqData.url = '?' + newReqData.url;
+        newReqData.url = urlPath + newReqData.url;
+
+        return newReqData;
+    },
+
+    _getRequestParamPair: function (requestParam) {
+        var paramPair = requestParam.split('=');
+
+        return { key: paramPair[0], value: paramPair[1] };
+    },
+
+    _removeUnnecessaryFilterAttributes: function (paramsObj) {
+        for (var i = 0; i < paramsObj.columns.length; i++) {
+            var col = paramsObj.columns[i];
+            delete col['orderable'];
+            delete col.search['regex']
+        }
+
+        delete paramsObj.search['regex']
+        _params = '' + $.toJSON(paramsObj);
 
         return _params;
     },
@@ -1340,13 +1520,13 @@ $.widget("bs.Catalog", {
         var buttonsList = [];
         if (!options.viewOnly) {
             var savebutton = {
-                id: "button-save",
-                text: "Save",
+                id: 'button-save',
+                text: 'Save',
                 tabindex: 980,
                 click: function () {
                     var bValid = true;
-                    $("#" + this.id + " input, #" + this.id + " select").removeClass("ui-state-error");
-                    var tips = $("#" + this.id + " p.validateTips");
+                    $('#' + this.id + ' input, #' + this.id + ' select').removeClass("ui-state-error");
+                    var tips = $('#' + this.id + ' p.validateTips');
 
                     if (null != options.validate && typeof (options.validate) == "function") {
                         bValid = options.validate(tips, that._dialog);
@@ -1366,11 +1546,19 @@ $.widget("bs.Catalog", {
         }
 
         buttonsList.push({
-            id: "button-cancel",
-            text: "Cancel",
+            id: 'button-cancel',
+            text: 'Cancel',
             tabindex: 990,
             click: function () {
-                $(this).dialog("close");
+                if (null != options.beforeDialogCancelCallBack && typeof (options.beforeDialogCancelCallBack) == 'function') {
+                    options.beforeDialogCancelCallBack(options);
+                }
+
+                $(this).dialog('close');
+
+                if (null != options.afterDialogCancelCallBack && typeof (options.afterDialogCancelCallBack) == 'function') {
+                    options.afterDialogCancelCallBack(options);
+                }
             }
         });
 
@@ -1387,51 +1575,155 @@ $.widget("bs.Catalog", {
         });
     },
 
+    _appendNextPrevButtons: function() {
+        var that = this;
+        var options = this.options;
+        var appendAfter = this._getAppendAfter();
+        var prev = $('<button id="' + options.pageConfig.Name + '-btn-prev" class="nav-btn" onclick="return false;" title="Move to previous record">Prev</button>');
+        $(appendAfter).after(prev);
+        var next = $('<button id="' + options.pageConfig.Name + '-btn-next" class="nav-btn" onclick="return false;" title="Move to next record">Next</button>');
+        prev.after(next);
+
+        $(options.tableSelector).on('draw.dt', function () { that._tableDraw(that); });
+        $(next).button().click(function () { that._moveTo('next'); });
+        $(prev).button().click(function () { that._moveTo('previous'); });
+    },
+
+    _toggleNextPrevButtons: function(toggleTo) {
+        var name = this.options.pageConfig.Name;
+        var sel = '#' + name + '-btn-prev, #' + name + '-btn-next';
+        $(sel).button(toggleTo);
+    },
+
+    _getAppendAfter: function() {
+        var appendAfter = $('#button-cancel', this._dialog.dialog('widget'));
+        if (this.options.appendNextPrevButtonsAfter) {
+            appendAfter = $(this.options.appendNextPrevButtonsAfter);
+        }
+
+        return appendAfter;
+    },
+
+    _moveTo: function (dir) {
+        var tableSelector = this.options.tableSelector;
+        var info = this._getMoveToInfo(dir);
+        if (this.options.debug) log(info);
+
+        if (this._isFirstRecord(info) || this._isLastRecord(info)) return; 
+        if (info.index == info.limit) {
+            $(tableSelector).attr(dir + 'Button', 'true');
+            $(tableSelector + ' tbody tr').removeClass('row_selected').removeClass('ui-state-active');
+            $(tableSelector).DataTable().page(dir).draw('page');
+        } else {
+            $(tableSelector + ' tbody #' + info.list[info.index][info.fieldId]).removeClass('row_selected').removeClass('ui-state-active');
+            $(tableSelector + ' tbody #' + info.list[info.nextIndex][info.fieldId]).addClass('row_selected').addClass('ui-state-active');
+            this._editEntity();
+        }
+    },
+
+    _tableDraw: function (that) {
+        var tableSelector = that.options.tableSelector;
+        if ($(tableSelector).attr('nextButton') != 'true' && $(tableSelector).attr('previousButton') != 'true') {            
+            return;// do nothing normal page change
+        }
+
+        var _row = $(tableSelector).attr('nextButton') == 'true' ? 'first' : 'last';
+        $(tableSelector + ' tbody tr:' + _row).addClass('row_selected').addClass('ui-state-active');
+        $(tableSelector).removeAttr('nextButton').removeAttr('previousButton');
+
+        that._editEntity();
+    },
+
+    _getMoveToInfo: function(dir) {
+        var options = this.options;
+        if (options.debug) log(options);
+        var info = $(options.tableSelector).DataTable().page.info();
+        info.fieldId = options.pageConfig.FieldId;
+        if ($(options.tableSelector).is(':visible')) {
+            info.list = $(options.tableSelector).DataTable().rows(':visible').data();
+            info.ids = $(options.tableSelector).DataTable().rows(':visible').ids();
+        } else {
+            info.list = $(options.tableSelector).DataTable().rows().data();
+            info.ids = $(options.tableSelector).DataTable().rows().ids();
+        }
+        info.index = info.ids.indexOf($('#' + info.fieldId).val());
+        info.dir = dir;
+        info.limit = dir == 'next' ? (info.list.length - 1) : 0;
+        info.nextIndex = dir == 'next' ? (info.index + 1) : info.index - 1;
+
+        return info;
+    },
+
+    _isLastRecord: function(info) {
+        return info.dir == 'next' && info.page == (info.pages - 1) && info.index == info.limit;
+    },
+
+    _isFirstRecord: function(info) {
+        return info.dir == 'previous' && info.page == 0 && info.index == 0;
+    },
+
+    _editEntity: function() {
+        var options = this.options;
+        if (typeof options.editEntityCallBack === 'function') {
+            if (options.viewOnly) disableDialog(options.dialogSelector);
+            options.editEntityCallBack($(options.tableSelector).DataTable(), options);
+        } else {
+            if (options.viewOnly) disableDialog(options.dialogSelector);
+            this.editEntity($(options.tableSelector).DataTable(), options);
+        }
+    },
+
     newEntity: function (oTable, options) {
         clearDialog('#' + this._dialog.attr('id'));
         this._setDefaultValues(options.pageConfig);
 
         this._dialog.dialog('option', 'title', this._dialog.attr('originalTitle') + ' [New]').dialog('open');
-        $('#dialogtabs', this._dialog).tabs('option', 'active', 0);
-        //TODO: create method to set focus to first element on the dialog
-        $('input:visible:first', $($('div.ui-tabs-panel', this._dialog)[0])).focus();
+        $('.ui-tabs', this._dialog).tabs('option', 'active', 0);
+        this._setFocusOnFirstDialogElement();
 
-        if (options.viewOnly) disableDialog('#' + this._dialog.attr('id'));
+        if (this.options.debug) log(options);
+        if (this.options.viewOnly) disableDialog('#' + this._dialog.attr('id'));
+        if (this.options.appendNextPrevButtons) this._toggleNextPrevButtons('disable');
 
         return this._dialog;
     },
 
-    editEntity: function (oTable, options) {
-        var selected = fnGetSelected(oTable);
-        var row = getSelectedRowData(oTable);
-        if (selected.length <= 0) {
-            log('The selected row is empty, probably is the No data available row.');
-            return;
-        };
+    editEntity: function (oTable, options, obj) {
+        if (this.options.debug) log(this.options);
+        var entity = obj;
+        if (obj == null || typeof obj == 'undefined') {
+            entity = getSelectedRowData(oTable);
+            if (this.options.debug) log('editEntity obj is null');
+        }
 
+        if (this.options.debug) log(entity);
         clearDialog('#' + this._dialog.attr('id'));
-        populateDialog(row, '#' + this._dialog.attr('id'));
+        populateDialog(entity, '#' + this._dialog.attr('id'));
         this._setDefaultValues(options.pageConfig);
 
         this._dialog.dialog('option', 'title', this._dialog.attr('originalTitle') + ' [Edit]').dialog('open');
-        $('#dialogtabs', this._dialog).tabs('option', 'active', 0);
-        $('input:visible:first', $($('div.ui-tabs-panel', this._dialog)[0])).focus();
+        $('.ui-tabs', this._dialog).tabs('option', 'active', 0);
+        this._setFocusOnFirstDialogElement();
 
-        if (options.viewOnly) disableDialog('#' + this._dialog.attr('id'));
+        if (this.options.viewOnly) disableDialog('#' + this._dialog.attr('id'));
+        if (this.options.appendNextPrevButtons) this._toggleNextPrevButtons('enable');
+
+        return entity;
     },
 
     deleteEntity: function (oTable, options) {
         var entity = getSelectedRowData(oTable);
-        var tableId = this.element.attr('id');
+        var tableSel = this.options.tableSelector;
+        if (this.options.debug) log(entity);
 
         $.ajax({
-            type: "POST",
+            type: 'POST',
             url: options.deleteRequest,
-            data: "entity=" + encodeURIComponent($.toJSON(entity))
+            data: 'entity=' + encodeURIComponent($.toJSON(entity))
         }).done(function (json) {
             if (json.ErrorMsg == SUCCESS) {
                 oTable.ajax.reload();
-                $('#' + tableId + '_wrapper button.disable').button('disable');
+                $(tableSel + '_wrapper button.disable').button('disable');
             } else {
                 alert(json.ErrorMsg);
             }
@@ -1446,26 +1738,30 @@ $.widget("bs.Catalog", {
     saveEntity: function (oTable, options, obj) {
         var entity = obj;
         if (obj == null || typeof obj == 'undefined') {
-            entity = getObject('#' + $(options.dialogSelector).attr('id'));
+            entity = getObject(options.dialogSelector);
         }
+
+        if (this.options.debug) log(entity);
+        if (this.options.debug) log(this.options);
+        
         var that = this;
-        var tableId = this.element.attr('id');
+        var tableSel = this.options.tableSelector;
 
         $.ajax({
-            type: "POST",
+            type: 'POST',
             url: options.saveRequest,
-            data: "entity=" + encodeURIComponent($.toJSON(entity))
+            data: 'entity=' + encodeURIComponent($.toJSON(entity))
         }).done(function (json) {
             if (json.ErrorMsg == SUCCESS) {
-                if (null != options.afterSaveEntityCallBack && typeof (options.afterSaveEntityCallBack) == "function") {
-                    options.afterSaveEntityCallBack(oTable, options, json);
+                if (typeof that.options.afterSaveEntityCallBack === 'function') {
+                    that.options.afterSaveEntityCallBack(oTable, options, json, entity);
                 } else {
                     that._dialog.dialog('close');
-                    $('#' + tableId + '_wrapper button.disable').button('disable');
-                    oTable.ajax.reload();
+                    $(tableSel + '_wrapper button.disable').button('disable');
+                    $(tableSel).DataTable().ajax.reload(null, false);
                 }
             } else {
-                showError($("#" + $(options.dialogSelector).attr('id') + " p.validateTips"), json.ErrorMsg);
+                showError($(options.dialogSelector + ' p.validateTips'), json.ErrorMsg);
             }
         }).always(function (json) {
             if (json.ErrorMsg == SESSION_EXPIRED) {
@@ -1475,9 +1771,32 @@ $.widget("bs.Catalog", {
         });
     },
 
+    _setFocusOnFirstDialogElement: function () {
+        var tab = $($('div.ui-tabs-panel', this._dialog)[0]);
+        var elements = $('input:visible:first, select, textarea:visible:first', tab);
+        for (var i = 0; i < elements.length; i++) {
+            var ele = elements[i];
+            if (ele.nodeName == 'INPUT' || ele.nodeName == 'TEXTAREA') {
+                $(ele).focus();
+                break;
+            } else if (this._isSelectMenu(ele) && this._isSelectMenuEnable(ele)) {
+                $(ele).selectmenu('widget').focus();
+                break;
+            }
+        }
+    },
+
+    _isSelectMenu: function(ele) {
+        return ele.nodeName == 'SELECT' && $(ele).hasClass('selectMenu');
+    },
+
+    _isSelectMenuEnable: function(ele) {
+        var widget = $(ele).selectmenu('widget');
+        return $(widget).is(':visible') && !$(widget).hasClass('ui-state-disabled');
+    },
+
     _setDefaultValues: function(config) {
         if (!(config && config.Tabs)) return;
-
         var fields = [];
 
         for (var t = 0; t < config.Tabs.length; t++) {
@@ -1501,10 +1820,15 @@ $.widget("bs.Catalog", {
 
         if (startsWith(_value, 'js:')) {
             _value = _value.substring(3);
-            _value = eval('(' + _value + ')');
+            try {
+                _value = eval('(' + _value + ')');
+            }
+            catch (e) {
+                log('Not able to set default value. Error [' + e.message+ ']');
+            }
         }
 
-        var _field = $('#' + field.FieldName);
+        var _field = $('#' + field.FieldName, this._dialog);
 
         if (field.ControlType == 'selectmenu' && $('#' + field.FieldName).hasClass('selectMenu')) {
             _field.val(_value).selectmenu('refresh');           
@@ -1517,16 +1841,15 @@ $.widget("bs.Catalog", {
         }
     },
 
-    reloadTable: function (url, callback) {
-        if (typeof url != 'undefined' && url != null && url != '' && callback != null) {
-            return this.oTable.ajax.url(url).load(callback);
+    reloadTable: function (url, callback, resetPaging) {
+        var _resetPaging = resetPaging || false;
+        var _callback = callback || null;
+
+        if (typeof url != 'undefined' && url) {
+            return this.oTable.ajax.url(url).load(_callback, _resetPaging);
         }
 
-        if (typeof url != 'undefined' && url != null && url != '') {
-            return this.oTable.ajax.url(url).load();
-        }
-
-        return this.oTable.ajax.reload();
+        return this.oTable.ajax.reload(_callback, _resetPaging);
     },
 
     clearTable: function () {
@@ -1554,6 +1877,10 @@ $.widget("bs.Catalog", {
         return this.options;
     },
 
+    setCatalogOptions: function (_options) {
+        this.options = _options;
+    },
+
     getDialog: function () {
         return this._dialog;
     },
@@ -1568,7 +1895,7 @@ $.widget("bs.Catalog", {
 
 });
 
-$.widget("bs.ComboBox", {
+$.widget('epe.ComboBox', {
 
     options: {
         id: '',
@@ -1594,46 +1921,24 @@ $.widget("bs.ComboBox", {
         cache: false
     },
 
-    _create: function () {
-        var wrapperId = this.element.attr("id") + "_combobox_wrapper";
+    _create: function () {       
         this.prevVal = '';
 
         var that = this;
-        if (this.options.url != null && this.options.url != '') {
-            if (this.options.cache != null && this.options.cache == true) {
-                $.when($.getData(this.options.url)).done(function (json) {
-                    if (json.aaData) {
-                        that.options.list = json.aaData;
-                    } else {
-                        log("Unable to fetch " + that.options.error + " list.");
-                    }
+        if (this.options.url) {
+            $.when(this._getComboData()).done(function (json) {
+                if (json.aaData) {
+                    that.options.list = json.aaData;
+                } else {
+                    log('Unable to fetch ' + that.options.error + ' list.');
+                }
 
-                    that.wrapper = $('<table class="custom-combobox" cellpadding="0" cellspacing="0"><tr><td class="custom-combobox-input-td"></td><td class="custom-combobox-button-td"></td></tr></table>').insertAfter(that.element);
-                    that.wrapper.attr("id", wrapperId);
-                    that._loadOptions();
-                });
-            } else {
-                $.ajax({
-                    type: "GET",
-                    url: this.options.url,
-                    data: this.options.data,
-                    context: this
-                }).done(function (json) {
-                    if (json.aaData) {
-                        this.options.list = json.aaData;
-                    } else {
-                        log("Unable to fetch " + this.options.error + " list.");
-                    }
-
-                    this.wrapper = $('<table class="custom-combobox" cellpadding="0" cellspacing="0"><tr><td class="custom-combobox-input-td"></td><td class="custom-combobox-button-td"></td></tr></table>').insertAfter(this.element);
-                    this.wrapper.attr("id", wrapperId);
-                    this._loadOptions();
-                });
-            }
+                that._createWrapper();
+                that._loadOptions();
+            });
         } else {
             this.options.onLoadComplete();
-            this.wrapper = $('<table class="custom-combobox" cellpadding="0" cellspacing="0"><tr><td class="custom-combobox-input-td"></td><td class="custom-combobox-button-td"></td></tr></table>').insertAfter(this.element);
-            this.wrapper.attr("id", wrapperId);
+            this._createWrapper();
             if ($.isArray(this.options.list) && this.options.list.length > 0) {
                 this._loadOptions();
             } else {
@@ -1646,6 +1951,23 @@ $.widget("bs.ComboBox", {
         this.element.hide();
     },
 
+    _getComboData: function() {
+        if (this.options.cache && (this.options.cache == true || this.options.cache == 'true')) {
+            return $.getData(this.options.url);
+        } else {
+            return $.ajax({
+                url: this.options.url,
+                data: this.options.data
+            });
+        }
+    },
+
+    _createWrapper: function() {
+        var wrapperId = this.element.attr('id') + '_combobox_wrapper';
+        this.wrapper = $('<table class="custom-combobox" cellpadding="0" cellspacing="0"><tr><td class="custom-combobox-input-td"></td><td class="custom-combobox-button-td"></td></tr></table>').insertAfter(this.element);
+        this.wrapper.attr('id', wrapperId);
+    },
+
     _loadOptions: function () {
         if (this.options.onLoadingOptions != null) {
             this.options.onLoadingOptions(this.element, this.options);
@@ -1654,10 +1976,8 @@ $.widget("bs.ComboBox", {
         }
 
         this.options.onLoadComplete();
-
         this._createAutocomplete();
         this._createShowAllButton();
-
         this.options.onCreateComplete();
     },
 
@@ -1665,55 +1985,32 @@ $.widget("bs.ComboBox", {
         this.element.empty();
         this.element.attr('load-complete', 'false');
         var list = this.options.list;
-        var opts = this.options;
+        var ddInfo = this.options;
+
+        if (ddInfo.selected) ddInfo.selectedVal = ddInfo.selected; //copy ddInfo.selected to ddInfo.selectedVal for backward compatibility
+        if (ddInfo.sortByField) ddInfo.sortBy = ddInfo.sortByField; //copy ddInfo.sortByField to ddInfo.sortBy for backward compatibility
 
         if (list.length <= 0) {
-            this.element.append($("<option></option>").attr("value", '').text(opts.emptyText));
-            opts.onLoadComplete();
+            this.element.append($('<option></option>').attr('value', '').text(ddInfo.emptyText));
+            ddInfo.onLoadComplete();
             //return;
         }
 
-        if (null != opts.sort && typeof (opts.sort) == "function") {
-            list.sort(function (a, b) { return opts.sort(a, b); });
+        if (typeof ddInfo.sort === 'function') {
+            list.sort(function (a, b) { return ddInfo.sort(a, b); });
         } else {
-            if (opts.sortByField != null && opts.sortByField != '') {
-                opts.sortBy = opts.sortByField;
-                $.page.sortList(list, opts);
-            }
+            $.page.sortList(list, ddInfo);
         }
 
-        if (opts.addSelect) {
-            this.element.append($("<option></option>").attr("value", '').text(opts.selectText));
+        if (ddInfo.addSelect) {
+            this.element.append($('<option></option>').attr('value', '').text(ddInfo.selectText));
         }
 
         for (var i = 0; i < list.length; i++) {
-            var obj = list[i];
-            var option = $("<option></option>");
-
-            var text = obj[opts.textField];
-            if ($.isArray(opts.textField) || opts.textField.split(',').length > 0) {
-                text = '';
-                var array = $.isArray(opts.textField) ? opts.textField : opts.textField.split(',');
-                for (var t = 0; t < array.length; t++) {
-                    text = text + $.trim(obj[array[t]]) + ', ';
-                }
-                text = text.substring(0, text.length - 2);
-            }
-
-            //Setting extra attributes
-            if (opts.extraAttrs != null && opts.extraAttrs != '') {
-                var attrs = opts.extraAttrs.split(',');
-                for (var a = 0; a < attrs.length; a++) {
-                    var attr = attrs[a];
-                    option.attr(attr, obj[attr]);
-                }
-            }
-
-            this.element.append(option.attr("value", obj[opts.valField]).text(text));
-            if (opts.selected != null && opts.selected == obj[opts.valField]) {
-                option.attr("selected", "selected");
-            }
+            var obj = list[i];        
+            this.element.append($.page.createOption(obj, ddInfo));
         }
+
         this.element.attr('load-complete', 'true');
         this.element.addClass('combobox');
         this.prevVal = this.element.val();
@@ -1721,22 +2018,22 @@ $.widget("bs.ComboBox", {
 
     _createAutocomplete: function () {
         var that = this;
-        var selected = this.element.children(":selected"),
-          value = selected.val() ? selected.text() : "";
+        var selected = this.element.children(':selected'),
+          value = selected.val() ? selected.text() : '';
 
-        this.input = $("<input>")
+        this.input = $('<input>')
           .appendTo(this.wrapper.find('td.custom-combobox-input-td'))
           .val(value)
-          .attr("title", "")
-          .attr("id", this.element.attr("id") + "_combobox")
-          .attr("name", this.element.attr("id"))
-          .attr("tabindex", this.element.attr("tabindex"))
-          .attr("title", this.element.attr("title"))
-          .addClass("custom-combobox-input ui-widget ui-widget-content ui-corner-left")
+          .attr('title', '')
+          .attr('id', this.element.attr('id') + '_combobox')
+          .attr('name', this.element.attr('id'))
+          .attr('tabindex', this.element.attr('tabindex'))
+          .attr('title', this.element.attr('title'))
+          .addClass('custom-combobox-input ui-widget ui-widget-content ui-corner-left')
           .autocomplete({
               delay: 0,
               minLength: 0,
-              source: $.proxy(this, "_source")
+              source: $.proxy(this, '_source')
           }).blur(function () {
               //Clear select value if empty
               if ($.trim($(this).val()) == '') {
@@ -1748,19 +2045,19 @@ $.widget("bs.ComboBox", {
             autocompleteselect: function (event, ui) {
                 ui.item.option.selected = true;
 
-                this._trigger("select", event, {
+                this._trigger('select', event, {
                     item: ui.item.option
                 });
 
                 if (this.prevVal != ui.item.option.value) {
-                    this.element.trigger("change");
+                    this.element.trigger('change');
                     this.prevVal = ui.item.option.value;
                 }
 
                 that.options.onItemSelected(that.element);
             },
 
-            autocompletechange: "_removeIfInvalid"
+            autocompletechange: '_removeIfInvalid'
         });
     },
 
@@ -1768,20 +2065,20 @@ $.widget("bs.ComboBox", {
         var input = this.input,
           wasOpen = false;
 
-        this.button = $("<a>")
-          .attr("tabindex", this.element.attr("tabindex"))
+        this.button = $('<a>')
+          .attr('tabindex', this.element.attr('tabindex'))
           .tooltip()
           .appendTo(this.wrapper.find('td.custom-combobox-button-td'))
           .button({
               icons: {
-                  primary: "ui-icon-triangle-1-s"
+                  primary: 'ui-icon-triangle-1-s'
               },
               text: false
           })
-          .removeClass("ui-corner-all")
-          .addClass("custom-combobox-toggle ui-corner-right")
+          .removeClass('ui-corner-all')
+          .addClass('custom-combobox-toggle ui-corner-right')
           .mousedown(function () {
-              wasOpen = input.autocomplete("widget").is(":visible");
+              wasOpen = input.autocomplete('widget').is(':visible');
           })
           .keydown(function (event) {
               if (event.which == 13) {
@@ -1793,7 +2090,7 @@ $.widget("bs.ComboBox", {
                   }
 
                   // Pass empty string as value to search for, displaying all results
-                  input.autocomplete("search", "");
+                  input.autocomplete('search', '');
               }
           })
           .click(function () {
@@ -1805,13 +2102,13 @@ $.widget("bs.ComboBox", {
               }
 
               // Pass empty string as value to search for, displaying all results
-              input.autocomplete("search", "");
+              input.autocomplete('search', '');
           });
     },
 
     _source: function (request, response) {
-        var matcher = new RegExp($.ui.autocomplete.escapeRegex(request.term), "i");
-        response(this.element.children("option").map(function () {
+        var matcher = new RegExp($.ui.autocomplete.escapeRegex(request.term), 'i');
+        response(this.element.children('option').map(function () {
             var text = $(this).text();
             if (this.value && (!request.term || matcher.test(text)))
                 return {
@@ -1828,12 +2125,14 @@ $.widget("bs.ComboBox", {
             return;
         }
 
+        var prevText = this.element.find('option:selected').text();
+        var prevValue = this.element.val();
         // Search for a match (case-insensitive)
         var value = this.input.val(),
           valueLowerCase = value.toLowerCase(),
           valid = false;
 
-        this.element.children("option").each(function () {
+        this.element.children('option').each(function () {
             if ($(this).text().toLowerCase() === valueLowerCase) {
                 this.selected = valid = true;
                 return false;
@@ -1846,19 +2145,20 @@ $.widget("bs.ComboBox", {
         }
 
         // Remove invalid value
-        if (this.options.removedInvalid) {
+         if (this.options.removedInvalid) {
             this.input
-            .val(this.element.find('option:selected').text())
-            .attr("title", value + " didn't match any item")
-            .tooltip("open");
-            this.element.val("");
+            .val(prevText)
+            .attr('title', value + ' didn\'t match any item');
+            
+
+            this.element.val(prevValue);
             this._delay(function () {
-                this.input.tooltip("close").attr("title", "");
+                this.input.attr('title', '');
             }, 2500);
-            this.input.data("ui-autocomplete").term = "";
+            this.input.data('ui-autocomplete').term = '';
         } else {
             // Value not found clearing drop down val
-            this.element.val("");
+            this.element.val('');
         }
     },
 
@@ -1910,42 +2210,30 @@ $.widget("bs.ComboBox", {
 
         this.options.list = [];
         this.options = $.extend(this.options, newoptions);
-
-        if (this.options.url != null && this.options.url != '') {
-            $.ajax({
-                type: "GET",
-                url: this.options.url,
-                context: this
-            }).done(function (json) {
+        var that = this;
+        if (this.options.url) {
+            $.when(this._getComboData()).done(function (json) {
                 if (json.aaData) {
-                    this.options.list = json.aaData;
-                } else {
-                    if (json.ErrorMsg == SESSION_EXPIRED) {
-                        window.location.href = LOGIN_PAGE;
-                        return;
-                    }
-                    log("Unable to fetch " + this.options.error + " list.");
+                    that.options.list = json.aaData;
+                } else {                    
+                    log('Unable to fetch ' + that.options.error + ' list.');
                 }
 
-                this.input.val('');
+                that.input.val('');
 
-                if (this.options.onLoadingOptions != null) {
-                    this.options.onLoadingOptions(this.element, this.options);
+                if (that.options.onLoadingOptions != null) {
+                    that.options.onLoadingOptions(that.element, that.options);
                 } else {
-                    this._loadingOptions();
+                    that._loadingOptions();
                 }
 
-                this.input.val(this.element.find('option:selected').text());
+                that.input.val(that.element.find('option:selected').text());
 
-                if (null != newoptions.onLoadComplete && typeof (newoptions.onLoadComplete) == "function") {
+                if (typeof newoptions.onLoadComplete === 'function') {
                     newoptions.onLoadComplete();
                 }
-            }).always(function (json) {
-                if (json.ErrorMsg == SESSION_EXPIRED) {
-                    window.location.href = LOGIN_PAGE;
-                    return;
-                }
             });
+
             this.element.attr('load-complete', 'true');
             return;
         }
@@ -1961,7 +2249,7 @@ $.widget("bs.ComboBox", {
 
             this.input.val(this.element.find('option:selected').text());
 
-            if (null != newoptions.onLoadComplete && typeof (newoptions.onLoadComplete) == "function") {
+            if (typeof newoptions.onLoadComplete === 'function') {
                 newoptions.onLoadComplete();
             }
             this.element.attr('load-complete', 'true');
@@ -1972,7 +2260,7 @@ $.widget("bs.ComboBox", {
 });
 
 
-$.widget("bs.Page", {
+$.widget('epe.Page', {
 
     //defaults
     options: {
@@ -2223,20 +2511,8 @@ $.widget("bs.Page", {
 
             try {
                 // Try to load the combobox the new way
-                var ddInfo = $.evalJSON(controlFields.dropDownFields[d].DropDownInfo);
-                var sortField = ddInfo.textField;
-                if (ddInfo.sortBy != null && ddInfo.sortBy != '') {
-                    sortField = ddInfo.sortBy;
-                }
-
-                var _cache = false;
-                if (ddInfo.cache) _cache = ddInfo.cache;
-
-                $('#' + controlFields.dropDownFields[d].FieldName, dialog).ComboBox({
-                    url: ddInfo.url, removedInvalid: true, addSelect: true, selectText: '', sortByField: sortField,
-                    valField: ddInfo.valField, textField: ddInfo.textField, error: controlFields.dropDownFields[d].Label,
-                    cache: _cache
-                });
+                var _options = $.page.getDDInfoOptions(controlFields.dropDownFields[d]);
+                $('#' + controlFields.dropDownFields[d].FieldName, dialog).ComboBox(_options);
             } catch (e) {
                 // if fail try the old way
                 $('#' + controlFields.dropDownFields[d].FieldName, dialog).ComboBox({
@@ -2276,26 +2552,29 @@ $.widget("bs.Page", {
             var field = controlFields.dateFields[dt];
             if (field.ControlType == 'hidden') continue;
 
-            var _DateFormat = 'mm/dd/yy';
-            var _TimeFormat = 'HH:mm:ss';
+            var _dateFormat = 'mm/dd/yy';
+            var _timeFormat = 'HH:mm:ss';
+    
+            var dateFormatConfigValue = $.page.getFieldProp(field, 'date-format'); //controlPros['date-format'];
+            if (dateFormatConfigValue)
+                _dateFormat = dateFormatConfigValue;
+          
 
-            if (field.ControlType == 'timepicker') {
-                var controlPros = $.evalJSON(field.ControlProps);
-
-                var dateFormatConfigValue = controlPros['date-format'];
-                if (dateFormatConfigValue)
-                    _DateFormat = dateFormatConfigValue;
-
-                var timeFormatConfigValue = controlPros['time-format'];
+            if (field.ControlType == 'timepicker') {            
+                            
+                var timeFormatConfigValue = $.page.getFieldProp(field, 'time-format');  //controlPros['time-format'];
                 if (timeFormatConfigValue)
-                    _TimeFormat = timeFormatConfigValue;
+                    _timeFormat = timeFormatConfigValue;
 
+                var _timeOnly = isTrue($.page.getFieldProp(field, 'timeOnly'));
+                if (_timeOnly) _dateFormat = '';
 
                 $('#' + field.FieldName, dialog).datetimepicker({
                     showButtonPanel: true,
                     showOn: 'button',
-                    timeFormat: _TimeFormat,
-                    dateFormat: _DateFormat
+                    timeFormat: _timeFormat,
+                    dateFormat: _dateFormat,
+                    timeOnly:_timeOnly
                 }).next('button').text('').button({
                     icons: {
                         primary: 'ui-icon-calendar'
@@ -2305,7 +2584,8 @@ $.widget("bs.Page", {
             } else {
                 $('#' + field.FieldName, dialog).datepicker({
                     showButtonPanel: true,
-                    showOn: 'button'
+                    showOn: 'button',
+                    dateFormat: _dateFormat
                 }).next('button').text('').button({
                     icons: {
                         primary: 'ui-icon-calendar'
@@ -2320,8 +2600,16 @@ $.widget("bs.Page", {
             }
         }
 
+        this._initMoneyControls(config, dialog);
+
         config.NoWrapFields = controlFields.noWrapFields;
         this.dialog = dialog;
+    },
+
+    _initMoneyControls: function (config, dialog) {
+        if (maskMoneyScriptLoaded()) {
+            $('input.money', dialog).maskMoney(MASK_MONEY_DEFAULT_OPTS);
+        }        
     },
 
     _initFilter: function (config) {
@@ -2677,7 +2965,7 @@ $.widget("bs.Page", {
 
 });
 
-$.widget("bs.Filter", {
+$.widget('epe.Filter', {
     //defaults
     options: {
         debug:false,
@@ -2707,7 +2995,7 @@ $.widget("bs.Filter", {
         var _filterDateFormat = 'mm/dd/yy';
         var _filterTimeFormat = 'HH:mm:ss';
         
-        $.page.initSelectMenu(selectMenus.join(','));
+        $.page.initSelectMenu($(selectMenus.join(','), this.element));
         this._initComboBoxes(ddlMenus);
         this._initMultiSelects(multiselects);
 
@@ -2725,18 +3013,17 @@ $.widget("bs.Filter", {
                 var promise = $.page.loadMultiSelect($(this.element), f.FieldData);
                 promises.push(promise);
             } else if ($.page.common.isDateField(f.FieldData)) {
+               
+                var dateFormatConfigValue = $.page.getFieldProp(f.FieldData, 'date-format');
+                if (dateFormatConfigValue)
+                    _filterDateFormat = dateFormatConfigValue;
+
                 if (f.FieldData.ControlType == 'timepicker') {
-                    var field = f.FieldData;
-
-                    var controlPros = $.evalJSON(field.ControlProps);
-                    var dateFormatConfigValue = controlPros['date-format'];
-                    if (dateFormatConfigValue)
-                        _filterDateFormat = dateFormatConfigValue;
-
-                    var timeFormatConfigValue = controlPros['time-format'];
+                
+                    var timeFormatConfigValue = $.page.getFieldProp(f.FieldData, 'time-format');  //controlPros['time-format'];
                     if (timeFormatConfigValue)
                         _filterTimeFormat = timeFormatConfigValue;
-
+                
                     $('#' + f.GridData.ColumnName, $(this.element)).datetimepicker({
                         showButtonPanel: true,
                         showOn: 'button',
@@ -2756,7 +3043,8 @@ $.widget("bs.Filter", {
                 } else {
                     $('#' + f.GridData.ColumnName, $(this.element)).datepicker({
                         showButtonPanel: true,
-                        showOn: "button"
+                        showOn: 'button',
+                        dateFormat: _filterDateFormat,
                     }).next('button').text('').button({
                         icons: {
                             primary: 'ui-icon-calendar'
@@ -2767,20 +3055,8 @@ $.widget("bs.Filter", {
             }
         }
 
-        $('#clearFilter', this.element).button({ icons: { primary: "ui-icon-cancel" } }).click(function () {
-            $('input,select', this.element).val("");
-            $('select.selectMenu', this.element).selectmenu('refresh', true);
-            $('select[firstoptionval]', this.element).each(function () {
-                $(this).val($(this).attr('firstoptionval')).selectmenu('refresh', true);
-            });
-
-            if (multiselectScriptLoaded()) {
-                $('select.multiselect', this.element).each(function(ele) {
-                    $(this).multiselect('uncheckAll');
-                    $.page.refreshMultiselect($(this));                
-                });
-            }            
-
+        $('#clearFilter', this.element).button({ icons: { primary: 'ui-icon-cancel' } }).click(function () {        
+            that.clear();
             that._filterChange();
         });
 
@@ -2867,23 +3143,11 @@ $.widget("bs.Filter", {
         if (!fields) return;
         for (var i = 0; i < fields.length; i++) {
             var field = fields[i];
-            $('#' + field.FieldName).empty();
-            $('#' + field.FieldName).append($("<option selected></option>").attr("value", 'Loading...').text('Loading...'));
+            $('#' + field.FieldName, this.element).empty();
+            $('#' + field.FieldName, this.element).append($('<option selected></option>').attr('value', 'Loading...').text('Loading...'));
 
-            var ddInfo = $.evalJSON(field.DropDownInfo);
-            var sortField = ddInfo.textField;
-            if (ddInfo.sortBy != null && ddInfo.sortBy != '') {
-                sortField = ddInfo.sortBy;
-            }
-
-            var _cache = false;
-            if (ddInfo.cache) _cache = ddInfo.cache;
-
-            $('#' + field.FieldName, this.element).ComboBox({
-                url: '', removedInvalid: false, addSelect: true, selectText: '', sortByField: sortField,
-                valField: ddInfo.valField, textField: ddInfo.textField, error: field.Label,
-                cache: _cache
-            });
+            var _options = $.page.getDDInfoOptions(field);
+            $('#' + field.FieldName, this.element).ComboBox(_options);
 
             var that = this;
             $('#' + field.FieldName, this.element).change(function () { that._filterChange(); });
@@ -2893,28 +3157,16 @@ $.widget("bs.Filter", {
     _initComboBox: function (field) {
         var that = this;
         var ddInfo = $.evalJSON(field.DropDownInfo);
-        var sortField = ddInfo.textField;
-        if (ddInfo.sortBy != null && ddInfo.sortBy != '') {
-            sortField = ddInfo.sortBy;
-        }
-
-        var _cache = false;
-        if (ddInfo.cache) _cache = ddInfo.cache;
-        if (_cache) {
-            return $.when($.getData(ddInfo.url)).done(function (json) {
-                $('#' + field.FieldName, that.element).ComboBox('reload', {
-                    url: '', removedInvalid: false, addSelect: true, selectText: ddInfo.selectedText, sortByField: sortField,
-                    valField: ddInfo.valField, textField: ddInfo.textField, error: field.Label, list: json.aaData
-                });
+        var _options = $.page.getDDInfoOptions(field);
+        if (_options.cache) {
+            return $.when($.getData(_options.url)).done(function (json) {
+                $('#' + field.FieldName, that.element).ComboBox('reload', _options);
             });
         } else {
             return $.ajax({
-                url: ddInfo.url,
+                url: _options.url,
             }).done(function (json) {
-                $('#' + field.FieldName, that.element).ComboBox('reload', {
-                    url: '', removedInvalid: false, addSelect: true, selectText: ddInfo.selectedText, sortByField: sortField,
-                    valField: ddInfo.valField, textField: ddInfo.textField, error: field.Label, list: json.aaData                    
-                });
+                $('#' + field.FieldName, that.element).ComboBox('reload', _options);
             });
         }
     }, 
@@ -2924,7 +3176,7 @@ $.widget("bs.Filter", {
         for (var i = 0; i < fields.length; i++) {
             var field = fields[i];
             var ddInfo = $.evalJSON(field.DropDownInfo);
-            $.page.initMultiselect($('#' + field.FieldName), ddInfo);
+            $.page.initMultiselect($('#' + field.FieldName, this.element), ddInfo);
         }
     },
 
@@ -2967,6 +3219,21 @@ $.widget("bs.Filter", {
         }
     },
 
+    clear: function() {
+        $('input,select', this.element).val('');
+        $('select.selectMenu', this.element).selectmenu('refresh', true);
+        $('select[firstoptionval]', this.element).each(function () {
+            $(this).val($(this).attr('firstoptionval')).selectmenu('refresh', true);
+        });
+
+        if (multiselectScriptLoaded()) {
+            $('select.multiselect', this.element).each(function (ele) {
+                $(this).multiselect('uncheckAll');
+                $.page.refreshMultiselect($(this));
+            });
+        }
+    },
+
     refresh: function() {
         this._FILTER = {};
         this._filterChange();
@@ -2990,7 +3257,7 @@ $.page = {};
 $.page.common = {};
 
 $.page.common.isDateField = function (field) {
-    return field.Type.indexOf('date') != -1 || field.Type.indexOf('time') != -1;
+    return (field.Type.indexOf('date') != -1 || field.Type.indexOf('time') != -1) && field.ControlType != 'hidden';
 }
 
 $.page.getFieldProp = function (field, prop) {
@@ -3008,7 +3275,7 @@ $.page.getFieldProp = function (field, prop) {
 $.page.initSelectMenu = function (selector) {
     $(selector).addClass('selectMenu').attr('load-complete', 'false');
     $(selector).empty().append($('<option></option>').attr('value', '').text('Loading..'));
-    $(selector).selectmenu().selectmenu("menuWidget").addClass("select-menu-overflow");
+    $(selector).selectmenu().selectmenu('menuWidget').addClass('select-menu-overflow');
 }
 
 $.page.initMultiselect = function (element, ddInfo) {
@@ -3037,10 +3304,11 @@ $.page.loadSelectMenu = function (dialog, selectMenu) {
         element.addClass('selectMenu').attr('load-complete', 'false').empty();
         element.append($('<option></option>').attr('value', '').text('Loading..')).selectmenu();
     }
-
+    element.selectmenu('setOptions', ddInfo);
     if (ddInfo.cache != null && (ddInfo.cache == true || ddInfo.cache == 'true')) {
         return $.Deferred(function( dfd ) {
             $.when($.getData(ddInfo.url)).done(function (json) {
+                element.selectmenu('setData', json.aaData || []);
                 $.page.createSelectMenuOptions(element, json, ddInfo);
                 dfd.resolve();
             });
@@ -3052,6 +3320,7 @@ $.page.loadSelectMenu = function (dialog, selectMenu) {
         $.ajax({
             url: ddInfo.url,
         }).done(function (json) {
+            element.selectmenu('setData', json.aaData || []);
             $.page.createSelectMenuOptions(element, json, ddInfo);
             dfd.resolve();
         });
@@ -3087,24 +3356,27 @@ $.page.loadMultiSelect = function (dialog, multiSelect) {
     }).promise();
 }
 
-$.page.createSelectMenuOptions = function (element, json, ddInfo) {
-    if (json.aaData && json.aaData.length > 0) {
-        element.selectmenu('setData', json.aaData);
+$.page.createSelectMenuOptions = function (element, json, ddInfo) {    
+    var _defaultddInfo = { addEmptyOption: true };
+    ddInfo = $.extend(_defaultddInfo, ddInfo);
+    if (($.isArray(json) && json.length > 0) || (json.aaData && json.aaData.length > 0)) {
         $.page.createSelectOptions(element, json, ddInfo);
 
-        //adding empty option add the begining of the list
-        var firstOptionValue = '';
-        if (typeof ddInfo.firstOptionVal != 'undefined' && ddInfo.firstOptionVal != null && ddInfo.firstOptionVal != '') {
-            firstOptionValue = ddInfo.firstOptionVal;
-            element.attr('firstOptionVal', ddInfo.firstOptionVal);
-        }
+        //adding empty option at the begining of the list
+        if (ddInfo.addEmptyOption) {
+            var firstOptionValue = '';
+            if (ddInfo.firstOptionVal) {
+                firstOptionValue = ddInfo.firstOptionVal;
+                element.attr('firstOptionVal', ddInfo.firstOptionVal);
+            }
 
-        $('<option>').attr('value', firstOptionValue).insertBefore(element.find('option:first'));
-        if (!ddInfo.selectedVal && !ddInfo.selectedText) {
-            element.find('option:first').attr('selected', 'selected');
+            $('<option>').attr('value', firstOptionValue).insertBefore(element.find('option:first'));
+            if (!ddInfo.selectedVal && !ddInfo.selectedText) {
+                element.find('option:first').attr('selected', 'selected');
+            }
         }
-
-        element.selectmenu('refresh').selectmenu("menuWidget").addClass("select-menu-overflow");
+        
+        element.selectmenu('refresh').selectmenu('menuWidget').addClass('select-menu-overflow');
         element.attr('load-complete', 'true');
 
         if (jQuery.isFunction(ddInfo.onChange)) {
@@ -3125,7 +3397,7 @@ $.page.createSelectMenuOptions = function (element, json, ddInfo) {
 }
 
 $.page.createSelectOptions = function (element, json, ddInfo) {
-    var list = json.aaData;
+    var list = $.isArray(json) ? json : json.aaData;
 
     $.page.sortList(list, ddInfo);
 
@@ -3137,35 +3409,55 @@ $.page.createSelectOptions = function (element, json, ddInfo) {
 }
 
 $.page.createOption = function (obj, ddInfo) {
-    var option = $("<option></option>");
+    var option = $('<option></option>');
+    var text = $.page.getOptionText(obj, ddInfo);
 
+    if ((ddInfo.selectedText && ddInfo.selectedText.toUpperCase() == obj[ddInfo.textField].toUpperCase()) ||
+            (ddInfo.selectedVal && ddInfo.selectedVal == obj[ddInfo.valField])) {
+        option.attr('selected', 'true');
+    }
+    
+    $.page.setOptionExtraAttr(option, obj, ddInfo);
+
+    return option.attr('value', obj[ddInfo.valField]).text(text);
+}
+
+$.page.getOptionText = function (obj, ddInfo) {
     var text = obj[ddInfo.textField];
+
     if ($.isArray(ddInfo.textField) || ddInfo.textField.indexOf(',') != -1) {
         text = '';
-        var concatChar = ', ';
-        if (typeof ddInfo.concatChar != 'undefined' && ddInfo.concatChar != null && ddInfo != '') {
-            concatChar = ddInfo.concatChar + ' ';
-        }
-
-        var array = ddInfo.textField;
-        if (ddInfo.textField.indexOf(',') != -1) array = ddInfo.textField.split(',');
-
-        var length = array.length;
-        for (var t = 0; t < length; t++) {
+        var concatChar = ddInfo.concatChar ? ddInfo.concatChar + ' ' : ', ';
+        var array = $.isArray(ddInfo.textField) ? ddInfo.textField : ddInfo.textField.split(',');
+        for (var t = 0; t < array.length; t++) {
             text = text + $.trim(obj[array[t]]) + concatChar;
         }
+
         text = text.substring(0, text.length - concatChar.length);
     }
 
-    if (ddInfo.selectedText && ddInfo.selectedText.toUpperCase() == obj[ddInfo.textField].toUpperCase()) {
-        option.attr('selected', 'true');
-    }
+    return $.trim(text);
+}
 
-    if (ddInfo.selectedVal && ddInfo.selectedVal == obj[ddInfo.valField]) {
-        option.attr('selected', 'true');
+$.page.setOptionExtraAttr = function (option, obj, ddInfo) {
+    if (ddInfo.extraAttrs) {
+        var attrs = ddInfo.extraAttrs.split(',');
+        for (var a = 0; a < attrs.length; a++) {
+            var attr = attrs[a];
+            option.attr(attr, obj[attr]);
+        }
     }
+}
 
-    return option.attr("value", obj[ddInfo.valField]).text(text);
+$.page.getDDInfoOptions = function (field) {
+    var _defaultOpts = {
+        url: '', removedInvalid: true, addSelect: true, selectText: '', sortByField: '',
+        valField: '', textField: '', error: field.Label,
+        cache: false
+    };
+
+    var ddInfo = $.evalJSON(field.DropDownInfo);
+    return $.extend(_defaultOpts, ddInfo);
 }
 
 $.page.sortList = function (list, ddInfo) {
@@ -3280,19 +3572,28 @@ $.page.filter.setMultiSelectVal = function (filter, ele) {
     }
 }
 
-$.widget("ui.selectmenu", $.ui.selectmenu, {
+$.page.filter.getFilterField = function (config, fieldName) {
+    for (var i = 0; i < config.Filter.Fields.length; i++) {
+        var field = config.Filter.Fields[i].FieldData;
+        if (field.FieldName == fieldName) {
+            return field;
+        }
+    }
+}
+
+$.widget('ui.selectmenu', $.ui.selectmenu, {
     _create: function () {
         this._super();
         this._setTabIndex();
     },
     _setTabIndex: function () {
-        this.button.attr("tabindex",
+        this.button.attr('tabindex',
             this.options.disabled ? -1 :
-            this.element.attr("tabindex") || 0);
+            this.element.attr('tabindex') || 0);
     },
     _setOption: function (key, value) {
         this._super(key, value);
-        if (key === "disabled") {
+        if (key === 'disabled') {
             this._setTabIndex();
         }
     },
@@ -3303,6 +3604,14 @@ $.widget("ui.selectmenu", $.ui.selectmenu, {
     getData: function () {
         //accessor
         return this.list;
+    },
+    setOptions: function (_opts) {
+        //mutator
+        this.ddinfo = _opts;
+    },
+    getOptions: function () {
+        //accessor
+        return this.ddinfo;
     }
 });
 

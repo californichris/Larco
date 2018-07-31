@@ -1,4 +1,4 @@
-﻿<%@ Page Title="Refresh Cache" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="RefreshCache.aspx.cs" Inherits="BS.Common.RefreshCache" %>
+﻿<%@ Page Title="Refresh Cache" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="RefreshCache.aspx.cs" Inherits="EPE.Common.RefreshCache" %>
 <asp:Content ID="Content1" ContentPlaceHolderID="HeadContent" runat="server">
 <script type="text/javascript">
 

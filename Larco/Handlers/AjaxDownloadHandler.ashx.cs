@@ -1,12 +1,14 @@
 ﻿using System.Web;
 using System;
 using System.IO;
+using EPE.Common.handler;
 using iTextSharp.text;
 using iTextSharp.text.html.simpleparser;
 using iTextSharp.text.pdf;
+using System.Collections;
 
 
-namespace BS.Common.handler
+namespace EPE.Common.handler
 {
     /// <summary>
     /// Summary description for AjaxDownloadHandler

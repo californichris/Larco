@@ -24,8 +24,7 @@
                 log('No user modules define.');
                 return;
             }
-            var modules = eval('(' + USER_MODULES + ')');
-            USER_MODULES = modules;
+            var modules = $.evalJSON(USER_MODULES);
 
             var parentModules = jQuery.grep(modules, function (n, i) {
                 return (n.ParentModule == '');

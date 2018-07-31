@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Web;
 using System.Web.Security;
-using BS.Common.Dao;
-using BS.Common.Entities;
-using BS.Common.Utils;
+using EPE.Common.Dao;
+using EPE.Common.Entities;
+using EPE.Common.Utils;
 
 namespace BS.Larco
 {
@@ -22,15 +22,16 @@ namespace BS.Larco
 
         private bool ValidateUser(string userName, string passWord)
         {
-            BS.Common.Entities.Page.Page usersPage = DAOFactory.Instance.GetPageInfoDAO().GetPageConfig("", "Users");
+            EPE.Common.Entities.Page.Page usersPage = DAOFactory.Instance.GetPageInfoDAO().GetPageConfig("", "Users");
             Entity entity = EntityUtils.CreateEntity(usersPage);
-            entity.SetProperty("USE_Login",userName);
+            entity.SetProperty("USE_Login", userName);
             entity.SetProperty("USE_Password", passWord);
 
             IList<Entity> list = DAOFactory.Instance.GetCatalogDAO().FindEntities(entity, FilterInfo.SearchType.AND);
             if (list.Count == 1)
             {
                 Session["CurrentUser"] = list[0];
+                Session["CurrentUserLogin"] = userName;
                 return true;                
             }
 

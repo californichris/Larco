@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace BS.Common
+namespace EPE.Common
 {
     public partial class QueryHelper : System.Web.UI.Page
     {

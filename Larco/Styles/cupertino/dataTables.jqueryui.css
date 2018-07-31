@@ -20,7 +20,7 @@ table.dataTable tfoot th {
 }
 table.dataTable thead th,
 table.dataTable thead td {
-  padding: 4px 18px;
+  padding: 4px 18px 4px 10px;
 }
 table.dataTable thead th:active,
 table.dataTable thead td:active {

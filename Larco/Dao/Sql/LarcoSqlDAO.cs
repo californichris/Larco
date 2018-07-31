@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Text;
-using BS.Common.Dao;
-using BS.Common.Dao.Handlers;
-using BS.Common.Entities;
-using BS.Common.Utils;
+using EPE.Common.Dao;
+using EPE.Common.Dao.Handlers;
+using EPE.Common.Entities;
+using EPE.Common.Utils;
 
 namespace BS.Larco.Dao.Sql
 {

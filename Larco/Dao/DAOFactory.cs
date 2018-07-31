@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Configuration;
-using System.Reflection;
-using BS.Common.Utils;
+using EPE.Common.Utils;
 
-namespace BS.Common.Dao
+namespace EPE.Common.Dao
 {
     /// <summary>This class is use to abstract and encapsulate all access to the data source.
     /// <para>This is a singleton class and it's marked sealed to prevent derivation, which could add instances.</para>

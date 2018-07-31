@@ -7,7 +7,8 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace BS.Larco {
+namespace Common.EPE
+{
     
     
     public partial class InvalidAccess {

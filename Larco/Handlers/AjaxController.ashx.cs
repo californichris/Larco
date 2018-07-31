@@ -6,20 +6,21 @@ using System.Reflection;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using BS.Common.Ajax;
-using BS.Common.Utils;
+using EPE.Common.Ajax;
+using EPE.Common.Utils;
 using iTextSharp.text;
 using iTextSharp.text.html.simpleparser;
 using iTextSharp.text.pdf;
+using Microsoft.Practices.EnterpriseLibrary.Logging;
 
-namespace BS.Common.handler
+namespace EPE.Common.handler
 {
     /// <summary>
     /// Custom HttpHandler responsible for handling all ajax request.
     /// </summary>
     public class AjaxController : IHttpHandler
     {
-        public static readonly string DefaultAjaxBasePkg = "BS.Ajax";
+        public static readonly string DefaultAjaxBasePkg = "EPE.Ajax";
         public static readonly string AjaxBasePkgParamName = "AjaxBasePkg";
 
         /// <summary>
@@ -28,21 +29,24 @@ namespace BS.Common.handler
         /// <param name="context">the request HTTPContext</param>
         public void ProcessRequest(HttpContext context)
         {
-            LoggerHelper.Info("Start");
-            string response = HandleAjaxRequest(context.Request);
+            using (new TraceManager(Logger.Writer).StartTrace("Ajax"))
+            {
+                LoggerHelper.Info("Start");
+                string response = HandleAjaxRequest(context.Request);
             
-            string csv = context.Request.Params["csv"];
-            if (!string.IsNullOrEmpty(csv) && bool.Parse(csv))
-            {
-                HandleExport(context, response);
-            }                        
-            else
-            {
-                context.Response.ContentType = "application/json";
-                context.Response.Write(response);
+                string csv = context.Request.Params["csv"];
+                if (!string.IsNullOrEmpty(csv) && bool.Parse(csv))
+                {
+                    HandleExport(context, response);
+                }                        
+                else
+                {
+                    context.Response.ContentType = "application/json";
+                    context.Response.Write(response);
+                }
+            
+                LoggerHelper.Info("End");
             }
-            
-            LoggerHelper.Info("End");
         }
 
         public virtual void HandleExport(HttpContext context, string response)
@@ -194,8 +198,8 @@ namespace BS.Common.handler
         /// <summary>
         /// Handles all ajax requests by parsing the additional path information of the request.
         /// <para> The path info must be in the format : /ClassToBeInstatiated/MethodToBeInvoke for</para>
-        /// <para> more detail please see <see cref="BS.Common.handler.ClassInfo" />. </para>
-        /// <para>The ClassToBeInstatiated must extend BS.Common.Ajax.AjaxBase </para>
+        /// <para> more detail please see <see cref="EPE.Common.handler.ClassInfo" />. </para>
+        /// <para>The ClassToBeInstatiated must extend EPE.Common.Ajax.AjaxBase </para>
         /// <para> and the MethodToBeInvoke must have the following signature: public string methodName(HttpRequest request)</para>
         /// </summary>
         /// <param name="request">the HttpRequest</param>
