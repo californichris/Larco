@@ -34,7 +34,7 @@
 	                    return p.Nombre == entity.Nombre;
 	                });
 
-	                entity.ProductId = arr[0].Id;
+	                entity.ProductId = arr[0].ProdId;
 	                catalog.Catalog('saveEntity', oTable, options, entity);
 	            }
 	        });

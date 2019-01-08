@@ -10,59 +10,45 @@
 
 	    $(document).ready(function () {
 	        $('div.catalog').Page({
-	            source: AJAX_CONTROLER_URL + '/PageInfo/GetPageConfig?pageName=' + PAGE_NAME,
-	            onFilterInitComplete: function(config) {
-	                var clients = '010,060,062,162,699,799,862,899,999,960'.split(',');
-	                var options = $('#ClientIdFilter option');
-
-	                for (var i = 0; i < options.length; i++) {
-	                    if (clients.indexOf($(options[i]).val()) == -1) {
-	                        $(options[i]).attr('selected', 'selected');
-	                    }
-	                }
-
-	                $.page.refreshMultiselect($('#ClientIdFilter'));
-
-	                $('select.multiselect', $(FILTER_SEL)).multiselect({
-	                    close: function () {
-	                        $(FILTER_SEL).Filter('refresh');
-	                    }
-	                });
-
-	            },
-	            onLoadComplete: function (config) {
-	                $('h2').text(config.Title);
-	                document.title = config.Title;
-	                initializeCatalog(config);
-	            }
+	            source: AJAX + '/PageInfo/GetPageConfig?pageName=' + PAGE_NAME,
+	            onBeforeCreateFilter: beforeCreateFilter,
+	            onFilterInitComplete: filterInitComplete,
+	            onLoadComplete: loadComplete
 	        });
 	    });
 
-	    function initializeCatalog(config) {
-           
+	    function beforeCreateFilter(config) {
+	        var field = config.FilterFielNameMap['ITS_StatusFilter'];
+	        if (field) {
+	            field.Label = '';
+	        }
+	    }
+
+	    function loadComplete(config) {
+	        $('h2').text(config.Title);
+	        document.title = config.Title;
+	        initCatalog(config);
+	    }
+
+	    function filterInitComplete(config) {
+	        var options = $('#ClienteFilter option');
+	        for (var i = 0; i < options.length; i++) {
+	            if (NOT_SELECTED_CLIENTS.indexOf($(options[i]).val()) == -1) {
+	                $(options[i]).attr('selected', 'selected');
+	            }
+	        }
+
+	        $.page.refreshMultiselect($('#ClienteFilter'));
+	    }
+
+	    function initCatalog(config) {
 	        $(TABLE_SEL).Catalog({
-                serverSide : true,
-                pageConfig: config,
-	            processing: true,
-                paginate: true,
-                //filter : false,
-                //viewOnly:true,
-	            showEdit: false,
-	            showNew: false,
-                showDelete:false,
-                showExport: true,
+                serverSide : true, pageConfig: config,
+	            processing: true, paginate: true,
+                showExport: true, 
                 //scrollY: '600px',
                 scrollX: '100%',
-                scrollXInner: '200%',
-                initCompleteCallBack: function () {
-                    $(TABLE_SEL + '_processing').css('z-index', '10').css('color', 'black');
-
-                    $(TABLE_SEL).on('draw.dt', function () {
-                        //TODO: calculate totals
-                        console.log('Redraw occurred at: ' + new Date().getTime());
-                    });
-
-                }
+                scrollXInner: '150%',
 	        });
 	    }
 

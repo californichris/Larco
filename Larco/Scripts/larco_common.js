@@ -4,6 +4,32 @@ TYPE.STOCK = 'STOCK';
 TYPE.MERGE = 'MERGE';
 TYPE.PARTIAL = 'PARTIAL';
 
+const NOT_SELECTED_CLIENTS = '010,012,060,062,162,699,799,862,899,912,999,960'.split(',');
+
+function getCheckFlagJSON() {
+    return $.toJSON({ url: 'AjaxController.ashx/PageInfo/GetPageEntityList?pageName=PageListItem&entity={"FieldName":"CheckFlag"}', valField: 'Value', textField: 'Text', cache: true });
+}
+
+function getConfig() {
+    return _getConfig(PAGE_NAME);
+}
+
+function _getConfig(pageName) {
+    return $.getData(AJAX + '/PageInfo/GetPageConfig?pageName=' + pageName);
+}
+
+function _createCheck(aData, idPrefix, fieldId, _clazz) {
+    var id = idPrefix + aData[fieldId];
+
+    var html = new StringBuffer();
+    html.append('<input ').append(fieldId).append('="').append(aData[fieldId]);
+    html.append('" type="checkbox" id="').append(id);
+    html.append('" class="').append(_clazz).append(' dialog-check ui-widget-content ui-corner-all" ');
+    html.append('>');
+
+    return html.toString();
+}
+
 function getOrdenType(entity) {
     if (isTrue(entity.Stock)) {
         return TYPE.STOCK;
@@ -219,3 +245,77 @@ function getTemplate(templateName) {
         url: AJAX + '/PageInfo/GetPageEntityList?pageName=Templates&searchType=AND&entity=' + $.toJSON(entity)
     });
 }
+
+/****************** Top Records ***********************************/
+function getTopRecords(config, top, order, where) {
+    return $.ajax({
+        url: createTopRecordsUrl(config, top, order, where),
+        //data: 'filterInfo=' + encodeURIComponent($.toJSON(filter)),
+        cache: false
+    });
+}
+
+function createTopRecordsUrl(config, top, order, where) {
+    var filter = getFilterInfo(config, top, order);
+    if (where && $.isPlainObject(where)) {
+        var colIdxs = getGridColsIndexes(config);
+        $.each(where, function (key, value) {
+            filter.columns[colIdxs[key]].search.value = value;
+        });
+    }
+
+    var url = AJAX + '/PageInfo/GetPageEntityList?pageName=' + config.Name + '&filterInfo=' + encodeURIComponent($.toJSON(filter));
+
+    return url;
+}
+
+function getFilterInfo(config, _top, _order) {
+    var filterInfo = {};
+    filterInfo.draw = '1';
+    filterInfo.columns = createFilterInfoColumns(config);
+    filterInfo.order = _order;
+    filterInfo.start = 0;
+    filterInfo.length = _top;
+    filterInfo.search = { value: '', regex: false };
+
+    return filterInfo;
+}
+
+function createFilterInfoColumns(config) {
+    var cols = [];
+    for (var i = 0; i < config.GridFields.length; i++) {
+        var gridField = config.GridFields[i];
+        var column = createFilterInfoColumn(gridField);
+        var props = getColControlProps(config, gridField);
+        if (props && props['search-type']) {
+            column.searchtype = props['search-type'];
+        }
+
+        cols.push(column);
+    }
+
+    return cols;
+}
+
+function getColControlProps(config, gridField) {
+    var props = null, field = config.FieldMap[gridField.FieldId];
+    if (field.ControlProps) {
+        props = $.evalJSON(field.ControlProps);
+    }
+
+    return props;
+}
+
+function createFilterInfoColumn(gridField) {
+    var column = {};
+    column.data = gridField.ColumnName;
+    column.name = gridField.ColumnName;
+    column.orderable = true;
+    column.searchable = gridField.Searchable == 'True' ? true : false;
+    column.search = { value: '', regex: false };
+
+    return column;
+}
+/*********************************************************************************/
+
+

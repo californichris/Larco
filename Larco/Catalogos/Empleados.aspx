@@ -3,10 +3,11 @@
 	<script type="text/javascript">
 	    $(document).ready(function () {
 	        $('div.catalog').Page({
-	            source: AJAX_CONTROLER_URL + '/PageInfo/GetPageConfig?pageName=Empleados',
+	            source: AJAX + '/PageInfo/GetPageConfig?pageName=Empleados',
 	            dialogStyle: 'table',
 	            onLoadComplete: function (config) {
 	                $('h2').text(config.Title);
+	                if (config.Filter != null) $('div.catalog').before('<br/>');
 	                document.title = config.Title;
 	                initializeCatalog(config);
 	            }
@@ -15,20 +16,11 @@
 
 	    function initializeCatalog(config) {
 	        $('table.display').Catalog({
-	            pageConfig: config,
-	            serverSide: true,
-	            showExport: true,
-	            dialogWidth: 700,
+	            pageConfig: config, serverSide: true,
+	            viewOnly: !EDIT_ACCESS, showEdit: true,
+	            showExport: true, dialogWidth: 700,
 	            validate: function (tips) {
 	                return validateDialog(config, tips);
-	            },
-	            rowCallback: function (nRow, aData, iDisplayIndex) {
-	                var wrap = '<div style="white-space:nowrap;overflow:hidden;width:220px;" title="DATA">DATA</div>';
-	                jQuery('td:eq(' + getArrayIndexForKey(config.GridFields, 'ColumnName', 'Nombre') + ')', nRow).html(wrap.replace(/DATA/g, aData.Nombre));
-	                jQuery('td:eq(' + getArrayIndexForKey(config.GridFields, 'ColumnName', 'Departamento') + ')', nRow).html(wrap.replace(/DATA/g, aData.Departamento));
-	                jQuery('td:eq(' + getArrayIndexForKey(config.GridFields, 'ColumnName', 'Puesto') + ')', nRow).html(wrap.replace(/DATA/g, aData.Puesto));
-
-	                return nRow;
 	            }
 	        });
 	    }

@@ -1,0 +1,10 @@
+﻿body {
+}
+
+.page {
+    width: 1280px; /* 960px */
+}
+
+tr.bold {
+    font-weight: bold;
+}

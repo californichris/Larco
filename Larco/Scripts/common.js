@@ -387,7 +387,7 @@ function checkDate(tips, field, fieldDesc) {
 
     var date = null;
     if (field.hasClass('hasDatepicker')) {
-        date = $.datepicker.formatDate($(field).datepicker('option', 'dateFormat'), $(field).datepicker("getDate"));
+        date = $.datepicker.formatDate($(field).datepicker('option', 'dateFormat'), $(field).datepicker('getDate'));
         if (date != field.val()) {
             date = new Date(field.val()).toString();
         }
@@ -457,8 +457,12 @@ function checkLength(tips, field, fieldDesc, min, max) {
     }
 }
 
+function isInt(val) {
+    return val && /^\d+$/.test(val);
+}
+
 function isFloat(val) {
-    return val != '' && /^-?(?:\d+|\d{1,3}(?:,\d{3})+)?(?:\.\d+)?$/.test(val);
+    return val && /^-?(?:\d+|\d{1,3}(?:,\d{3})+)?(?:\.\d+)?$/.test(val);
 }
 
 function checkFloat(tips, field, fieldDesc, min, max) {
@@ -723,36 +727,34 @@ function isFalse(value) {
 
 function populateDialog(data, selector) {
     var sel = 'input,select,textarea';
-    $(sel, $(selector)).each(
-        function (index) {  
-            var id = $(this).attr('name');
-            if (id == null || id == '') {
-                id = $(this).attr('id');
-            }
+    var elements = $(sel, $(selector));
 
-            if ($(this).attr('type') == 'checkbox' && isTrue(data[id])) {
-                $(this).prop('checked', true);
-            } else if ($(this).hasClass('hasDatepicker') && data[id] != '') {
-                $(this).datepicker('setDate', new Date(data[id]));
-            } else if ($(this).hasClass('custom-combobox-input')) {
-                //$(this).val($('#' + id + ' option[value=' + data[$('#' + id).attr('name')] + ']').text());
-            } else if ($(this).hasClass('combobox')) {
-                $(this).ComboBox('value', data[id]);
-            } else if ($(this).hasClass('money') && maskMoneyScriptLoaded()) {
-                $(this).val(data[id]).maskMoney('mask');
-            } else if ($(this).hasClass('selectMenu')) {
-                if (data[id] == '' && $('option:first', $(this)).val().toUpperCase() == 'NULL') {
-                    $(this).val($('option:first', $(this)).val());
-                } else {
-                    $(this).val(data[id]);
-                }
-                
-                $(this).selectmenu('refresh', true);           
+    for (var i = 0; i < elements.length; i++) {
+        var ele = $(elements[i]);
+        var id = $(ele).attr('name') || $(ele).attr('id');
+
+        if (ele.attr('type') == 'checkbox' && isTrue(data[id])) {
+            ele.prop('checked', true);
+        } else if (ele.hasClass('timepicker') && data[id] != '') {
+            ele.val(data[id]);
+        } else if (ele.hasClass('hasDatepicker') && data[id] != '') {
+            ele.datepicker('setDate', new Date(data[id]));
+        } else if (ele.hasClass('custom-combobox-input')) {
+            //ele.val($('#' + id + ' option[value=' + data[$('#' + id).attr('name')] + ']').text());
+        } else if (ele.hasClass('combobox')) {
+            ele.ComboBox('value', data[id]);
+        } else if (ele.hasClass('money') && maskMoneyScriptLoaded()) {
+            ele.val(data[id]).maskMoney('mask');
+        } else if (ele.hasClass('selectMenu')) {
+            if (data[id] == '' && $('option:first', ele).val().toUpperCase() == 'NULL') {
+                ele.selectmenu('setValue', $('option:first', ele).val());
             } else {
-                $(this).val(data[id]);
-            }
+                ele.selectmenu('setValue', data[id]);
+            }            
+        } else {
+            ele.val(data[id]);
         }
-    );
+    }
 }
 
 function getObject(selector) {
@@ -760,10 +762,12 @@ function getObject(selector) {
     var obj = {};
     $(sel, $(selector)).each(
         function (index) {
-            var id = $(this).attr('name') || $(this).attr('id');
+            var id = $(this).attr('id') || $(this).attr('name');
 
             if ($(this).attr('type') == 'checkbox') {
                 obj[id] = $(this).is(':checked') ? '1' : '0';
+            } else if ($(this).hasClass('timepicker')) {
+                obj[id] = $(this).val();
             } else if ($(this).hasClass('hasDatepicker')) {
                 var date = $(this).datepicker('getDate');
                 obj[id] = $.datepicker.formatDate('mm/dd/yy', date);
@@ -851,14 +855,17 @@ function getSelectedRowData(dataTable) {
  */
 function selectRow(dataTable, row) {
     var buttonsSelector = '#' + $(row).closest('table').attr('id') + '_wrapper button.disable';
-    $(buttonsSelector).button('disable');
+    $(buttonsSelector).button($(row).hasClass('row_selected') ? 'disable' : 'enable');
+
+    toggleRowSelected(dataTable, row);
+}
+
+function toggleRowSelected(dataTable, row) {
     if ($(row).hasClass('row_selected')) {
         $(row).removeClass('row_selected').removeClass('ui-state-active');
-    }
-    else {
+    } else {
         dataTable.$('tr.row_selected').removeClass('row_selected').removeClass('ui-state-active');
         $(row).addClass('row_selected').addClass('ui-state-active');
-        $(buttonsSelector).button('enable');
     }
 }
 
@@ -930,6 +937,8 @@ $.widget("epe.Catalog", {
         showIcons: true,
         showText: true,
         showExport: false,
+        showReload: false,
+        showReloadText: false,
         encodeExport: true,
         viewOnly: false,
         //dialog options
@@ -966,6 +975,8 @@ $.widget("epe.Catalog", {
         drawCallBack: function (oTable, oSettings) { },
         selectRowCallBack: function (oTable) { },
         doubleClickCallBack: function (oTable) { },
+        afterDialogCancelCallBack: function (options) { },
+        beforeDialogCancelCallBack: function (options) { },
         beforeServerDataCall: null,
         beforeLoadingTableCallBack: null,
         newEntityCallBack: null,
@@ -1271,7 +1282,7 @@ $.widget("epe.Catalog", {
             }
         }
 
-        return options.rowCallback(nRow, aData, iDisplayIndex);
+        return options.rowCallback(nRow, aData, iDisplayIndex, options.pageConfig);
     },
 
     _createButtons: function () {
@@ -1419,12 +1430,34 @@ $.widget("epe.Catalog", {
             buttonsWrapper.append(expbtn);
         }
 
+        if (options.showReload) {
+            buttonsWrapper.append(this._createReloadButton());
+        }
+
         $('#' + id + '_wrapper button').button();
         $('#' + id + '_wrapper button.disable').button('disable');
         $('#' + id + '_filter input').addClass('text ui-corner-all');
 
         this.buttonsWrapper = buttonsWrapper;
         return buttonsWrapper;
+    },
+
+    _createReloadButton: function () {
+        var id = this.element.attr('id');
+        var options = this.options;
+        var that = this;
+        var btn = $('<button id="reload' + id + '" onclick="return false;" title="Reload">Reload</button>');
+        var buttonOpts = { text: options.showReloadText };
+
+        if (options.showIcons) {
+            buttonOpts.icons = { primary: 'ui-icon-arrowrefresh-1-e' };
+        }
+
+        $(btn).button(buttonOpts).click(function (event) {
+            that.reloadTable();
+        });
+
+        return btn;
     },
 
     getExportRequest: function (options) {
@@ -1522,7 +1555,7 @@ $.widget("epe.Catalog", {
             var savebutton = {
                 id: 'button-save',
                 text: 'Save',
-                tabindex: 980,
+                //tabindex: 980,
                 click: function () {
                     var bValid = true;
                     $('#' + this.id + ' input, #' + this.id + ' select').removeClass("ui-state-error");
@@ -1548,7 +1581,7 @@ $.widget("epe.Catalog", {
         buttonsList.push({
             id: 'button-cancel',
             text: 'Cancel',
-            tabindex: 990,
+            //tabindex: 990,
             click: function () {
                 if (null != options.beforeDialogCancelCallBack && typeof (options.beforeDialogCancelCallBack) == 'function') {
                     options.beforeDialogCancelCallBack(options);
@@ -1646,7 +1679,7 @@ $.widget("epe.Catalog", {
             info.list = $(options.tableSelector).DataTable().rows().data();
             info.ids = $(options.tableSelector).DataTable().rows().ids();
         }
-        info.index = info.ids.indexOf($('#' + info.fieldId).val());
+        info.index = info.ids.indexOf($('#' + info.fieldId, $(options.dialogSelector)).val());
         info.dir = dir;
         info.limit = dir == 'next' ? (info.list.length - 1) : 0;
         info.nextIndex = dir == 'next' ? (info.index + 1) : info.index - 1;
@@ -1711,12 +1744,18 @@ $.widget("epe.Catalog", {
         return entity;
     },
 
-    deleteEntity: function (oTable, options) {
-        var entity = getSelectedRowData(oTable);
+    deleteEntity: function (oTable, options, obj) {
+        if (this.options.debug) log(this.options);
+        var entity = obj;
+        if (obj == null || typeof obj == 'undefined') {
+            entity = getSelectedRowData(oTable);
+            if (this.options.debug) log('deleteEntity obj is null');
+        }
+
         var tableSel = this.options.tableSelector;
         if (this.options.debug) log(entity);
 
-        $.ajax({
+        return $.ajax({
             type: 'POST',
             url: options.deleteRequest,
             data: 'entity=' + encodeURIComponent($.toJSON(entity))
@@ -1747,7 +1786,7 @@ $.widget("epe.Catalog", {
         var that = this;
         var tableSel = this.options.tableSelector;
 
-        $.ajax({
+        return $.ajax({
             type: 'POST',
             url: options.saveRequest,
             data: 'entity=' + encodeURIComponent($.toJSON(entity))
@@ -1776,6 +1815,7 @@ $.widget("epe.Catalog", {
         var elements = $('input:visible:first, select, textarea:visible:first', tab);
         for (var i = 0; i < elements.length; i++) {
             var ele = elements[i];
+            if ($(ele).prop('readonly') || $(ele).prop('disabled')) continue;
             if (ele.nodeName == 'INPUT' || ele.nodeName == 'TEXTAREA') {
                 $(ele).focus();
                 break;
@@ -2267,6 +2307,8 @@ $.widget('epe.Page', {
         data: '',
         source: '',
         showLoading: true,
+        dialogSelector: '',
+        filterSelector: '',
         createPageFilter: true,
         createPageTable: true,
         createPageDialog: true,
@@ -2319,7 +2361,7 @@ $.widget('epe.Page', {
 
     _createContent: function(json) {
         this.config = json;
-
+        this._createConfigMaps();
         if (this.config.Filter) {
             var fields = this._getFilterFields(this.config);
             if (fields.length != 0) {
@@ -2362,6 +2404,11 @@ $.widget('epe.Page', {
         }                       
     },
 
+    _createConfigMaps: function () {
+        var config = this.config;
+        $.page.appendConfigMaps(config);
+    },
+
     _showLoading: function () {
         this.loading = $('<div id="loading" style="height:500px;">Loading, please wait...</div>');
         $(this.element).after(this.loading);
@@ -2381,15 +2428,18 @@ $.widget('epe.Page', {
         });
 
         var length = fields.length;
+        var gridIndexes = {};
         html.append('<tr>');
         for (var i = 0; i < length; i++) {
             html.append('<th align="left">').append(fields[i].ColumnLabel).append('</th>');
+            gridIndexes[fields[i].ColumnName] = i;
         }
         html.append('</tr>');
 
         var table = $('<table cellpadding="0" cellspacing="0" border="0" class="display" id="' + config.Name + '_table"><thead></thead><tbody></tbody></table>');
         $('thead', table).append(html.toString());
 
+        config.ColIdxs = gridIndexes;
         this.table = table;
         $(this.element).append(table);
     },
@@ -2500,8 +2550,13 @@ $.widget('epe.Page', {
         if (idFields.length > 0) {
             config.FieldId = idFields[0].FieldName;
         }
+        
+        if (this.options.dialogSelector) {
+            $(this.options.dialogSelector).append(dialog);
+        } else {
+            $('body').append(dialog);
+        }
 
-        $('body').append(dialog);
         $('#' + config.Name + '_dialogtabs', dialog).tabs();
 
         for (var d = 0; d < controlFields.dropDownFields.length; d++) {
@@ -2552,48 +2607,11 @@ $.widget('epe.Page', {
             var field = controlFields.dateFields[dt];
             if (field.ControlType == 'hidden') continue;
 
-            var _dateFormat = 'mm/dd/yy';
-            var _timeFormat = 'HH:mm:ss';
-    
-            var dateFormatConfigValue = $.page.getFieldProp(field, 'date-format'); //controlPros['date-format'];
-            if (dateFormatConfigValue)
-                _dateFormat = dateFormatConfigValue;
-          
-
-            if (field.ControlType == 'timepicker') {            
-                            
-                var timeFormatConfigValue = $.page.getFieldProp(field, 'time-format');  //controlPros['time-format'];
-                if (timeFormatConfigValue)
-                    _timeFormat = timeFormatConfigValue;
-
-                var _timeOnly = isTrue($.page.getFieldProp(field, 'timeOnly'));
-                if (_timeOnly) _dateFormat = '';
-
-                $('#' + field.FieldName, dialog).datetimepicker({
-                    showButtonPanel: true,
-                    showOn: 'button',
-                    timeFormat: _timeFormat,
-                    dateFormat: _dateFormat,
-                    timeOnly:_timeOnly
-                }).next('button').text('').button({
-                    icons: {
-                        primary: 'ui-icon-calendar'
-                    },
-                    text: false
-                });
+            if (field.ControlType == 'timepicker') {                                        
+                $.page.initDateTimePicker(field, dialog);
             } else {
-                $('#' + field.FieldName, dialog).datepicker({
-                    showButtonPanel: true,
-                    showOn: 'button',
-                    dateFormat: _dateFormat
-                }).next('button').text('').button({
-                    icons: {
-                        primary: 'ui-icon-calendar'
-                    },
-                    text: false
-                });
+                $.page.initDatePicker(field, dialog);
             }
-
             
             if ( this._isReadOnly(field) ) {
                 $('#' + field.FieldName, dialog).next('button').button('disable');
@@ -2634,8 +2652,8 @@ $.widget('epe.Page', {
 
     _getFilterFields : function(config) {
         if (this.options.debug) console.time('_getFilterFields');
-        var fields = [];
-
+        var fields = [], filterFielNameMap = {};
+        
         if (config.Filter && config.Filter.Fields && config.Filter.Fields.length > 0) {
             var length = config.Filter.Fields.length;
             for (var i = 0; i < length; i++) {
@@ -2679,6 +2697,7 @@ $.widget('epe.Page', {
                         from.FieldData.FieldName = from.FieldData.FieldName + 'FromFilter'
                         from.FieldData.Label = from.FieldData.Label + ' From:';
                         fields.push(from);
+                        filterFielNameMap[from.FieldData.FieldName.replace(' ', '')] = from.FieldData;
 
                         field.GridData.ColumnName = field.GridData.ColumnName + 'To';
                         field.FieldData.FieldName = field.FieldData.FieldName + 'To';
@@ -2691,9 +2710,12 @@ $.widget('epe.Page', {
                 field.FieldData.Label = field.FieldData.Label + ':';
 
                 fields.push(field);
+
+                filterFielNameMap[field.FieldData.FieldName.replace(' ', '')] = field.FieldData;
             }
         }
 
+        config.FilterFielNameMap = filterFielNameMap;
         if (this.options.debug) console.timeEnd('_getFilterFields');
         return fields;
     },
@@ -2959,7 +2981,7 @@ $.widget('epe.Page', {
         return this.filter;
     },
 
-    _destroy: function () {
+    destroy: function () {
         //TODO: implement destroy
     }
 
@@ -2991,9 +3013,6 @@ $.widget('epe.Filter', {
         var multiselects = $.map(config.Filter.Fields, function (f, i) {
             return f.FieldData.ControlType == 'multiselect' ? f.FieldData : null;
         });
-
-        var _filterDateFormat = 'mm/dd/yy';
-        var _filterTimeFormat = 'HH:mm:ss';
         
         $.page.initSelectMenu($(selectMenus.join(','), this.element));
         this._initComboBoxes(ddlMenus);
@@ -3013,44 +3032,16 @@ $.widget('epe.Filter', {
                 var promise = $.page.loadMultiSelect($(this.element), f.FieldData);
                 promises.push(promise);
             } else if ($.page.common.isDateField(f.FieldData)) {
-               
-                var dateFormatConfigValue = $.page.getFieldProp(f.FieldData, 'date-format');
-                if (dateFormatConfigValue)
-                    _filterDateFormat = dateFormatConfigValue;
-
                 if (f.FieldData.ControlType == 'timepicker') {
-                
-                    var timeFormatConfigValue = $.page.getFieldProp(f.FieldData, 'time-format');  //controlPros['time-format'];
-                    if (timeFormatConfigValue)
-                        _filterTimeFormat = timeFormatConfigValue;
-                
-                    $('#' + f.GridData.ColumnName, $(this.element)).datetimepicker({
-                        showButtonPanel: true,
-                        showOn: 'button',
-                        timeFormat: _filterTimeFormat,
-                        dateFormat: _filterDateFormat,
-                        onClose: function () {
-                            that._filterChange();
-                        }
-                    }).next('button').text('').button({
-                        icons: {
-                            primary: 'ui-icon-calendar'
-                        },
-                        text: false
-                    });
-
-                    $('#' + f.GridData.ColumnName, $(this.element)).addClass('hasTimePicker');
+                    var opts = $.page.getDateTimePickerOpts(f.FieldData);
+                    opts.onClose = function () {
+                        that._filterChange();
+                    }
+                    
+                    var ele = $('#' + f.FieldData.FieldName, $(this.element)).addClass('hasTimePicker');
+                    $.page._initDateTimePicker(ele, opts);
                 } else {
-                    $('#' + f.GridData.ColumnName, $(this.element)).datepicker({
-                        showButtonPanel: true,
-                        showOn: 'button',
-                        dateFormat: _filterDateFormat,
-                    }).next('button').text('').button({
-                        icons: {
-                            primary: 'ui-icon-calendar'
-                        },
-                        text: false
-                    });
+                    $.page.initDatePicker(f.FieldData, $(this.element));
                 }                
             }
         }
@@ -3075,7 +3066,7 @@ $.widget('epe.Filter', {
         $('input[type=text]', this.element).change(function () {
             that._filterChange();
         }).keydown(function () {
-            if ((event.type == 'keydown' && event.keyCode == 13)) {
+            if ((event && event.type == 'keydown' && event.keyCode == 13)) {
                 that._filterChange();
                 event.preventDefault();
             }
@@ -3261,15 +3252,22 @@ $.page.common.isDateField = function (field) {
 }
 
 $.page.getFieldProp = function (field, prop) {
+    var props = $.page.getFieldProps(field);
+    if (props[prop]) return props[prop];
+
+    return null;
+}
+
+$.page.getFieldProps = function (field) {
     var controlProps = field.ControlProps;
     if (controlProps) {
         try { // Try to parse controlprops
             var props = controlProps && $.evalJSON(controlProps);
-            if (props[prop]) return props[prop];
+            return props;
         } catch (e) { /* not able to parse props*/ }
     }
 
-    return null;
+    return {};
 }
 
 $.page.initSelectMenu = function (selector) {
@@ -3397,15 +3395,17 @@ $.page.createSelectMenuOptions = function (element, json, ddInfo) {
 }
 
 $.page.createSelectOptions = function (element, json, ddInfo) {
+    element.empty();
     var list = $.isArray(json) ? json : json.aaData;
-
     $.page.sortList(list, ddInfo);
 
-    element.empty();
+    var html = new StringBuffer();
     var length = list.length;
     for (var i = 0; i < length; i++) {
-        element.append($.page.createOption(list[i], ddInfo));
+        html.append($.page.createOptionHTML(list[i], ddInfo));
     }
+
+    element.html(html.toString());
 }
 
 $.page.createOption = function (obj, ddInfo) {
@@ -3421,6 +3421,27 @@ $.page.createOption = function (obj, ddInfo) {
 
     return option.attr('value', obj[ddInfo.valField]).text(text);
 }
+
+$.page.createOptionHTML = function (obj, ddInfo) {
+    var text = $.page.getOptionText(obj, ddInfo);
+    var html = new StringBuffer();
+    html.append('<option');
+
+    if ((ddInfo.selectedText && ddInfo.selectedText.toUpperCase() == obj[ddInfo.textField].toUpperCase()) ||
+            (ddInfo.selectedVal && ddInfo.selectedVal == obj[ddInfo.valField])) {
+        html.append(' selected="true" ');
+    }
+
+    $.page.appendOptionExtraAttr(html, obj, ddInfo);
+
+    html.append(' value="').append(obj[ddInfo.valField]).append('" ');
+    html.append('>');
+    html.append(text);
+    html.append('</option>');
+
+    return html.toString();
+}
+
 
 $.page.getOptionText = function (obj, ddInfo) {
     var text = obj[ddInfo.textField];
@@ -3445,6 +3466,16 @@ $.page.setOptionExtraAttr = function (option, obj, ddInfo) {
         for (var a = 0; a < attrs.length; a++) {
             var attr = attrs[a];
             option.attr(attr, obj[attr]);
+        }
+    }
+}
+
+$.page.appendOptionExtraAttr = function (optionHTML, obj, ddInfo) {
+    if (ddInfo.extraAttrs) {
+        var attrs = ddInfo.extraAttrs.split(',');
+        for (var a = 0; a < attrs.length; a++) {
+            var attr = attrs[a];
+            optionHTML.append(' ').append(attr).append('="').append(obj[attr]).append('" ');
         }
     }
 }
@@ -3519,6 +3550,24 @@ $.page.refreshMultiselect = function (element) {
     return element;
 }
 
+$.page.appendConfigMaps = function (config) {
+    var fieldMap = {}, fieldNameMap = {}, tabs = config.Tabs;
+
+    for (var i = 0; tabs && i < tabs.length; i++) {
+        var fields = tabs[i].Fields;
+        for (var f = 0; fields && f < fields.length; f++) {
+            var field = fields[f];
+            fieldMap[field.FieldId] = field;
+            fieldNameMap[field.FieldName.replace(' ', '')] = field;
+        }
+    }
+
+    config.FieldMap = fieldMap;
+    config.FieldNameMap = fieldNameMap;
+
+    return config;
+}
+
 $.page.filter = {};
 
 $.page.filter.createFilter = function (filterEle) {
@@ -3581,37 +3630,286 @@ $.page.filter.getFilterField = function (config, fieldName) {
     }
 }
 
+$.page.initDatePicker = function (field, dialog) {
+    var _dateFormat = $.page.getFieldProp(field, 'date-format') || 'mm/dd/yy'; //backward compatibility
+    var opts = { showButtonPanel: true, showOn: 'button', dateFormat: _dateFormat };//default-options    
+    var props = $.page.getFieldProps(field);
+    opts = $.extend(opts, props);
+
+    $('#' + field.FieldName, dialog).datepicker(opts).next('button').text('').button({
+        icons: { primary: 'ui-icon-calendar' }, text: false
+    });
+}
+
+$.page.initDateTimePicker = function (field, dialog) {
+    var opts = $.page.getDateTimePickerOpts(field);
+    $.page._initDateTimePicker($('#' + field.FieldName, dialog), opts);   
+}
+
+$.page._initDateTimePicker = function (ele, opts) {
+    $(ele).addClass('timepicker');
+    $(ele).datetimepicker(opts).next('button').text('').button({
+        icons: { primary: 'ui-icon-calendar' }, text: false
+    });
+}
+
+$.page.getDateTimePickerOpts = function (field) {
+    var _dateFormat = $.page.getFieldProp(field, 'date-format') || 'mm/dd/yy'; //backward compatibility
+    var _timeFormat = $.page.getFieldProp(field, 'time-format') || 'HH:mm:ss'; //backward compatibility
+
+    var opts = { //default-options
+        showButtonPanel: true, showOn: 'button', timeFormat: _timeFormat, dateFormat: _dateFormat,
+        timeOnly: false, oneLine: false,  controlType: 'slider'
+    };
+
+    var props = $.page.getFieldProps(field);
+    opts = $.extend(opts, props);
+    opts.oneLine = isTrue(opts.oneLine);
+    opts.timeOnly = isTrue(opts.timeOnly);
+
+    return opts;
+}
+
 $.widget('ui.selectmenu', $.ui.selectmenu, {
     _create: function () {
         this._super();
         this._setTabIndex();
     },
+
     _setTabIndex: function () {
         this.button.attr('tabindex',
             this.options.disabled ? -1 :
             this.element.attr('tabindex') || 0);
     },
+
     _setOption: function (key, value) {
         this._super(key, value);
         if (key === 'disabled') {
             this._setTabIndex();
         }
     },
+
     setData: function (_list) {
         //mutator
         this.list = _list;
     },
+
     getData: function () {
         //accessor
         return this.list;
     },
+
     setOptions: function (_opts) {
         //mutator
         this.ddinfo = _opts;
     },
+
     getOptions: function () {
         //accessor
         return this.ddinfo;
+    },
+
+    setValue: function (value) {
+        this.element.val(value);
+        var _widget = this.widget();
+
+        $('span.ui-selectmenu-text', _widget).text(this._getText(value));
+    },
+
+    _getText: function (value) {
+        //TODO: add cache
+        if (!$.trim(value)) return '';
+        if (!this.ddinfo) return $('option:selected', this.element).text();
+
+        var _list = this.list, valField = this.ddinfo.valField;
+        for (var i = 0; i < _list.length; i++) {
+            if (_list[i][valField] == value) return $.page.getOptionText(_list[i], this.ddinfo);
+        }
+
+        return '';
+    },
+
+    open: function (event) {
+        this._super(event);
+
+        var _menuWidget = this.menuWidget();
+        if ($(_menuWidget[0]).hasClass('select-menu-overflow')) {
+            $(_menuWidget[0]).animate({ scrollTop: 0 }, 0);
+            var selected = this._getSelectedItem();
+            var scrollTop = $(selected[0], _menuWidget[0]).position().top - $(selected[0], _menuWidget[0]).height();
+            var widgetHeigth = $(_menuWidget[0]).height();
+
+            if (scrollTop > widgetHeigth) {
+                $(_menuWidget[0]).animate({ scrollTop: scrollTop }, 0);
+            }            
+        }
+    },
+
+    _drawMenu: function () {
+        var that = this;
+
+        // Create menu
+        this.menu = $("<ul>", {
+            "aria-hidden": "true",
+            "aria-labelledby": this.ids.button,
+            id: this.ids.menu
+        });
+
+        // Wrap menu
+        this.menuWrap = $("<div>", {
+            "class": "ui-selectmenu-menu ui-front"
+        })
+			.append(this.menu)
+			.appendTo(this._appendTo());
+
+        // Initialize menu widget
+        this.menuInstance = this.menu
+			.menu({
+			    role: "listbox",
+			    select: function (event, ui) {
+			        event.preventDefault();
+
+			        // support: IE8
+			        // If the item was selected via a click, the text selection
+			        // will be destroyed in IE
+			        that._setSelection();
+
+			        that._select(that._getItemData(ui.item), event);
+			    },
+			    focus: function (event, ui) {
+			        var item = that._getItemData(ui.item);
+
+			        // Prevent inital focus from firing and check if its a newly focused item
+			        if (that.focusIndex != null && item.index !== that.focusIndex) {
+			            that._trigger("focus", event, { item: item });
+			            if (!that.isOpen) {
+			                that._select(item, event);
+			            }
+			        }
+			        that.focusIndex = item.index;
+
+			        that.button.attr("aria-activedescendant",
+						that.menuItems.eq(item.index).attr("id"));
+			    }
+			})
+			.menu("instance");
+
+        // Adjust menu styles to dropdown
+        this.menu
+			.addClass("ui-corner-bottom")
+			.removeClass("ui-corner-all");
+
+        // Don't close the menu on mouseleave
+        this.menuInstance._off(this.menu, "mouseleave");
+
+        // Cancel the menu's collapseAll on document click
+        this.menuInstance._closeOnDocumentClick = function () {
+            return false;
+        };
+
+        // Selects often contain empty items, but never contain dividers
+        this.menuInstance._isDivider = function () {
+            return false;
+        };
+    },
+
+    _refreshMenu: function () {
+        this.menu.empty();
+
+        var item,
+			options = this.element.find("option");
+
+        if (!options.length) {
+            return;
+        }
+
+        this._parseOptions(options);
+        //console.time('_renderMenu');
+        this._renderMenu(this.menu, this.items);
+        //console.timeEnd('_renderMenu');
+
+        //console.time('menuInstance_refresh');
+        this.menuInstance.refresh();
+        this.menuItems = this.menu.find("li").not(".ui-selectmenu-optgroup");
+        //console.timeEnd('menuInstance_refresh');
+
+        item = this._getSelectedItem();
+
+        // Update the menu to have the correct item focused
+        this.menuInstance.focus(null, item);
+        this._setAria(this._getItemData(item));
+
+        // Set disabled state
+        this._setOption("disabled", this.element.prop("disabled"));
+    },
+
+    _getItemData: function(item) {
+        var idx = parseInt($(item).attr('itemindex'));
+
+        return this.items[idx];
+    },
+
+    _selectFocusedItem: function (event) {
+        var item = this.menuItems.eq(this.focusIndex);
+        if (!item.hasClass("ui-state-disabled")) {
+            this._select(this._getItemData(item), event);
+        }
+    },
+
+    _renderItemData: function (ul, item) {
+        return this._renderItem(ul, item);
+    },
+
+    _renderItem: function (ul, item) {
+        var li = $("<li>");
+
+        if (item.disabled) {
+            li.addClass("ui-state-disabled");
+        }
+        this._setText(li, item.label);
+
+        li.attr('itemIndex', item.index);
+
+        return li.appendTo(ul);
+    },
+
+    _renderMenu: function (ul, items) {
+        var that = this, currentOptgroup = '';
+        var html = new StringBuffer();
+
+        var length = items.length;
+        for (var i = 0; i < length; i++) {
+            var item = items[i];
+            if (item.optgroup !== currentOptgroup) {
+                html.append('<li class="ui-selectmenu-optgroup ui-menu-divider');
+                html.append(item.element.parent('optgroup').prop('disabled') ? 'ui-state-disabled' : '');
+                html.append('>').append(item.optgroup).append('</li>');
+
+                currentOptgroup = item.optgroup;
+            }
+
+            that._appendItemData(html, item);
+        }
+
+        ul.append(html.toString());
+    },
+
+    _appendItemData: function (ulHTML, item) {
+        ulHTML.append('<li');
+
+        if (item.disabled) {
+            ulHTML.append(' class="ui-state-disabled" ');
+        }
+
+        ulHTML.append(' itemIndex="').append(item.index).append('" ');
+
+        if (item.label) {
+            ulHTML.append('>').append(item.label);
+        } else {
+            ulHTML.append('>&#160;');
+        }
+
+        ulHTML.append('</li>');
     }
 });
 

@@ -74,12 +74,12 @@
             newEntityCallBack: function (oTable, options) {
                 $(DETALLE_TABLE_SELECTOR).DataTable().clear().draw();
                 CURRENT_DETAIL = [];
-                $(TABLE_SEL).Catalog('newEntity', oTable, options);
+                $(TABLE_SELECTOR).Catalog('newEntity', oTable, options);
                 $('#ENT_Fecha').val(Date.today().toString('MM/dd/yyyy'));
             },
             editEntityCallBack: function (oTable, options) {
                 var data = getSelectedRowData(oTable);
-                $(TABLE_SEL).Catalog('editEntity', oTable, options);
+                $(TABLE_SELECTOR).Catalog('editEntity', oTable, options);
 
                 reloadEntradasDetalle(data);
             },

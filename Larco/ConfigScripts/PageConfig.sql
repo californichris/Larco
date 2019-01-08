@@ -1,21 +1,32 @@
+USE [EPEFrameworkService]
+GO
+ 
+DECLARE @PAGEAPP_ID AS INT
 DECLARE @PAGE_ID AS INT
 DECLARE @TAB_ID AS INT
 DECLARE @FIELD_ID AS INT
 DECLARE @FILTER_ID AS INT
 DECLARE @FILTERFIELD_ID AS INT
  
+SELECT TOP 1 @PAGEAPP_ID = PageAppId FROM PageApp WHERE AppName = 'Larco'
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'AggregateValue' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'AggregateValue' 
+IF @PAGEAPP_ID IS NULL BEGIN
+  INSERT INTO PageApp(AppName,UpdatedBy,UpdatedDate) VALUES('Larco','cbeltra',GETDATE())	
+  SELECT TOP 1 @PAGEAPP_ID = PageAppId FROM PageApp WHERE AppName = 'Larco'
+END
+ 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'AggregateValue' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'AggregateValue' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('AggregateValue','AggregateValue','tblAggregateValue','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('AggregateValue','AggregateValue','tblAggregateValue','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
@@ -38,18 +49,21 @@ INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownI
 SET @FIELD_ID = scope_identity()
 INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Value',3,'Value','cbeltra',GETDATE())
  
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'BeforeDays','BeforeDays','int',0,'',1,4,'inputbox',0,'','BeforeDays',1,1,'cbeltra',GETDATE(),'')
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'CalidadOrdenes' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'CalidadOrdenes' 
+ 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'CalidadOrdenes' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'CalidadOrdenes' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('CalidadOrdenes','Ordenes Liberadas Calidad','CalidadOrdenesVW','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('CalidadOrdenes','Ordenes Liberadas Calidad','CalidadOrdenesVW','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
@@ -108,17 +122,18 @@ INSERT INTO [PageFilter]([PageId],[FilterCols],[FilterText],[ShowClear],[FilterP
 SET @FILTER_ID = scope_identity()
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Clientes' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Clientes' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Clientes' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Clientes' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('Clientes','Clientes','tblClientes','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('Clientes','Clientes','tblClientes','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,3,'cbeltra',GETDATE())
@@ -169,17 +184,194 @@ INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownI
 INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Id','Id','int',1,'',0,16,'hidden',1,'','Id',1,1,'cbeltra',GETDATE(),'')
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Empleados' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Empleados' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'DiasVencido' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'DiasVencido' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('Empleados','Empleados','tblEmpleados','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('DiasVencido','Dias de Vencido','DiasVencidos_vw','cbeltra',GETDATE(),@PAGEAPP_ID,'')
+SET @PAGE_ID = scope_identity()
+ 
+INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
+SET @TAB_ID = scope_identity()
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ProdTaskId','ProdTaskId','int',1,'',0,9,'hidden',1,'','ProdTaskId',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,0,5,'_',1,'ProdTaskId','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ProductId','Producto','int',1,'{"url":"AjaxController.ashx/PageInfo/GetPageEntityList?pageName=Productos","valField":"Id","textField":"Nombre","cache":true}',0,1,'selectmenu',0,'','Product_ID',1,1,'cbeltra',GETDATE(),'{"search-type":"equals"}')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,0,1,0,'Producto',6,'ProductId','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'TaskId','Tarea','int',1,'{"cache":true,"textField":"Nombre","url":"AjaxController.ashx/PageInfo/GetPageEntityList?pageName=Tareas","valField":"TaskId"}',0,2,'selectmenu',0,'','Task_ID',1,1,'cbeltra',GETDATE(),'{"search-type":"equals"}')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,0,1,0,'Tarea',7,'TaskId','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Value','Puntos','decimal',0,'',1,4,'inputbox',0,'','Value',1,1,'cbeltra',GETDATE(),'{"edit-type":"multi"}')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Puntos',5,'Value','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'BeforeDays','Dias de Vencido','int',1,'',1,3,'inputbox',0,'','BeforeDays',1,1,'cbeltra',GETDATE(),'{"edit-type":"multi"}')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Dias de Vencido',4,'BeforeDays','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ProdNombre','Producto','varchar',0,'',1,5,'hidden',0,'','ProdNombre',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Producto',2,'ProdNombre','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ProdActivo','ProdActivo','bit',0,'',0,7,'hidden',0,'','ProdActivo',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'TareaNombre','Tarea','varchar',0,'',1,6,'hidden',0,'','TareaNombre',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Tarea',3,'TareaNombre','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'TareaActivo','TareaActivo','bit',0,'',0,8,'hidden',0,'','TareaActivo',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageFilter]([PageId],[FilterCols],[FilterText],[ShowClear],[FilterProps],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,2,'Filter',1,'','cbeltra',GETDATE())
+SET @FILTER_ID = scope_identity()
+ 
+SELECT @TAB_ID = TabId FROM PageTab WHERE TabName = 'Details' AND PageId = @PAGE_ID
+SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'ProductId' AND TabId = @TAB_ID
+INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,1,'cbeltra',GETDATE())
+ 
+SELECT @TAB_ID = TabId FROM PageTab WHERE TabName = 'Details' AND PageId = @PAGE_ID
+SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'TaskId' AND TabId = @TAB_ID
+INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,2,'cbeltra',GETDATE())
+ 
+ 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'DueUrgentOrdersProcessedByEmployee' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'DueUrgentOrdersProcessedByEmployee' AND PageAppId = @PAGEAPP_ID
+	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
+	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
+	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
+END
+ 
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('DueUrgentOrdersProcessedByEmployee','Reporte de Ordenes Urgentes y Vencidas Por Empleado','DueUrgentOrdersProcessedByEmployee_VW','cbeltra',GETDATE(),@PAGEAPP_ID,'')
+SET @PAGE_ID = scope_identity()
+ 
+INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
+SET @TAB_ID = scope_identity()
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'NumeroEmpleado','Numero Empleado','int',0,'',1,0,'inputbox',1,'','NumeroEmpleado',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,0,1,0,'NumeroEmpleado',13,'NumeroEmpleado','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Empleado','Empleado','varchar',0,'',1,1,'inputbox',0,'','Empleado',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Empleado',1,'Empleado','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'TaskId','Tarea','int',1,'{"url":"AjaxController.ashx/PageInfo/GetPageEntityList?pageName=Tareas","valField":"TaskId","textField":"Nombre","cache":true}',0,2,'selectmenu',0,'','TaskId',1,1,'cbeltra',GETDATE(),'{"search-type":"equals"}')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,0,1,0,'Tarea',15,'TaskId','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'TaskNombre','Tarea','varchar',0,'',1,3,'inputbox',0,'','TaskNombre',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Tarea',8,'TaskNombre','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ProdId','Producto','int',1,'{"url":"AjaxController.ashx/PageInfo/GetPageEntityList?pageName=Productos","valField":"Id","textField":"Nombre","cache":true}',0,4,'selectmenu',0,'','ProdId',1,1,'cbeltra',GETDATE(),'{"search-type":"equals"}')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,0,1,0,'Producto',14,'ProdId','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ProdNombre','Producto','varchar',0,'',1,5,'inputbox',0,'','ProdNombre',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Producto',9,'ProdNombre','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Requerida','Requerida','int',0,'',1,6,'inputbox',0,'','Requerida',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Piezas',3,'Requerida','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Urgent','Urgente','int',1,'',1,7,'inputbox',0,'','Urgent',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Urgente',6,'Urgent','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Due','Vencida','int',1,'',1,8,'inputbox',0,'','Due',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Vencida',7,'Due','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ITE_Nombre','Orden','varchar',0,'',1,9,'inputbox',0,'','ITE_Nombre',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Orden',10,'ITE_Nombre','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ITS_DTStart','Inicio','datetime',0,'',1,10,'inputbox',0,'','ITS_DTStart',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Inicio',11,'ITS_DTStart','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ITS_DTStop','Fecha','datetime',0,'',1,11,'inputbox',0,'','ITS_DTStop',1,1,'cbeltra',GETDATE(),'{"filter-type":"date-range"}')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Termino',12,'ITS_DTStop','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Puntos','Puntos','decimal',0,'',1,12,'inputbox',0,'','Puntos',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Puntos',4,'Puntos','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Ordenes','Ordenes','int',0,'',1,13,'inputbox',0,'','Ordenes',0,0,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Ordenes',2,'Ordenes','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'TotalPuntos','Total Puntos','decimal',0,'',1,14,'inputbox',0,'','TotalPuntos',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Total Puntos',5,'TotalPuntos','cbeltra',GETDATE())
+ 
+INSERT INTO [PageFilter]([PageId],[FilterCols],[FilterText],[ShowClear],[FilterProps],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,2,'Filter',1,'','cbeltra',GETDATE())
+SET @FILTER_ID = scope_identity()
+ 
+SELECT @TAB_ID = TabId FROM PageTab WHERE TabName = 'Details' AND PageId = @PAGE_ID
+SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'ITS_DTStop' AND TabId = @TAB_ID
+INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,1,'cbeltra',GETDATE())
+ 
+SELECT @TAB_ID = TabId FROM PageTab WHERE TabName = 'Details' AND PageId = @PAGE_ID
+SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'ProdId' AND TabId = @TAB_ID
+INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,2,'cbeltra',GETDATE())
+ 
+SELECT @TAB_ID = TabId FROM PageTab WHERE TabName = 'Details' AND PageId = @PAGE_ID
+SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'TaskId' AND TabId = @TAB_ID
+INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,3,'cbeltra',GETDATE())
+ 
+ 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Empleados' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Empleados' AND PageAppId = @PAGEAPP_ID
+	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
+	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
+	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
+END
+ 
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('Empleados','Empleados','tblEmpleados','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,2,'cbeltra',GETDATE())
@@ -225,17 +417,18 @@ INSERT INTO [PageFilter]([PageId],[FilterCols],[FilterText],[ShowClear],[FilterP
 SET @FILTER_ID = scope_identity()
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Entradas' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Entradas' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Entradas' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Entradas' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('Entradas','Entradas','tblEntradas','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('Entradas','Entradas','tblEntradas','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Entrada','',1,4,'cbeltra',GETDATE())
@@ -311,17 +504,18 @@ SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'ENT_OrdenCompra' AN
 INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,5,'cbeltra',GETDATE())
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'EntradasAlmacen' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'EntradasAlmacen' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'EntradasAlmacen' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'EntradasAlmacen' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('EntradasAlmacen','Reporte de Entradas Almacen','tblEntradasDetalle','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('EntradasAlmacen','Reporte de Entradas Almacen','tblEntradasDetalle','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,2,'cbeltra',GETDATE())
@@ -417,17 +611,18 @@ SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'ENT_OrdenCompra' AN
 INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,5,'cbeltra',GETDATE())
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'EntradasContraSalidas' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'EntradasContraSalidas' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'EntradasContraSalidas' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'EntradasContraSalidas' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('EntradasContraSalidas','Reporte de Entradas vs Salidas','EntradasSalidas_VW','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('EntradasContraSalidas','Reporte de Entradas vs Salidas','EntradasSalidas_VW','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,3,'cbeltra',GETDATE())
@@ -629,17 +824,18 @@ SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'MAT_ID' AND TabId =
 INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,2,'cbeltra',GETDATE())
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'EntradasDetalle' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'EntradasDetalle' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'EntradasDetalle' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'EntradasDetalle' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('EntradasDetalle','Entradas Detalle','tblEntradasDetalle','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('EntradasDetalle','Entradas Detalle','tblEntradasDetalle','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
@@ -690,17 +886,18 @@ INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownI
 INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ED_Saldo','ED_Saldo','decimal',0,'',1,13,'hidden',0,'','ED_Saldo',1,1,'cbeltra',GETDATE(),'')
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'EntradasSalidas' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'EntradasSalidas' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'EntradasSalidas' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'EntradasSalidas' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('EntradasSalidas','EntradasSalidas','tblEntradasSalidas','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('EntradasSalidas','EntradasSalidas','tblEntradasSalidas','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
@@ -732,17 +929,18 @@ SET @FIELD_ID = scope_identity()
 INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'ES_Costo',5,'ES_Costo','cbeltra',GETDATE())
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'EntradasSalidasConta' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'EntradasSalidasConta' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'EntradasSalidasConta' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'EntradasSalidasConta' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('EntradasSalidasConta','Entradas vs Salidas Conta','EntradasSalidasConta_VW','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('EntradasSalidasConta','Entradas vs Salidas Conta','EntradasSalidasConta_VW','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
@@ -834,17 +1032,18 @@ SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'MAT_ID' AND TabId =
 INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,2,'cbeltra',GETDATE())
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'ExistenciaMateriales' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'ExistenciaMateriales' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'ExistenciaMateriales' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'ExistenciaMateriales' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('ExistenciaMateriales','Existencia de Materiales','ExistenciaMateriales_VW','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('ExistenciaMateriales','Existencia de Materiales','ExistenciaMateriales_VW','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
@@ -861,17 +1060,18 @@ SET @FIELD_ID = scope_identity()
 INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Existencia',2,'Existencia','cbeltra',GETDATE())
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'FechaEntrega' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'FechaEntrega' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'FechaEntrega' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'FechaEntrega' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('FechaEntrega','Relacion de Fecha de Entrega','tblOrdenes','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('FechaEntrega','Relacion de Fecha de Entrega','tblOrdenes','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
@@ -999,17 +1199,18 @@ SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'OrdenCompra' AND Ta
 INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,9,'cbeltra',GETDATE())
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Items' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Items' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Items' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Items' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('Items','Items','tblItems','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('Items','Items','tblItems','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
@@ -1027,17 +1228,18 @@ INSERT INTO [PageFilter]([PageId],[FilterCols],[FilterText],[ShowClear],[FilterP
 SET @FILTER_ID = scope_identity()
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'ItemTasks' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'ItemTasks' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'ItemTasks' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'ItemTasks' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('ItemTasks','ItemTasks','tblItemTasks','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('ItemTasks','ItemTasks','tblItemTasks','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
@@ -1064,17 +1266,492 @@ INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownI
 INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'OrdenId','OrdenId','int',1,'',1,9,'hidden',0,'','OrdenId',1,1,'cbeltra',GETDATE(),'')
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Materiales' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Materiales' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'ItemTasks_VW' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'ItemTasks_VW' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('Materiales','Materiales','tblMateriales','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('ItemTasks_VW','ItemTasks_VW','ItemTasks_VW','cbeltra',GETDATE(),@PAGEAPP_ID,'')
+SET @PAGE_ID = scope_identity()
+ 
+INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,2,'cbeltra',GETDATE())
+SET @TAB_ID = scope_identity()
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ItemTaskId','ItemTaskId','int',1,'',1,0,'inputbox',1,'','ItemTaskId',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ITS_Status','ITS_Status','tinyint',0,'',1,1,'inputbox',0,'','ITS_Status',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'TaskStatus','TaskStatus','varchar',0,'',1,2,'inputbox',0,'','TaskStatus',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ITS_DTStart','ITS_DTStart','datetime',0,'',1,3,'inputbox',0,'','ITS_DTStart',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ITS_DTStop','ITS_DTStop','datetime',0,'',1,4,'inputbox',0,'','ITS_DTStop',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'USE_Login','USE_Login','varchar',0,'',1,5,'inputbox',0,'','USE_Login',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ITS_Machine','ITS_Machine','varchar',0,'',1,6,'inputbox',0,'','ITS_Machine',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'TaskId','TaskId','int',1,'',1,7,'inputbox',0,'','TaskId',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'TaskNombre','TaskNombre','varchar',0,'',1,8,'inputbox',0,'','TaskNombre',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Tiempo','Tiempo','decimal',0,'',1,9,'inputbox',0,'','Tiempo',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Interno','Interno','decimal',0,'',1,10,'inputbox',0,'','Interno',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'OrdenId','OrdenId','int',1,'',1,11,'inputbox',0,'','OrdenId',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ITE_Nombre','ITE_Nombre','varchar',0,'',1,12,'inputbox',0,'','ITE_Nombre',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ProdId','ProdId','int',1,'',1,13,'inputbox',0,'','ProdId',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Numero','Numero','varchar',0,'',1,14,'inputbox',0,'','Numero',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'OrdenCompra','OrdenCompra','varchar',0,'',1,15,'inputbox',0,'','OrdenCompra',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Recibido','Recibido','datetime',0,'',1,16,'inputbox',0,'','Recibido',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Interna','Interna','datetime',0,'',1,17,'inputbox',0,'','Interna',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Entrega','Entrega','datetime',0,'',1,18,'inputbox',0,'','Entrega',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Cliente','Cliente','varchar',0,'',1,19,'inputbox',0,'','Cliente',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Urgente','Urgente','bit',0,'',1,20,'checkbox',0,'','Urgente',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'TipoProceso','TipoProceso','varchar',0,'',1,21,'inputbox',0,'','TipoProceso',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Requerida','Requerida','int',0,'',1,22,'inputbox',0,'','Requerida',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Ordenada','Ordenada','int',0,'',1,23,'inputbox',0,'','Ordenada',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Terminal','Terminal','varchar',0,'',1,24,'inputbox',0,'','Terminal',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ProdNombre','ProdNombre','varchar',0,'',1,25,'inputbox',0,'','ProdNombre',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Empleado','Empleado','varchar',0,'',1,26,'inputbox',0,'','Empleado',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Nombre','Nombre','varchar',0,'',1,27,'inputbox',0,'','Nombre',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ITE_Id','ITE_Id','int',1,'',1,28,'inputbox',0,'','ITE_Id',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'TaskOrder','TaskOrder','smallint',0,'',1,29,'inputbox',0,'','TaskOrder',1,1,'cbeltra',GETDATE(),'')
+ 
+ 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'ItemTasksActive' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'ItemTasksActive' AND PageAppId = @PAGEAPP_ID
+	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
+	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
+	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
+END
+ 
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('ItemTasksActive','ItemTasksActive','ItemTasksActive_VW','cbeltra',GETDATE(),@PAGEAPP_ID,'')
+SET @PAGE_ID = scope_identity()
+ 
+INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,2,'cbeltra',GETDATE())
+SET @TAB_ID = scope_identity()
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ItemTaskId','ItemTaskId','int',1,'',1,1,'inputbox',1,'','ItemTaskId',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,0,1,0,'ItemTaskId',4,'ItemTaskId','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ITS_Status','ITS_Status','tinyint',0,'',1,2,'inputbox',0,'','ITS_Status',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'TaskStatus','TaskStatus','varchar',0,'',1,3,'inputbox',0,'','TaskStatus',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ITS_DTStart','ITS_DTStart','datetime',0,'',1,4,'inputbox',0,'','ITS_DTStart',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ITS_DTStop','ITS_DTStop','datetime',0,'',1,5,'inputbox',0,'','ITS_DTStop',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'USE_Login','USE_Login','varchar',0,'',1,6,'inputbox',0,'','USE_Login',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ITS_Machine','ITS_Machine','varchar',0,'',1,7,'inputbox',0,'','ITS_Machine',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'TaskId','TaskId','int',1,'',1,8,'inputbox',0,'','TaskId',1,1,'cbeltra',GETDATE(),'{"search-type":"equals"}')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,0,1,0,'TaskId',5,'TaskId','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'TaskNombre','TaskNombre','varchar',0,'',1,9,'inputbox',0,'','TaskNombre',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Tiempo','Tiempo','decimal',0,'',1,10,'inputbox',0,'','Tiempo',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Interno','Interno','decimal',0,'',1,11,'inputbox',0,'','Interno',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'OrdenId','OrdenId','int',1,'',1,12,'inputbox',0,'','OrdenId',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ITE_Nombre','ITE_Nombre','varchar',0,'',1,13,'inputbox',0,'','ITE_Nombre',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Orden',1,'ITE_Nombre','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ProdId','Producto','int',1,'',1,14,'inputbox',0,'','ProdId',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,0,1,0,'ProdId',3,'ProdId','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Numero','Numero','varchar',0,'',1,15,'inputbox',0,'','Numero',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'OrdenCompra','OrdenCompra','varchar',0,'',1,16,'inputbox',0,'','OrdenCompra',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Recibido','Recibido','datetime',0,'',1,17,'inputbox',0,'','Recibido',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Interna','Interna','datetime',0,'',1,18,'inputbox',0,'','Interna',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Entrega','Entrega','datetime',0,'',1,19,'inputbox',0,'','Entrega',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Cliente','Cliente','varchar',0,'',1,20,'inputbox',0,'','Cliente',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,0,1,0,'Cliente',6,'Cliente','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Urgente','Urgente','bit',0,'',1,21,'checkbox',0,'','Urgente',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,20,'Urgente',2,'Urgente','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ProdNombre','ProdNombre','varchar',0,'',1,22,'inputbox',0,'','ProdNombre',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageFilter]([PageId],[FilterCols],[FilterText],[ShowClear],[FilterProps],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,2,'Filter',1,'','cbeltra',GETDATE())
+SET @FILTER_ID = scope_identity()
+ 
+SELECT @TAB_ID = TabId FROM PageTab WHERE TabName = 'Details' AND PageId = @PAGE_ID
+SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'ProdId' AND TabId = @TAB_ID
+INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,1,'cbeltra',GETDATE())
+ 
+SELECT @TAB_ID = TabId FROM PageTab WHERE TabName = 'Details' AND PageId = @PAGE_ID
+SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'Cliente' AND TabId = @TAB_ID
+INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,2,'cbeltra',GETDATE())
+ 
+SELECT @TAB_ID = TabId FROM PageTab WHERE TabName = 'Details' AND PageId = @PAGE_ID
+SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'TaskId' AND TabId = @TAB_ID
+INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,3,'cbeltra',GETDATE())
+ 
+ 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'ItemTasksCompleted' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'ItemTasksCompleted' AND PageAppId = @PAGEAPP_ID
+	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
+	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
+	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
+END
+ 
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('ItemTasksCompleted','ItemTasksCompleted','ItemTasksCompleted_VW','cbeltra',GETDATE(),@PAGEAPP_ID,'')
+SET @PAGE_ID = scope_identity()
+ 
+INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
+SET @TAB_ID = scope_identity()
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ItemTaskId','ItemTaskId','int',1,'',1,0,'inputbox',1,'','ItemTaskId',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,0,1,0,'ItemTaskId',4,'ItemTaskId','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ITS_Status','ITS_Status','tinyint',0,'',1,1,'inputbox',0,'','ITS_Status',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'TaskStatus','TaskStatus','varchar',0,'',1,2,'inputbox',0,'','TaskStatus',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ITS_DTStart','ITS_DTStart','datetime',0,'',1,3,'inputbox',0,'','ITS_DTStart',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ITS_DTStop','Terminado','datetime',0,'',1,4,'inputbox',0,'','ITS_DTStop',1,1,'cbeltra',GETDATE(),'{"filter-type":"date-range"}')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,0,1,0,'Terminado',6,'ITS_DTStop','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'USE_Login','USE_Login','varchar',0,'',1,5,'inputbox',0,'','USE_Login',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ITS_Machine','ITS_Machine','varchar',0,'',1,6,'inputbox',0,'','ITS_Machine',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'TaskId','TaskId','int',1,'',1,7,'inputbox',0,'','TaskId',1,1,'cbeltra',GETDATE(),'{"search-type":"equals"}')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,0,1,0,'TaskId',5,'TaskId','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'TaskNombre','TaskNombre','varchar',0,'',1,8,'inputbox',0,'','TaskNombre',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Tiempo','Tiempo','decimal',0,'',1,9,'inputbox',0,'','Tiempo',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Interno','Interno','decimal',0,'',1,10,'inputbox',0,'','Interno',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'OrdenId','OrdenId','int',1,'',1,11,'inputbox',0,'','OrdenId',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ITE_Nombre','ITE_Nombre','varchar',0,'',1,12,'inputbox',0,'','ITE_Nombre',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Orden',1,'ITE_Nombre','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ProdId','Producto','int',1,'',1,13,'inputbox',0,'','ProdId',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,0,1,0,'ProdId',3,'ProdId','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Numero','Numero','varchar',0,'',1,14,'inputbox',0,'','Numero',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'OrdenCompra','OrdenCompra','varchar',0,'',1,15,'inputbox',0,'','OrdenCompra',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Recibido','Recibido','datetime',0,'',1,16,'inputbox',0,'','Recibido',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Interna','Interna','datetime',0,'',1,17,'inputbox',0,'','Interna',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Entrega','Entrega','datetime',0,'',1,18,'inputbox',0,'','Entrega',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Cliente','Cliente','varchar',0,'',1,19,'inputbox',0,'','Cliente',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,0,1,0,'Cliente',7,'Cliente','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Urgente','Urgente','bit',0,'',1,20,'checkbox',0,'','Urgente',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,20,'Urgente',2,'Urgente','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ProdNombre','ProdNombre','varchar',0,'',1,21,'inputbox',0,'','ProdNombre',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageFilter]([PageId],[FilterCols],[FilterText],[ShowClear],[FilterProps],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,2,'Filter',1,'','cbeltra',GETDATE())
+SET @FILTER_ID = scope_identity()
+ 
+SELECT @TAB_ID = TabId FROM PageTab WHERE TabName = 'Details' AND PageId = @PAGE_ID
+SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'ProdId' AND TabId = @TAB_ID
+INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,1,'cbeltra',GETDATE())
+ 
+SELECT @TAB_ID = TabId FROM PageTab WHERE TabName = 'Details' AND PageId = @PAGE_ID
+SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'Cliente' AND TabId = @TAB_ID
+INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,2,'cbeltra',GETDATE())
+ 
+SELECT @TAB_ID = TabId FROM PageTab WHERE TabName = 'Details' AND PageId = @PAGE_ID
+SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'ITS_DTStop' AND TabId = @TAB_ID
+INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,3,'cbeltra',GETDATE())
+ 
+SELECT @TAB_ID = TabId FROM PageTab WHERE TabName = 'Details' AND PageId = @PAGE_ID
+SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'TaskId' AND TabId = @TAB_ID
+INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,4,'cbeltra',GETDATE())
+ 
+ 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'ItemTasksProps' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'ItemTasksProps' AND PageAppId = @PAGEAPP_ID
+	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
+	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
+	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
+END
+ 
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('ItemTasksProps','ItemTasksProps','ItemTasks_VW','cbeltra',GETDATE(),@PAGEAPP_ID,'')
+SET @PAGE_ID = scope_identity()
+ 
+INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
+SET @TAB_ID = scope_identity()
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Key','Key','varchar',0,'',0,0,'inputbox',1,'','Key',0,0,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Propiedad',1,'Key','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Value','Value','varchar',0,'',0,1,'inputbox',0,'','Value',0,0,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Valor',2,'Value','cbeltra',GETDATE())
+ 
+ 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'ItemTasksReady' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'ItemTasksReady' AND PageAppId = @PAGEAPP_ID
+	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
+	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
+	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
+END
+ 
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('ItemTasksReady','ItemTasksReady','ItemTasksReady_VW','cbeltra',GETDATE(),@PAGEAPP_ID,'')
+SET @PAGE_ID = scope_identity()
+ 
+INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
+SET @TAB_ID = scope_identity()
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ItemTaskId','ItemTaskId','int',1,'',1,0,'inputbox',1,'','ItemTaskId',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,0,1,0,'ItemTaskId',4,'ItemTaskId','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ITS_Status','ITS_Status','tinyint',0,'',1,1,'inputbox',0,'','ITS_Status',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'TaskStatus','TaskStatus','varchar',0,'',1,2,'inputbox',0,'','TaskStatus',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ITS_DTStart','ITS_DTStart','datetime',0,'',1,3,'inputbox',0,'','ITS_DTStart',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ITS_DTStop','ITS_DTStop','datetime',0,'',1,4,'inputbox',0,'','ITS_DTStop',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'USE_Login','USE_Login','varchar',0,'',1,5,'inputbox',0,'','USE_Login',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ITS_Machine','ITS_Machine','varchar',0,'',1,6,'inputbox',0,'','ITS_Machine',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'TaskId','TaskId','int',1,'',1,7,'inputbox',0,'','TaskId',1,1,'cbeltra',GETDATE(),'{"search-type":"equals"}')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,0,1,0,'TaskId',5,'TaskId','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'TaskNombre','TaskNombre','varchar',0,'',1,8,'inputbox',0,'','TaskNombre',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Tiempo','Tiempo','decimal',0,'',1,9,'inputbox',0,'','Tiempo',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Interno','Interno','decimal',0,'',1,10,'inputbox',0,'','Interno',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'OrdenId','OrdenId','int',1,'',1,11,'inputbox',0,'','OrdenId',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ITE_Nombre','ITE_Nombre','varchar',0,'',1,12,'inputbox',0,'','ITE_Nombre',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Orden',1,'ITE_Nombre','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ProdId','Producto','int',1,'',1,13,'inputbox',0,'','ProdId',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,0,1,0,'ProdId',3,'ProdId','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Numero','Numero','varchar',0,'',1,14,'inputbox',0,'','Numero',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'OrdenCompra','OrdenCompra','varchar',0,'',1,15,'inputbox',0,'','OrdenCompra',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Recibido','Recibido','datetime',0,'',1,16,'inputbox',0,'','Recibido',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Interna','Interna','datetime',0,'',1,17,'inputbox',0,'','Interna',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Entrega','Entrega','datetime',0,'',1,18,'inputbox',0,'','Entrega',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Cliente','Cliente','varchar',0,'',1,19,'inputbox',0,'','Cliente',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,0,1,0,'Cliente',6,'Cliente','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Urgente','Urgente','bit',0,'',1,20,'checkbox',0,'','Urgente',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,20,'Urgente',2,'Urgente','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ProdNombre','ProdNombre','varchar',0,'',1,21,'inputbox',0,'','ProdNombre',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageFilter]([PageId],[FilterCols],[FilterText],[ShowClear],[FilterProps],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,2,'Filter',1,'','cbeltra',GETDATE())
+SET @FILTER_ID = scope_identity()
+ 
+SELECT @TAB_ID = TabId FROM PageTab WHERE TabName = 'Details' AND PageId = @PAGE_ID
+SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'TaskId' AND TabId = @TAB_ID
+INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,3,'cbeltra',GETDATE())
+ 
+SELECT @TAB_ID = TabId FROM PageTab WHERE TabName = 'Details' AND PageId = @PAGE_ID
+SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'ProdId' AND TabId = @TAB_ID
+INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,1,'cbeltra',GETDATE())
+ 
+SELECT @TAB_ID = TabId FROM PageTab WHERE TabName = 'Details' AND PageId = @PAGE_ID
+SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'Cliente' AND TabId = @TAB_ID
+INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,2,'cbeltra',GETDATE())
+ 
+ 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'LatestOrdenStatus' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'LatestOrdenStatus' AND PageAppId = @PAGEAPP_ID
+	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
+	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
+	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
+END
+ 
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('LatestOrdenStatus','LatestOrdenStatus','LatestOrdenStatus_vw','cbeltra',GETDATE(),@PAGEAPP_ID,'')
+SET @PAGE_ID = scope_identity()
+ 
+INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,2,'cbeltra',GETDATE())
+SET @TAB_ID = scope_identity()
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ItemTaskId','ItemTaskId','int',1,'',1,0,'inputbox',1,'','ItemTaskId',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ITS_Status','ITS_Status','tinyint',0,'',1,1,'inputbox',0,'','ITS_Status',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'TaskStatus','TaskStatus','varchar',0,'',1,2,'inputbox',0,'','TaskStatus',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ITS_DTStart','ITS_DTStart','datetime',0,'',1,3,'inputbox',0,'','ITS_DTStart',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ITS_DTStop','ITS_DTStop','datetime',0,'',1,4,'inputbox',0,'','ITS_DTStop',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'USE_Login','USE_Login','varchar',0,'',1,5,'inputbox',0,'','USE_Login',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ITS_Machine','ITS_Machine','varchar',0,'',1,6,'inputbox',0,'','ITS_Machine',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'TaskId','TaskId','int',1,'',1,7,'inputbox',0,'','TaskId',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'TaskNombre','TaskNombre','varchar',0,'',1,8,'inputbox',0,'','TaskNombre',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Tiempo','Tiempo','decimal',0,'',1,9,'inputbox',0,'','Tiempo',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Interno','Interno','decimal',0,'',1,10,'inputbox',0,'','Interno',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'TaskOrder','TaskOrder','smallint',0,'',1,11,'inputbox',0,'','TaskOrder',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'OrdenId','OrdenId','int',1,'',1,12,'inputbox',0,'','OrdenId',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ITE_Nombre','ITE_Nombre','varchar',0,'',1,13,'inputbox',0,'','ITE_Nombre',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ProdId','ProdId','int',1,'',1,14,'inputbox',0,'','ProdId',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Numero','Numero','varchar',0,'',1,15,'inputbox',0,'','Numero',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'OrdenCompra','OrdenCompra','varchar',0,'',1,16,'inputbox',0,'','OrdenCompra',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Recibido','Recibido','datetime',0,'',1,17,'inputbox',0,'','Recibido',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Interna','Interna','datetime',0,'',1,18,'inputbox',0,'','Interna',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Entrega','Entrega','datetime',0,'',1,19,'inputbox',0,'','Entrega',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Cliente','Cliente','varchar',0,'',1,20,'inputbox',0,'','Cliente',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Urgente','Urgente','bit',0,'',1,21,'checkbox',0,'','Urgente',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'TipoProceso','TipoProceso','varchar',0,'',1,22,'inputbox',0,'','TipoProceso',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Requerida','Requerida','int',0,'',1,23,'inputbox',0,'','Requerida',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Ordenada','Ordenada','int',0,'',1,24,'inputbox',0,'','Ordenada',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Terminal','Terminal','varchar',0,'',1,25,'inputbox',0,'','Terminal',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Nombre','Nombre','varchar',0,'',1,26,'inputbox',0,'','Nombre',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ProdNombre','ProdNombre','varchar',0,'',1,27,'inputbox',0,'','ProdNombre',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Empleado','Empleado','varchar',0,'',1,28,'inputbox',0,'','Empleado',1,1,'cbeltra',GETDATE(),'')
+ 
+ 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Materiales' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Materiales' AND PageAppId = @PAGEAPP_ID
+	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
+	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
+	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
+END
+ 
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('Materiales','Materiales','tblMateriales','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,2,'cbeltra',GETDATE())
@@ -1119,9 +1796,15 @@ INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[
  
 INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'MAT_ProvNumero','Provedor Id','varchar',0,'',1,3,'inputbox',0,'','MAT_ProvNumero',1,1,'cbeltra',GETDATE(),'')
  
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,0,1,0,'Provedor Id',7,'MAT_ProvNumero','cbeltra',GETDATE())
+ 
 INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'MAT_Stock','Cantidad Ideal','decimal',0,'',1,15,'inputbox',0,'','MAT_Stock',1,1,'cbeltra',GETDATE(),'')
  
 INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'MAT_Tipo','Tipo de Material','int',0,'{"url":"AjaxController.ashx/PageInfo/GetPageEntityList?pageName=TiposMaterial","valField":"TIP_ID","textField":"TIP_Descripcion","cache":true}',1,6,'selectmenu',0,'','MAT_Tipo',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,0,1,0,'Tipo de Material',8,'MAT_Tipo','cbeltra',GETDATE())
  
 INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'MAT_Total','MAT_Total','decimal',0,'',1,17,'hidden',0,'','MAT_Total',1,1,'cbeltra',GETDATE(),'')
  
@@ -1140,21 +1823,30 @@ INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownI
  
 INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'MAT_Numero','Numero Id','varchar',0,'',1,2,'inputbox',0,'','MAT_Numero',1,1,'cbeltra',GETDATE(),'')
  
-INSERT INTO [PageFilter]([PageId],[FilterCols],[FilterText],[ShowClear],[FilterProps],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,1,'Filter',1,'','cbeltra',GETDATE())
+INSERT INTO [PageFilter]([PageId],[FilterCols],[FilterText],[ShowClear],[FilterProps],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,2,'Filter',1,'','cbeltra',GETDATE())
 SET @FILTER_ID = scope_identity()
  
+SELECT @TAB_ID = TabId FROM PageTab WHERE TabName = 'Details' AND PageId = @PAGE_ID
+SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'MAT_ProvNumero' AND TabId = @TAB_ID
+INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,1,'cbeltra',GETDATE())
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'MergeOrdenes' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'MergeOrdenes' 
+SELECT @TAB_ID = TabId FROM PageTab WHERE TabName = 'Details' AND PageId = @PAGE_ID
+SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'MAT_Tipo' AND TabId = @TAB_ID
+INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,2,'cbeltra',GETDATE())
+ 
+ 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'MergeOrdenes' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'MergeOrdenes' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('MergeOrdenes','MergeOrdenes','tblMergeOrdenes','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('MergeOrdenes','MergeOrdenes','tblMergeOrdenes','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
@@ -1182,17 +1874,18 @@ INSERT INTO [PageFilter]([PageId],[FilterCols],[FilterText],[ShowClear],[FilterP
 SET @FILTER_ID = scope_identity()
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Modules' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Modules' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Modules' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Modules' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('Modules','Modules','tblScreens','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('Modules','Modules','tblScreens','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
@@ -1233,17 +1926,38 @@ SET @FIELD_ID = scope_identity()
 INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'URL',4,'URL','cbeltra',GETDATE())
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Ordenes' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Ordenes' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'NextMaterialId' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'NextMaterialId' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('Ordenes','Ventas','tblOrdenes','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('NextMaterialId','NextMaterialId','NextMaterialId_VW','cbeltra',GETDATE(),@PAGEAPP_ID,'')
+SET @PAGE_ID = scope_identity()
+ 
+INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
+SET @TAB_ID = scope_identity()
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'NextMaterialId','NextMaterialId','varchar',0,'',1,0,'inputbox',1,'','NextMaterialId',1,1,'cbeltra',GETDATE(),'')
+ 
+ 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Ordenes' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Ordenes' AND PageAppId = @PAGEAPP_ID
+	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
+	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
+	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
+END
+ 
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('Ordenes','Ventas','tblOrdenes','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Detalles','',1,4,'cbeltra',GETDATE())
@@ -1389,17 +2103,18 @@ SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'EmployeeId' AND Tab
 INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,5,'cbeltra',GETDATE())
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'OrdenesInProd' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'OrdenesInProd' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'OrdenesInProd' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'OrdenesInProd' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('OrdenesInProd','Usada para llenar las listas en la pantalla de ventas','tblOrdenes','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('OrdenesInProd','Usada para llenar las listas en la pantalla de ventas','tblOrdenes','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
@@ -1427,17 +2142,18 @@ INSERT INTO [PageFilter]([PageId],[FilterCols],[FilterText],[ShowClear],[FilterP
 SET @FILTER_ID = scope_identity()
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'PageListItem' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'PageListItem' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'PageListItem' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'PageListItem' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('PageListItem','PageListItem','PageListItem','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('PageListItem','PageListItem','PageListItem','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
@@ -1476,17 +2192,18 @@ INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[
 INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ItemId','ItemId','int',1,'',1,7,'hidden',1,'','ItemId',1,1,'cbeltra',GETDATE(),'')
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Paises' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Paises' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Paises' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Paises' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('Paises','Paises','tblPaises','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('Paises','Paises','tblPaises','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
@@ -1500,17 +2217,18 @@ INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[
 INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'PAIS_ID','PAIS_ID','int',1,'',1,2,'hidden',1,'','PAIS_ID',1,1,'cbeltra',GETDATE(),'')
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'PlanoAliasStock' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'PlanoAliasStock' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'PlanoAliasStock' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'PlanoAliasStock' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('PlanoAliasStock','PlanoAliasStock','tblPlanoAlias','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('PlanoAliasStock','PlanoAliasStock','tblPlanoAlias','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
@@ -1523,17 +2241,18 @@ INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownI
 INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'PA_Id','PA_Id','int',1,'',1,3,'inputbox',1,'','PA_Id',1,1,'cbeltra',GETDATE(),'')
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'PlanosList' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'PlanosList' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'PlanosList' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'PlanosList' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('PlanosList','Use in Plano Autocomplete','tblPlano','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('PlanosList','Use in Plano Autocomplete','tblPlano','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
@@ -1543,23 +2262,24 @@ INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownI
  
 INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'label','PN_Numero','varchar',1,'',1,2,'inputbox',0,'','PN_Numero',1,1,'cbeltra',GETDATE(),'')
  
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'PN_Numero',1,'label','cbeltra',GETDATE())
+ 
 INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'desc','PN_Descripcion','varchar',1,'',1,3,'inputbox',0,'','PN_Descripcion',1,1,'cbeltra',GETDATE(),'')
  
-INSERT INTO [PageFilter]([PageId],[FilterCols],[FilterText],[ShowClear],[FilterProps],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,1,'Filter',1,'','cbeltra',GETDATE())
-SET @FILTER_ID = scope_identity()
  
- 
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'PlanoStock' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'PlanoStock' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'PlanoStock' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'PlanoStock' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('PlanoStock','PlanoStock','tblPlano','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('PlanoStock','PlanoStock','tblPlano','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
@@ -1570,17 +2290,18 @@ INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownI
 INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'PN_Numero','PN_Numero','varchar',1,'',1,2,'inputbox',0,'','PN_Numero',1,1,'cbeltra',GETDATE(),'')
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'PorcentajeScrap' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'PorcentajeScrap' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'PorcentajeScrap' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'PorcentajeScrap' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('PorcentajeScrap','Porcentaje Scrap','ScrapVW','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('PorcentajeScrap','Porcentaje Scrap','ScrapVW','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
@@ -1664,17 +2385,18 @@ INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[
 INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ClientId','ClientId','varchar',1,'',1,16,'inputbox',0,'','ClientId',1,1,'cbeltra',GETDATE(),'')
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Productos' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Productos' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Productos' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Productos' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('Productos','Productos','tblProductos','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('Productos','Productos','tblProductos','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
@@ -1688,17 +2410,18 @@ SET @FIELD_ID = scope_identity()
 INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Nombre',1,'Nombre','cbeltra',GETDATE())
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Provedores' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Provedores' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Provedores' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Provedores' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('Provedores','Provedores','tblProvedores','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('Provedores','Provedores','tblProvedores','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,2,'cbeltra',GETDATE())
@@ -1752,17 +2475,18 @@ INSERT INTO [PageFilter]([PageId],[FilterCols],[FilterText],[ShowClear],[FilterP
 SET @FILTER_ID = scope_identity()
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'RelacionOrdenCompra' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'RelacionOrdenCompra' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'RelacionOrdenCompra' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'RelacionOrdenCompra' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('RelacionOrdenCompra','Relacion de Orden de Compra por Cliente','RelacionOrdenCompraVW','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('RelacionOrdenCompra','Relacion de Orden de Compra por Cliente','RelacionOrdenCompraVW','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
@@ -1921,17 +2645,18 @@ SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'PN_Numero' AND TabI
 INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,8,'cbeltra',GETDATE())
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'RoleModuleMapping' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'RoleModuleMapping' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'RoleModuleMapping' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'RoleModuleMapping' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('RoleModuleMapping','RoleModuleMapping','tblGroup_Screens','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('RoleModuleMapping','RoleModuleMapping','tblGroup_Screens','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
@@ -1975,17 +2700,18 @@ SET @FIELD_ID = scope_identity()
 INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Description',3,'Description','cbeltra',GETDATE())
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'RoleModules' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'RoleModules' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'RoleModules' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'RoleModules' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('RoleModules','RoleModules','tblGroup_Screens','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('RoleModules','RoleModules','tblGroup_Screens','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
@@ -2034,17 +2760,18 @@ SET @FIELD_ID = scope_identity()
 INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'ParentModule',6,'ParentModule','cbeltra',GETDATE())
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Roles' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Roles' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Roles' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Roles' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('Roles','Roles','tblGroups','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('Roles','Roles','tblGroups','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
@@ -2066,17 +2793,18 @@ INSERT INTO [PageFilter]([PageId],[FilterCols],[FilterText],[ShowClear],[FilterP
 SET @FILTER_ID = scope_identity()
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Routing' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Routing' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Routing' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Routing' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('Routing','Rutas','tblRouting','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('Routing','Rutas','tblRouting','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
@@ -2122,17 +2850,18 @@ SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'Rou_To' AND TabId =
 INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,3,'cbeltra',GETDATE())
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'RoutingVW' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'RoutingVW' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'RoutingVW' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'RoutingVW' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('RoutingVW','RoutingVW','RoutingVW','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('RoutingVW','RoutingVW','RoutingVW','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
@@ -2161,17 +2890,18 @@ INSERT INTO [PageFilter]([PageId],[FilterCols],[FilterText],[ShowClear],[FilterP
 SET @FILTER_ID = scope_identity()
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Salidas' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Salidas' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Salidas' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Salidas' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('Salidas','Salidas Almacen','tblSalidas','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('Salidas','Salidas Almacen','tblSalidas','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Salidas','',1,3,'cbeltra',GETDATE())
@@ -2212,17 +2942,18 @@ SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'SAL_Fecha' AND TabI
 INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,3,'cbeltra',GETDATE())
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'SalidasAlmacen' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'SalidasAlmacen' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'SalidasAlmacen' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'SalidasAlmacen' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('SalidasAlmacen','Reporte Salidas Almacen','tblSalidasDetalle','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('SalidasAlmacen','Reporte Salidas Almacen','tblSalidasDetalle','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,2,'cbeltra',GETDATE())
@@ -2301,17 +3032,18 @@ SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'MAT_Numero' AND Tab
 INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,3,'cbeltra',GETDATE())
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'SalidasDetalle' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'SalidasDetalle' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'SalidasDetalle' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'SalidasDetalle' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('SalidasDetalle','Salidas Detalle','tblSalidasDetalle','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('SalidasDetalle','Salidas Detalle','tblSalidasDetalle','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Detalle','',1,1,'cbeltra',GETDATE())
@@ -2336,17 +3068,18 @@ INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownI
 INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'MAT_ProvNumero','Proveedor ID','varchar',0,'',1,1,'inputbox',0,'','MAT_ProvNumero',0,0,'cbeltra',GETDATE(),'')
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Scrap' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Scrap' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Scrap' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Scrap' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('Scrap','Editor Scrap','tblScrap','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('Scrap','Editor Scrap','tblScrap','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,2,'cbeltra',GETDATE())
@@ -2411,17 +3144,18 @@ INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[
 INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Update_User','Update_User','int',0,'',1,15,'hidden',0,'','Update_User',1,1,'cbeltra',GETDATE(),'')
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Stock' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Stock' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Stock' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Stock' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('Stock','Stock','tblStock','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('Stock','Stock','tblStock','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
@@ -2444,17 +3178,18 @@ INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownI
 INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Update_User','Update_User','int',0,'',1,8,'inputbox',0,'','Update_User',1,1,'cbeltra',GETDATE(),'')
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Tareas' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Tareas' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Tareas' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Tareas' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('Tareas','Tareas','tblTareas','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('Tareas','Tareas','tblTareas','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
@@ -2493,17 +3228,18 @@ INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[
 INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'TaskId','Id','int',1,'',0,7,'hidden',1,'','Id',1,1,'cbeltra',GETDATE(),'')
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'TareasProductos' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'TareasProductos' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'TareasProductos' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'TareasProductos' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('TareasProductos','TareasProductos','tblTareas','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('TareasProductos','TareasProductos','tblTareas','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
@@ -2525,17 +3261,18 @@ SET @FIELD_ID = scope_identity()
 INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,0,20,'_',1,'TAS_Order','cbeltra',GETDATE())
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Templates' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Templates' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Templates' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Templates' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('Templates','Templates','Templates','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('Templates','Templates','Templates','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,2,'cbeltra',GETDATE())
@@ -2556,17 +3293,18 @@ INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[
 INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'TemplateId','TemplateId','int',1,'',1,4,'hidden',1,'','TemplateId',1,1,'cbeltra',GETDATE(),'')
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'TiposMaterial' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'TiposMaterial' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'TiposMaterial' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'TiposMaterial' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('TiposMaterial','Tipos de Material','tblTiposMaterial','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('TiposMaterial','Tipos de Material','tblTiposMaterial','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
@@ -2585,17 +3323,18 @@ INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[
 INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'TIP_ID','TIP_ID','int',1,'',1,3,'hidden',1,'','TIP_ID',1,1,'cbeltra',GETDATE(),'')
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'UnidadesMedida' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'UnidadesMedida' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'UnidadesMedida' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'UnidadesMedida' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('UnidadesMedida','Unidades de Medida','tblUnidadesMedida','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('UnidadesMedida','Unidades de Medida','tblUnidadesMedida','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
@@ -2609,17 +3348,18 @@ SET @FIELD_ID = scope_identity()
 INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Unidad de Medida',1,'UNI_Medida','cbeltra',GETDATE())
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'UserRoles' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'UserRoles' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'UserRoles' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'UserRoles' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('UserRoles','User Roles','tblUser_Groups','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('UserRoles','User Roles','tblUser_Groups','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
@@ -2638,17 +3378,18 @@ INSERT INTO [PageFilter]([PageId],[FilterCols],[FilterText],[ShowClear],[FilterP
 SET @FILTER_ID = scope_identity()
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Users' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Users' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Users' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Users' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('Users','Usuarios','tblUsers','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('Users','Usuarios','tblUsers','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Detalles','',1,1,'cbeltra',GETDATE())
@@ -2677,22 +3418,181 @@ INSERT INTO [PageFilter]([PageId],[FilterCols],[FilterText],[ShowClear],[FilterP
 SET @FILTER_ID = scope_identity()
  
  
-IF EXISTS (SELECT PageId FROM Page WHERE Name = 'ValidateOrden' ) BEGIN
-	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'ValidateOrden' 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'ValidateOrden' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'ValidateOrden' AND PageAppId = @PAGEAPP_ID
 	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
 	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
 	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
 END
  
-INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate]) VALUES ('ValidateOrden','Orden','tblOrdenes','cbeltra',GETDATE())
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('ValidateOrden','Orden','tblOrdenes','cbeltra',GETDATE(),@PAGEAPP_ID,'')
 SET @PAGE_ID = scope_identity()
  
 INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Details','',1,1,'cbeltra',GETDATE())
 SET @TAB_ID = scope_identity()
  
 INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ITE_Nombre','ITE_Nombre','varchar',0,'',1,1,'inputbox',1,'','ITE_Nombre',1,1,'cbeltra',GETDATE(),'')
+ 
+ 
+IF EXISTS (SELECT PageId FROM Page WHERE Name = 'Ventas' AND PageAppId = @PAGEAPP_ID) BEGIN
+	SELECT @PAGE_ID = PageId FROM Page WHERE Name = 'Ventas' AND PageAppId = @PAGEAPP_ID
+	DELETE FROM [PageGridColumn] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [PageFilterField] WHERE [FilterId] IN (SELECT [FilterId] FROM PageFilter WHERE [PageId] = @PAGE_ID)
+	DELETE FROM [PageField] WHERE [TabId] IN (SELECT [TabId] FROM [PageTab] WHERE [PageId] = @PAGE_ID)
+	DELETE FROM [PageTab] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [PageFilter] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [EntityEvents] WHERE [PageId] = @PAGE_ID
+	DELETE FROM [Page] WHERE [PageId] = @PAGE_ID
+END
+ 
+INSERT INTO [Page]([Name],[Title],[TableName],[UpdatedBy],[UpdatedDate],[PageAppId],[ConnName]) VALUES ('Ventas','Ventas','Ventas_vw','cbeltra',GETDATE(),@PAGEAPP_ID,'')
+SET @PAGE_ID = scope_identity()
+ 
+INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Detalles','',1,4,'cbeltra',GETDATE())
+SET @TAB_ID = scope_identity()
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Aprobacion','Aprobacion de Proceso','bit',0,'',1,15,'checkbox',0,'','Aprobacion',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Entrega','Fecha Compromiso','date',0,'',1,11,'inputbox',0,'','Entrega',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Fecha Compromiso',7,'Entrega','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ITE_ID','ITE_ID','int',0,'',1,30,'hidden',0,'','ITE_ID',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Nombre','Nombre','varchar',1,'{"url":"AjaxController.ashx/PageInfo/GetPageEntityList?pageName=Empleados&entity={\"Departamento\":\"LIST_Ventas,Administracion\"}","valField":"Id","textField":"Nombre","cache":true}',1,13,'selectmenu',0,'','Nombre',1,1,'cbeltra',GETDATE(),'{"filter-type":"text"}')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Nombre',8,'Nombre','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Observaciones','Observaciones','varchar',0,'',1,25,'multiline',0,'','Observaciones',1,1,'cbeltra',GETDATE(),'{"colSpan":"2","maxlength":"1000","rows":"2"}')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'OrdenCompra','Orden Compra','varchar',0,'',1,12,'inputbox',0,'','OrdenCompra',1,1,'cbeltra',GETDATE(),'{"maxlength":"50"}')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Orden Compra',4,'OrdenCompra','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'PN_Id','Numero de Plano','varchar',0,'',1,3,'inputbox',0,'','PN_Id',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Recibido','Fecha Recibido','date',0,'',1,9,'inputbox',0,'','Recibido',1,1,'cbeltra',GETDATE(),'{"filter-type":"date-range","readonly":"true"}')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Fecha Recibido',5,'Recibido','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Requisicion','Requisicion','varchar',0,'',1,14,'inputbox',0,'','Requisicion',1,1,'cbeltra',GETDATE(),'{"maxlength":"50"}')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'StockParcial','StockParcial','bit',0,'',1,21,'checkbox',0,'','StockParcial',1,1,'cbeltra',GETDATE(),'{"readonly":"true"}')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Terminal','Revision','varchar',0,'',1,8,'inputbox',0,'','Terminal',1,1,'cbeltra',GETDATE(),'{"maxlength":"50"}')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Total','Total','decimal',0,'',1,18,'inputbox',0,'','Total',1,1,'cbeltra',GETDATE(),'{"readonly":"true","maxlength":"7"}')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Update_Date','Update_Date','datetime',0,'',1,29,'hidden',0,'','Update_Date',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Urgente','Urgente','bit',0,'',1,16,'checkbox',0,'','Urgente',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Dolares','Dolares','bit',0,'',1,19,'checkbox',0,'','Dolares',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'FAC_Id','FAC_Id','int',0,'',1,24,'hidden',0,'','FAC_Id',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Interna','Fecha Interna','date',0,'',1,10,'inputbox',0,'','Interna',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Fecha Interna',6,'Interna','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ITE_Nombre','Orden de Trabajo','varchar',1,'',1,1,'inputbox',0,'','ITE_Nombre',1,1,'cbeltra',GETDATE(),'{"maxlength":"13"}')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Orden de Trabajo',1,'ITE_Nombre','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Numero','Numero de Parte','varchar',0,'',1,4,'inputbox',0,'','Numero',1,1,'cbeltra',GETDATE(),'{"maxlength":"50"}')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Numero',3,'Numero','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Ordenada','Cantidad Larco','int',1,'',1,7,'inputbox',0,'','Ordenada',1,1,'cbeltra',GETDATE(),'{"maxlength":"5"}')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Otras','Otra Descripcion','varchar',0,'',1,26,'multiline',0,'','Otras',1,1,'cbeltra',GETDATE(),'{"colSpan":"2","maxlength":"500","rows":"2"}')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ProdId','Descripcion/Producto','varchar',1,'{"url":"AjaxController.ashx/PageInfo/GetPageEntityList?pageName=Productos","valField":"Id","textField":"Nombre","cache":true}',1,5,'dropdownlist',0,'','ProdId',1,1,'cbeltra',GETDATE(),'{"filter-type":"text","colSpan":"2"}')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,1,1,0,'Descripcion',2,'ProductDesc','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Requerida','Cantidad Cliente','int',1,'',1,6,'inputbox',0,'','Requerida',1,1,'cbeltra',GETDATE(),'{"maxlength":"5"}')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ST_ID','ST_ID','int',0,'',1,27,'hidden',0,'','ST_ID',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'StockParcialCantidad','StockParcialCantidad','int',0,'',1,34,'hidden',0,'','StockParcialCantidad',1,1,'cbeltra',GETDATE(),'{"maxlength":"5"}')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'TipoProceso','Tipo Proceso','varchar',0,'',1,2,'inputbox',0,'','TipoProceso',1,1,'cbeltra',GETDATE(),'{"maxlength":"50"}')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Unitario','Valor Unitario','decimal',1,'',1,17,'inputbox',0,'','Unitario',1,1,'cbeltra',GETDATE(),'{"maxlength":"7"}')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Update_User','Update_User','int',0,'',1,31,'hidden',0,'','Update_User',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Mezclado','Mezclar','bit',0,'',1,22,'checkbox',0,'','Mezclado',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'OrdenId','OrdenId','int',1,'',1,37,'hidden',1,'','OrdenId',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,0,1,0,'OrdenId',9,'OrdenId','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'MezclarOrders','MezclarOrders','varchar',0,'',0,23,'inputbox',0,'','MezclarOrders',0,0,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'ProductDesc','ProductDesc','varchar',0,'',1,33,'hidden',0,'','ProductDesc',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Stock','Stock','bit',0,'',1,20,'checkbox',0,'','Stock',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'PN_Numero','Numero Plano','varchar',0,'',1,33,'inputbox',0,'','PN_Numero',1,1,'cbeltra',GETDATE(),'')
+ 
+SET @FIELD_ID = scope_identity()
+INSERT INTO [PageGridColumn]([FieldId],[PageId],[Visible],[Searchable],[Width],[ColumnLabel],[ColumnOrder],[ColumnName],[UpdatedBy],[UpdatedDate]) VALUES (@FIELD_ID,@PAGE_ID,0,1,0,'PN_Numero',10,'PN_Numero','cbeltra',GETDATE())
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Producto','Producto','varchar',0,'',1,34,'hidden',0,'','Producto',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageTab]([PageId],[TabName],[URL],[TabOrder],[Cols],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,'Instrucciones Especiales','',2,1,'cbeltra',GETDATE())
+SET @TAB_ID = scope_identity()
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Alerta','Instruciones Especiales','bit',0,'',1,1,'checkbox',0,'','Alerta',1,1,'cbeltra',GETDATE(),'')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'Instrucciones','Instrucciones','nvarchar',0,'',1,3,'multiline',0,'','Instrucciones',1,1,'cbeltra',GETDATE(),'{"maxlength":"1000","readonly":"true","rows":"12"}')
+ 
+INSERT INTO [PageField]([TabId],[FieldName],[Label],[Type],[Required],[DropDownInfo],[Exportable],[FieldOrder],[ControlType],[IsId],[JoinInfo],[DBFieldName],[Insertable],[Updatable],[UpdatedBy],[UpdatedDate],[ControlProps]) VALUES(@TAB_ID,'AlertaMsg','Mensaje en Orden de Trabajo','nvarchar',0,'',1,2,'inputbox',0,'','AlertaMsg',1,1,'cbeltra',GETDATE(),'{"maxlength":"50","readonly":"true"}')
+ 
+INSERT INTO [PageFilter]([PageId],[FilterCols],[FilterText],[ShowClear],[FilterProps],[UpdatedBy],[UpdatedDate]) VALUES (@PAGE_ID,3,'Filter',1,'','cbeltra',GETDATE())
+SET @FILTER_ID = scope_identity()
+ 
+SELECT @TAB_ID = TabId FROM PageTab WHERE TabName = 'Detalles' AND PageId = @PAGE_ID
+SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'ITE_Nombre' AND TabId = @TAB_ID
+INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,1,'cbeltra',GETDATE())
+ 
+SELECT @TAB_ID = TabId FROM PageTab WHERE TabName = 'Detalles' AND PageId = @PAGE_ID
+SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'ProdId' AND TabId = @TAB_ID
+INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,2,'cbeltra',GETDATE())
+ 
+SELECT @TAB_ID = TabId FROM PageTab WHERE TabName = 'Detalles' AND PageId = @PAGE_ID
+SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'Numero' AND TabId = @TAB_ID
+INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,3,'cbeltra',GETDATE())
+ 
+SELECT @TAB_ID = TabId FROM PageTab WHERE TabName = 'Detalles' AND PageId = @PAGE_ID
+SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'OrdenCompra' AND TabId = @TAB_ID
+INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,4,'cbeltra',GETDATE())
+ 
+SELECT @TAB_ID = TabId FROM PageTab WHERE TabName = 'Detalles' AND PageId = @PAGE_ID
+SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'Nombre' AND TabId = @TAB_ID
+INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,5,'cbeltra',GETDATE())
+ 
+SELECT @TAB_ID = TabId FROM PageTab WHERE TabName = 'Detalles' AND PageId = @PAGE_ID
+SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'PN_Numero' AND TabId = @TAB_ID
+INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,6,'cbeltra',GETDATE())
+ 
+SELECT @TAB_ID = TabId FROM PageTab WHERE TabName = 'Detalles' AND PageId = @PAGE_ID
+SELECT @FIELD_ID = FieldId from PageField WHERE FieldName = 'Recibido' AND TabId = @TAB_ID
+INSERT INTO [PageFilterField]([FilterId],[FieldId],[FilterOrder],[UpdatedBy],[UpdatedDate]) VALUES (@FILTER_ID,@FIELD_ID,7,'cbeltra',GETDATE())
  
 GO

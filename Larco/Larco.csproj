@@ -97,6 +97,7 @@
     <Content Include="Admin\QueryHelper.aspx" />
     <Content Include="Admin\RefreshCache.aspx" />
     <Content Include="Catalogos\Clientes.aspx" />
+    <Content Include="Catalogos\DiasVencido.aspx" />
     <Content Include="Catalogos\Empleados.aspx" />
     <Content Include="Catalogos\Materiales.aspx" />
     <Content Include="Catalogos\MenuEditor.aspx" />
@@ -104,7 +105,11 @@
     <Content Include="Catalogos\Rutas.aspx" />
     <Content Include="Catalogos\Tareas.aspx" />
     <Content Include="Catalogos\Templates.aspx" />
+    <Content Include="ConfigScripts\EXPORT-Page-Larco.sql" />
+    <Content Include="ConfigScripts\ModulesAndRoles.sql" />
+    <Content Include="ConfigScripts\ObjectToUpdate_Urgentes-Vencido.txt" />
     <Content Include="ConfigScripts\PageConfig.sql" />
+    <Content Include="ConfigScripts\Urgentes-Vencido-script.sql" />
     <Content Include="Default.aspx" />
     <Content Include="Global.asax" />
     <Content Include="Herramientas\EditorOrdenes.aspx" />
@@ -135,11 +140,17 @@
     <Content Include="Reportes\EntradasAlmacen.aspx" />
     <Content Include="Reportes\EntradasSalidasAlmacen.aspx" />
     <Content Include="Reportes\EntradasSalidasAlmacenConta.aspx" />
+    <Content Include="Reportes\OrdenesUrgentesVencidasPorEmpleado.aspx" />
     <Content Include="Reportes\RelacionFechaEntrega.aspx" />
     <Content Include="Reportes\RelacionOrdenCompra.aspx" />
     <Content Include="Reportes\SalidasAlmacen.aspx" />
     <Content Include="Reportes\ScrapDinero.aspx" />
     <Content Include="Reportes\ScrapPorcentaje.aspx" />
+    <Content Include="Scripts\app\dias_vencido.js" />
+    <Content Include="Scripts\app\materiales.js" />
+    <Content Include="Scripts\app\productos.js" />
+    <Content Include="Scripts\app\urgentes_vencidas_empleado.js" />
+    <Content Include="Scripts\app\ventas.js" />
     <Content Include="Scripts\common.js" />
     <Content Include="Scripts\dashboard_common.js" />
     <Content Include="Scripts\date.js" />
@@ -196,6 +207,7 @@
     <Content Include="Scripts\tinymce\themes\modern\theme.min.js" />
     <Content Include="Scripts\tinymce\tinymce.min.js" />
     <Content Include="Sistema\Usuarios.aspx" />
+    <Content Include="Styles\app.css" />
     <Content Include="Styles\blitzer\dataTables.jqueryui.css" />
     <Content Include="Styles\blitzer\images\ui-bg_diagonals-thick_75_f3d8d8_40x40.png" />
     <Content Include="Styles\blitzer\images\ui-bg_dots-small_65_a6a6a6_2x2.png" />
@@ -268,6 +280,7 @@
     </Compile>
     <Compile Include="Ajax\Larco.cs" />
     <Compile Include="Ajax\PageInfo.cs" />
+    <Compile Include="Ajax\QueryHelper.cs" />
     <Compile Include="Ajax\Users.cs" />
     <Compile Include="App_Start\BaseBundleConfig.cs" />
     <Compile Include="App_Start\BundleConfig.cs" />
@@ -277,6 +290,13 @@
     </Compile>
     <Compile Include="Catalogos\Clientes.aspx.designer.cs">
       <DependentUpon>Clientes.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Catalogos\DiasVencido.aspx.cs">
+      <DependentUpon>DiasVencido.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Catalogos\DiasVencido.aspx.designer.cs">
+      <DependentUpon>DiasVencido.aspx</DependentUpon>
     </Compile>
     <Compile Include="Catalogos\Empleados.aspx.cs">
       <DependentUpon>Empleados.aspx</DependentUpon>
@@ -452,6 +472,13 @@
     <Compile Include="Reportes\EntradasSalidasAlmacenConta.aspx.designer.cs">
       <DependentUpon>EntradasSalidasAlmacenConta.aspx</DependentUpon>
     </Compile>
+    <Compile Include="Reportes\OrdenesUrgentesVencidasPorEmpleado.aspx.cs">
+      <DependentUpon>OrdenesUrgentesVencidasPorEmpleado.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Reportes\OrdenesUrgentesVencidasPorEmpleado.aspx.designer.cs">
+      <DependentUpon>OrdenesUrgentesVencidasPorEmpleado.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Reportes\RelacionFechaEntrega.aspx.cs">
       <DependentUpon>RelacionFechaEntrega.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -551,11 +578,11 @@
     <VisualStudio>
       <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}">
         <WebProjectProperties>
-          <UseIIS>False</UseIIS>
+          <UseIIS>True</UseIIS>
           <AutoAssignPort>True</AutoAssignPort>
           <DevelopmentServerPort>50341</DevelopmentServerPort>
           <DevelopmentServerVPath>/Larco</DevelopmentServerVPath>
-          <IISUrl>http://localhost:48812/Larco</IISUrl>
+          <IISUrl>http://localhost:50344/Larco</IISUrl>
           <NTLMAuthentication>False</NTLMAuthentication>
           <UseCustomServer>False</UseCustomServer>
           <CustomServerUrl>

@@ -21,6 +21,9 @@ namespace BS.Common
             var multiSelectJSBundle = bundles.GetBundleFor(BaseBundleConfig.ExtraWidgetsJsVirtualPath);
             multiSelectJSBundle.Include(BaseBundleConfig.ScriptsPath + "jquery.mask.js");
 
+            var cssBundle = bundles.GetBundleFor(BaseBundleConfig.SiteMasterCSSVirtualPath);
+            cssBundle.Include(BaseBundleConfig.StylesPath + "app.css");
+
             /*****************************/
             var styleBundle = new StyleBundle(StylesPath + "blitzer/jquery_css")
                 .Include(StylesPath + "blitzer/jquery-ui.css")
@@ -41,6 +44,27 @@ namespace BS.Common
                 .Include(ScriptsPath + "jqplot/jqplot.pointLabels.js")
                 .Include(ScriptsPath + "jqplot/jqplot.canvasOverlay.js");
             bundles.Add(jqplotJSBundle);
+            /*****************************/
+
+            var ventasJSBundle = new ScriptBundle(BaseBundleConfig.ScriptsPath + "ventas_js")
+                .Include(ScriptsPath + "app/ventas.js");
+            bundles.Add(ventasJSBundle);
+
+            var dvJSBundle = new ScriptBundle(BaseBundleConfig.ScriptsPath + "dias_vencido_js")
+                .Include(ScriptsPath + "app/dias_vencido.js");
+            bundles.Add(dvJSBundle);
+
+            var uveJSBundle = new ScriptBundle(BaseBundleConfig.ScriptsPath + "urgentes_vencidas_empleado_js")
+                .Include(ScriptsPath + "app/urgentes_vencidas_empleado.js");
+            bundles.Add(uveJSBundle);
+
+            var materialesJSBundle = new ScriptBundle(BaseBundleConfig.ScriptsPath + "materiales_js")
+                .Include(ScriptsPath + "app/materiales.js");
+            bundles.Add(materialesJSBundle);
+
+            var prodsJSBundle = new ScriptBundle(BaseBundleConfig.ScriptsPath + "productos_js")
+                .Include(ScriptsPath + "app/productos.js");
+            bundles.Add(prodsJSBundle);
         }
     }
 }
