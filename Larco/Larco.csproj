@@ -97,14 +97,21 @@
     <Content Include="Admin\QueryHelper.aspx" />
     <Content Include="Admin\RefreshCache.aspx" />
     <Content Include="Catalogos\Clientes.aspx" />
+    <Content Include="Catalogos\DatosContribuyente.aspx" />
+    <Content Include="Catalogos\DiasInhabiles.aspx" />
     <Content Include="Catalogos\DiasVencido.aspx" />
     <Content Include="Catalogos\Empleados.aspx" />
     <Content Include="Catalogos\Materiales.aspx" />
     <Content Include="Catalogos\MenuEditor.aspx" />
+    <Content Include="Catalogos\Paises.aspx" />
     <Content Include="Catalogos\Productos.aspx" />
+    <Content Include="Catalogos\ProductosTerminados.aspx" />
+    <Content Include="Catalogos\Proveedores.aspx" />
     <Content Include="Catalogos\Rutas.aspx" />
     <Content Include="Catalogos\Tareas.aspx" />
     <Content Include="Catalogos\Templates.aspx" />
+    <Content Include="Catalogos\TiposMaterial.aspx" />
+    <Content Include="Catalogos\UnidadesMedida.aspx" />
     <Content Include="ConfigScripts\EXPORT-Page-Larco.sql" />
     <Content Include="ConfigScripts\ModulesAndRoles.sql" />
     <Content Include="ConfigScripts\ObjectToUpdate_Urgentes-Vencido.txt" />
@@ -242,6 +249,7 @@
     <Content Include="Styles\cupertino\images\ui-icons_ffffff_256x240.png" />
     <Content Include="Styles\cupertino\jquery-horizontal-menu.css" />
     <Content Include="Styles\cupertino\jquery-ui.css" />
+    <Content Include="Styles\jquery-ui-timepicker-addon.css" />
     <Content Include="Styles\jquery.jqplot.css" />
     <Content Include="Styles\jquery.multiselect.css" />
     <Content Include="Styles\jquery.multiselect.filter.css" />
@@ -292,6 +300,20 @@
     <Compile Include="Catalogos\Clientes.aspx.designer.cs">
       <DependentUpon>Clientes.aspx</DependentUpon>
     </Compile>
+    <Compile Include="Catalogos\DatosContribuyente.aspx.cs">
+      <DependentUpon>DatosContribuyente.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Catalogos\DatosContribuyente.aspx.designer.cs">
+      <DependentUpon>DatosContribuyente.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Catalogos\DiasInhabiles.aspx.cs">
+      <DependentUpon>DiasInhabiles.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Catalogos\DiasInhabiles.aspx.designer.cs">
+      <DependentUpon>DiasInhabiles.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Catalogos\DiasVencido.aspx.cs">
       <DependentUpon>DiasVencido.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -320,12 +342,33 @@
     <Compile Include="Catalogos\MenuEditor.aspx.designer.cs">
       <DependentUpon>MenuEditor.aspx</DependentUpon>
     </Compile>
+    <Compile Include="Catalogos\Paises.aspx.cs">
+      <DependentUpon>Paises.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Catalogos\Paises.aspx.designer.cs">
+      <DependentUpon>Paises.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Catalogos\Productos.aspx.cs">
       <DependentUpon>Productos.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
     <Compile Include="Catalogos\Productos.aspx.designer.cs">
       <DependentUpon>Productos.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Catalogos\ProductosTerminados.aspx.cs">
+      <DependentUpon>ProductosTerminados.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Catalogos\ProductosTerminados.aspx.designer.cs">
+      <DependentUpon>ProductosTerminados.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Catalogos\Proveedores.aspx.cs">
+      <DependentUpon>Proveedores.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Catalogos\Proveedores.aspx.designer.cs">
+      <DependentUpon>Proveedores.aspx</DependentUpon>
     </Compile>
     <Compile Include="Catalogos\Rutas.aspx.cs">
       <DependentUpon>Rutas.aspx</DependentUpon>
@@ -347,6 +390,20 @@
     </Compile>
     <Compile Include="Catalogos\Templates.aspx.designer.cs">
       <DependentUpon>Templates.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Catalogos\TiposMaterial.aspx.cs">
+      <DependentUpon>TiposMaterial.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Catalogos\TiposMaterial.aspx.designer.cs">
+      <DependentUpon>TiposMaterial.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Catalogos\UnidadesMedida.aspx.cs">
+      <DependentUpon>UnidadesMedida.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Catalogos\UnidadesMedida.aspx.designer.cs">
+      <DependentUpon>UnidadesMedida.aspx</DependentUpon>
     </Compile>
     <Compile Include="Dao\DAOFactory.cs" />
     <Compile Include="Dao\ILarcoDAO.cs" />

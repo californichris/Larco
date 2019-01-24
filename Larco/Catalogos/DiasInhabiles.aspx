@@ -1,7 +1,7 @@
-﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Rutas.aspx.cs" Inherits="BS.Larco.Catalogos.Rutas" %>
+﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="DiasInhabiles.aspx.cs" Inherits="BS.Larco.Catalogos.DiasInhabiles" %>
 <asp:Content ID="Content1" ContentPlaceHolderID="HeadContent" runat="server">
 	<script type="text/javascript">
-	    const PAGE_NAME = 'Routing';
+	    const PAGE_NAME = 'NonWorkingDay';
 	    const TABLE_SEL = '#' + PAGE_NAME + '_table';
 
 	    $(document).ready(function () {
@@ -20,15 +20,9 @@
 	    function initCatalog(config) {
 	        $(TABLE_SEL).Catalog({
 	            pageConfig: config, serverSide: true, showExport: true,
+	            sorting: [[0, 'desc']],
 	            validate: function (tips) {
 	                return validateDialog(config, tips);
-	            },
-	            saveEntityCallBack: function (oTable, options) {
-                    //TODO: removed this code when the Nombre column is deleted from table
-	                var entity = getObject(options.dialogSelector);
-	                entity.Nombre = $('#ProdId option:selected').text();
-
-	                $(TABLE_SEL).Catalog('saveEntity', oTable, options, entity);
 	            }
 	        });
 	    }
