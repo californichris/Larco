@@ -1,8 +1,10 @@
 ﻿var DATA = [];
 var detailTable = null;
-var OTHER = 'Otros*';
+var OTHER = 'Other*';
 var FILTERTYPE = { EQUALS: 'EQUALS', NOTEQUALS: 'NOTEQUALS', DATERANGE: 'DATERANGE' };
-var SERIES_COLORS = ['#004276', '#CF0E0E', '#AD2323', '#AF5D5D', '#CCCCCC', '#EEEEEE', '#F9F9F9', '#5191C4', '#1D6094'];
+const DETAIL_PAGE = '#PageApp_container';
+const DETAIL_DIALOG = '#detail_dialog';
+
 var DEFAULT_DETAIL_DIALOG_OPTS = {
     autoOpen: false,
     height: 630,
@@ -16,105 +18,78 @@ var DEFAULT_DETAIL_DIALOG_OPTS = {
     }
 }
 
-var tableOpts = {
-    data: [], jQueryUI: true, processing: true, destroy: true, paging: false, searching: true, info: true, scrollY: 490,
-    rowCallback: function (nRow, aData, iDisplayIndex) {
-        var armJobNumber = aData.ArmJobNumber;
-        if (aData.ArmJobNumber != null && aData.ArmJobNumber != '') {
-            var url = APP_PATH + '/Projects/Projects.aspx?action=view&projectId=' + aData.ProjectId;
-            armJobNumber = '<a style="color:blue;" href="' + url + '"  target="_blank" title="View project details.">' + aData.ArmJobNumber + '</a>';
-        }
+function getAggreateData(pageName, aggregate) {
+    return $.ajax({
+        url: AJAX_CONTROLER_URL + '/PageInfo/GetAggreateEntities?pageName=' + pageName + '&aggregateInfo=' + $.toJSON(aggregate),
+        dataType: 'json'
+    });
+}
 
-        jQuery('td:eq(0)', nRow).html(armJobNumber);
-        return nRow;
-    },
-    columns: [{ data: 'ArmJobNumber' }, { mDataProp: 'JobIdShortDesc' }, { data: 'StatusIdText' },
-        { data: 'EmployeeId' }, { mDataProp: 'PriorityIdText' }, { data: 'RequestingGroup' }]
-};
+function convertToGraphArray(json, aggregate) {
+    var aggregateField = aggregate.Functions[0].Alias || 'Aggregate';
+    var fieldName = aggregate.GroupByFields.split(',')[0];
+    var list = getSortedList(json, fieldName);
+   
+    var array = [];
+    for (var i = 0; i < list.length; i++) {
+        var obj = list[i];
+
+        obj[fieldName] = obj[fieldName] == '' ? 'None' : obj[fieldName];
+        array.push(createGraphPoint(obj[fieldName] + ' - ' + obj[aggregateField], parseInt(obj[aggregateField])));
+    }
+
+    return array;
+}
+
+function getSortedList(json, fieldName) {
+    var list = $.isArray(json) ? json : json.aaData;
+    sortListBy(list, fieldName);
+
+    return list;
+}
+
+function sortListBy(list, fieldName) {
+    list.sort(function (a, b) {
+        var a1 = a[fieldName], b1 = b[fieldName];
+        if (a1 == b1) return 0;
+        return a1 > b1 ? 1 : -1;
+    });
+}
 
 function createLoading() {
-    var loading = $('<div id="loading" style="height:500px;">Loading, please wait...</div>');
+    var loading = $('<div id="loading" style="height:500px;">Loading, please wait...</div>');    
     $('h2').after(loading);
-
     var target = document.getElementById('loading');
     var spinner = new Spinner(spinOpts).spin(target);
-
+    
     return loading;
 }
 
 function createDetailDialog() {
-    $('#detail_dialog').dialog(DEFAULT_DETAIL_DIALOG_OPTS);
+    $(DETAIL_DIALOG).dialog(DEFAULT_DETAIL_DIALOG_OPTS);
 }
 
-function createDetailTable(opts) {
-    detailTable = $('#detail_table').DataTable(opts);
-
-    // Bind the mouseover/mouseout events to the detail table
-    $('tbody', $('#detail_table')).mouseover(function (event) {
-        $('tbody tr.ui-state-hover', this.element).removeClass('ui-state-hover');
-        var targetEle = event.target || event.srcElement;
-        var parent = targetEle;
-        if (targetEle.nodeName != 'TR') {
-            parent = $(targetEle).parentsUntil('table', 'tr'); //targetEle.parentNode;      	
+function createDetailTable() {
+    $(DETAIL_PAGE).Page({
+        source: AJAX + '/PageInfo/GetPageConfig?pageName=' + PAGE_NAME,
+        createPageFilter: false, createPageDialog: false,
+        onLoadComplete: function (config) {
+            $(TABLE_SEL).Catalog({
+                pageConfig: config, source: [], showNew: false,
+                showEdit: false, showDelete: false,
+            });
         }
-
-        $(parent).addClass("ui-state-hover");
-    }).mouseout(function (event) {
-        $('tbody tr.ui-state-hover', $('#detail_table')).removeClass('ui-state-hover');
     });
 }
 
-function createActiveCompletedBarChart(target, data, options) {
-    var completed = filterData(data, 'StatusIdText', 'Completed', FILTERTYPE.EQUALS);
-    var active = filterData(data, 'StatusIdText', 'Active', FILTERTYPE.EQUALS);
+function getDetailEntity(current, target, _data) {
+    var groupByfields = $('#' + target).attr('groupByfields');
+    var value = current.split(' - ')[0];
 
-    var completedWeek = filterData(completed, 'CompletionDate', getWeekRange(), FILTERTYPE.DATERANGE);
-    var completedMonth = filterData(completed, 'CompletionDate', getMonthRange(), FILTERTYPE.DATERANGE);
-    var completedYear = filterData(completed, 'CompletionDate', getYearRange(), FILTERTYPE.DATERANGE);
+    var entity = {};
+    entity[groupByfields] = value;
 
-    var completedArray = [];
-    completedArray.push(completedWeek);
-    completedArray.push(completedMonth);
-    completedArray.push(completedYear);
-
-    var activeWeek = filterData(active, 'SystemEnteredDate', getWeekRange(), FILTERTYPE.DATERANGE);
-    var activeMonth = filterData(active, 'SystemEnteredDate', getMonthRange(), FILTERTYPE.DATERANGE);
-    var activeYear = filterData(active, 'SystemEnteredDate', getYearRange(), FILTERTYPE.DATERANGE);
-
-    var activeArray = [];
-    activeArray.push(activeWeek);
-    activeArray.push(activeMonth);
-    activeArray.push(activeYear);
-
-    var series = [];
-    series.push(activeArray);
-    series.push(completedArray);
-
-    var s1 = [activeWeek.length, activeMonth.length, activeYear.length];
-    var s2 = [completedWeek.length, completedMonth.length, completedYear.length];
-    var ticks = ['Week', 'Month', 'Year'];
-
-    plot2 = $.jqplot(target, [s1, s2], {
-        title: options.title,
-        seriesColors: ['#A2CDEE', '#07497C'],
-        seriesDefaults: {
-            renderer: $.jqplot.BarRenderer,
-            pointLabels: { show: true }
-        },
-        axes: {
-            xaxis: {
-                renderer: $.jqplot.CategoryAxisRenderer,
-                ticks: ticks
-            }
-        }
-    });
-
-    $('#' + target).bind('jqplotDataClick',
-        function (ev, seriesIndex, pointIndex, data) {
-            var _data = { "aaData": series[seriesIndex][pointIndex] }
-            displayDetail(_data);
-        }
-    );
+    return entity;
 }
 
 function getYearRange() {
@@ -155,9 +130,10 @@ function createPieChart(target, data, options) {
     var _data = data;
     var plot = jQuery.jqplot(target, [data], {
         title: options.title,
-        seriesColors: SERIES_COLORS,
-        seriesDefaults: { shadow: true, renderer: jQuery.jqplot.PieRenderer, rendererOptions: { showDataLabels: true } },
-        legend: { show: true, location: 'e' }
+        seriesColors: getSeriesColors(),
+        seriesDefaults: { shadow: false, showLine: true, renderer: jQuery.jqplot.PieRenderer, rendererOptions: { showDataLabels: true } },
+        legend: { show: true, location: 'e' },
+        grid: getDefaultGrid()
     });
 
     var curWidth = $('#' + target + ' table.jqplot-table-legend').width();
@@ -201,7 +177,7 @@ function createPieChart(target, data, options) {
     $('#' + target + ' .jqplot-event-canvas').css('z-index', 80);
     $('#' + target + ' table.jqplot-table-legend').css('z-index', 90);
 
-    // Bind the click event to the pie chart legend table tnody
+    // Bind the click event to the pie chart legend table tbody
     $('#' + target + ' table.jqplot-table-legend tbody').click(function (event) {
         event.stopPropagation();
         var targetEle = event.target || event.srcElement;
@@ -216,7 +192,6 @@ function createPieChart(target, data, options) {
         } else {
             options.reloadCallback(current, target, _data)
         }
-
     });
 
     // Bind the mouseover/mouseout events to the pie chart legend table
@@ -228,7 +203,7 @@ function createPieChart(target, data, options) {
             parent = $(targetEle).parentsUntil('table.jqplot-table-legend', 'tr.jqplot-table-legend');
         }
 
-        $(parent).addClass("ui-state-hover");
+        $(parent).addClass('ui-state-hover');
         var current = $('td:last', parent).text();
 
         highlightSlice(plot, current);
@@ -240,70 +215,31 @@ function createPieChart(target, data, options) {
     $('tr', $('#' + target + ' table.jqplot-table-legend')).css('cursor', 'default');
 }
 
-function createDueDateBarChart(target, data, options) {
-    var openProjects = filterData(data, 'StatusIdText', 'Completed', FILTERTYPE.NOTEQUALS);
-    openProjects = filterData(openProjects, 'StatusIdText', 'Canceled', FILTERTYPE.NOTEQUALS);
+function getSeriesColors() {
+    var seriesColors = [];
+    var opacity = '0.50';
+    seriesColors.push('rgba(11, 65, 106,' + opacity + ')');
+    seriesColors.push('rgba(0, 116, 159,' + opacity + ')');
+    seriesColors.push('rgba(162, 205, 238,' + opacity + ')');
+    seriesColors.push('rgba(103, 164, 211,' + opacity + ')');
+    seriesColors.push('rgba(70, 140, 194,' + opacity + ')');
+    seriesColors.push('rgba(37, 112, 169,' + opacity + ')');
+    seriesColors.push('rgba(17, 86, 139,' + opacity + ')');
+    seriesColors.push('rgba(7, 73, 124,' + opacity + ')');
+    seriesColors.push('rgba(220, 233, 243,' + opacity + ')');
 
-    var from = Date.today().moveToFirstDayOfMonth();
-    var to = Date.today().moveToFirstDayOfMonth().addYears(1).addDays(-1)
-    var range = from.toString('MM/dd/yyyy') + '_' + to.toString('MM/dd/yyyy');
+    return seriesColors;
+}
 
-    openProjects = filterData(openProjects, 'DueDate', range, FILTERTYPE.DATERANGE);
-
-    for (var i = 0; i < openProjects.length; i++) {
-        openProjects[i].DueDateMonthYear = Date.parse(openProjects[i].DueDate).toString('yyyy-MM');
-    }
-
-    var projectsByDueDate = groupData({
-        data: openProjects,
-        fieldName: 'DueDateMonthYear'
-    });
-
-    var s1 = [];
-    var ticks = [];
-    var _ticks = [];
-
-    for (var i = 0; i < projectsByDueDate.length; i++) {
-        ticks.push(right(projectsByDueDate[i][0], 7));
-        s1.push(projectsByDueDate[i][1]);
-        var _date = right(projectsByDueDate[i][0], 7) + '-01';
-        _ticks.push(Date.parseExact(_date, "yyyy-MM-dd").toString('MMM-yyyy'))
-    }
-
-    $.jqplot(target, [s1], {
-        title: options.title,
-        seriesColors: SERIES_COLORS,
-        seriesDefaults: {
-            renderer: $.jqplot.BarRenderer,
-            pointLabels: { show: true },
-            rendererOptions: {
-                varyBarColor: true
-            }
-        },
-        axes: {
-            xaxis: {
-                renderer: $.jqplot.CategoryAxisRenderer,
-                ticks: _ticks
-            }
-        }
-    });
-
-    $('#' + target).bind('jqplotDataClick',
-        function (ev, seriesIndex, pointIndex, graphdata) {
-            var _date = ticks[pointIndex] + '-01';
-
-            var from = Date.parseExact(_date, "yyyy-MM-dd").moveToFirstDayOfMonth();
-            var to = Date.parseExact(_date, "yyyy-MM-dd").moveToLastDayOfMonth();
-            var range = from.toString('MM/dd/yyyy') + '_' + to.toString('MM/dd/yyyy');
-
-            var detail = filterData(data, 'StatusIdText', 'Completed', FILTERTYPE.NOTEQUALS);
-            detail = filterData(detail, 'StatusIdText', 'Canceled', FILTERTYPE.NOTEQUALS);
-            detail = filterData(detail, 'DueDate', range, FILTERTYPE.DATERANGE);
-
-            var _data = { "aaData": detail }
-            displayDetail(_data);
-        }
-    );
+function getDefaultGrid() {
+    return {
+        drawGridLines: true,        // wether to draw lines across the grid or not.
+        gridLineColor: '#E5E5E5',   // CSS color spec of the grid lines.
+        background: '#ffffff',      // CSS color spec for background color of grid.
+        borderColor: '#CFCFCF',     // CSS color spec for border around grid.
+        borderWidth: 2.0,           // pixel width of border around grid.
+        shadow: false               // draw a shadow for grid.
+    };
 }
 
 function highlightSlice(plot, current) {
@@ -327,130 +263,62 @@ function highlightSlice(plot, current) {
     s.renderer.drawSlice.call(s, canvas._ctx, s._sliceAngles[pidx][0], s._sliceAngles[pidx][1], s.highlightColorGenerator.get(pidx), false);
 }
 
-function reloadDetailTable(current, target, data) {
-    var filterVal = (current.split(' - '))[1];
-    var filteredData = [];
-    var fieldName = '';
-
-    if (target.indexOf('Status') != -1) {
-        fieldName = 'StatusIdText';
-        if (OTHER != filterVal) {
-            filteredData = filterData(DATA, fieldName, filterVal, FILTERTYPE.EQUALS)
-        }
-        $('#detail_dialog').dialog('option', 'title', 'Projects by Status - ' + filterVal);
-    } else if (target.indexOf('Employee') != -1) {
-        fieldName = 'EmployeeId';
-        filteredData = filterData(DATA, 'StatusIdText', 'Completed', FILTERTYPE.NOTEQUALS);
-        filteredData = filterData(filteredData, 'StatusIdText', 'Canceled', FILTERTYPE.NOTEQUALS);
-        filteredData = filterData(filteredData, 'StatusId', '', FILTERTYPE.NOTEQUALS);
-        if (OTHER != filterVal) {
-            filteredData = filterData(filteredData, fieldName, filterVal, FILTERTYPE.EQUALS);
-        }
-
-        $('#detail_dialog').dialog('option', 'title', 'Projects by Employee - ' + filterVal);
-    } else if (target.indexOf('Priority') != -1) {
-        fieldName = 'PriorityIdText';
-        filteredData = filterData(DATA, 'StatusIdText', 'Completed', FILTERTYPE.NOTEQUALS);
-        filteredData = filterData(filteredData, 'StatusIdText', 'Canceled', FILTERTYPE.NOTEQUALS);
-        filteredData = filterData(filteredData, 'StatusId', '', FILTERTYPE.NOTEQUALS);
-        if (OTHER != filterVal) {
-            filteredData = filterData(filteredData, fieldName, filterVal, FILTERTYPE.EQUALS);
-        }
-
-        $('#detail_dialog').dialog('option', 'title', 'Projects by Priority - ' + filterVal);
-    } else {
-        fieldName = 'RequestingGroup';
-        filteredData = filterData(DATA, 'StatusIdText', 'Completed', FILTERTYPE.NOTEQUALS);
-        filteredData = filterData(filteredData, 'StatusIdText', 'Canceled', FILTERTYPE.NOTEQUALS);
-        filteredData = filterData(filteredData, 'StatusId', '', FILTERTYPE.NOTEQUALS);
-        if (OTHER != filterVal) {
-            filteredData = filterData(filteredData, fieldName, filterVal, FILTERTYPE.EQUALS);
-        }
-        $('#detail_dialog').dialog('option', 'title', 'Projects by Requesting Group - ' + filterVal);
-    }
-
-    if (OTHER == filterVal) {
-        for (var i = 0; i < data.length; i++) {
-            var d = data[i];
-            filterVal = (d[0].split(' - '))[1];
-            filteredData = filterData(filteredData, fieldName, filterVal, FILTERTYPE.NOTEQUALS);
-        }
-    }
-
-    var _data = { "aaData": filteredData }
-    displayDetail(_data);
-}
-
-function displayDetail(_data) {
-    detailTable.clear().rows.add(_data.aaData).draw();
+function displayDetail(current, target, _data) {
+    $(DETAIL_DIALOG + ' div.detail-container').hide();
+    $(DETAIL_PAGE).show();
     
-    $('#detail_dialog div.dataTables_filter input').addClass('ui-corner-all');
-    $('#detail_dialog .DataTables_sort_icon').css('float', 'right');
-    $('#detail_dialog').dialog('open');
+    //TODO: change this to use the more generic method _displayDetail in default.js
+    var entity = getDetailEntity(current, target, _data);
 
-    detailTable.columns.adjust().draw();
+    $(TABLE_SEL).Catalog('clearTable');
+    $.when(getDetailData(entity)).done(function (json) {
+        $(TABLE_SEL).Catalog('addDataToTable', json.aaData);
+        $(DETAIL_DIALOG).dialog('open');
+    });
 }
 
-function groupData(options) {
-    var list = options.data;
-    var fieldName = options.fieldName;
+function getDetailData(entity) {
+    return $.getData(AJAX + '/PageInfo/GetPageEntityList?pageName=' + PAGE_NAME + '&entity=' + encodeURIComponent($.toJSON(entity)));
+}
 
-    list.sort(function (a, b) {
-        var a1 = a[fieldName], b1 = b[fieldName];
-        if (a1 == b1) return 0;
-        return a1 > b1 ? 1 : -1;
-    });
+function createCountChart(container) {
+    $(container).html('');
+    var aggregateInfo = createCountAggregate(container);
+    var pageName = $(container).attr('pageName') || PAGE_NAME;
 
-    var groupData = [];
-    var prevVal = '';
-    var count = 0;
+    $.when(getAggreateData(pageName, aggregateInfo)).done(function (json) {
+        hideLoading();
 
-    for (var i = 0; i < list.length; i++) {
-        var data = list[i];
-        data[fieldName] = data[fieldName] == '' ? 'None' : data[fieldName];
-
-        if ((options.countIf != null && options.countIf(data)) || options.countIf == null) {
-            if (prevVal != '' && prevVal != data[fieldName]) {
-                if (count > 0) {
-                    groupData.push(createGraphPoint(count + ' - ' + prevVal, count));
-                }
-                count = 0;
+        if (!json.aaData || json.aaData.length <= 0) return;
+        createPieChart($(container).attr('id'), convertToGraphArray(json, aggregateInfo), {
+            title: $(container).attr('title'), reloadCallback: function (current, target, _data) {
+                displayDetail(current, target, _data);
             }
-
-            count += 1;
-            prevVal = data[fieldName];
-        }
-    }
-
-    var data = list[list.length - 1];
-    groupData.push(createGraphPoint(count + ' - ' + data[fieldName], count));
-
-    if (groupData.length > 15) {
-        groupData.sort(function (a, b) { //Sort descending
-            var a1 = b[1], b1 = a[1];
-            if (a1 == b1) return 0;
-            return a1 > b1 ? 1 : -1;
         });
+    });
+}
 
-        var first14 = groupData.slice(0, 14);
-        var rest = groupData.slice(14);
+function hideLoading() {
+    if (loading) loading.remove();
+    $('div.catalog').show();
+}
 
-        var sum = 0;
-        for (var i = 0; i < rest.length; i++) {
-            sum += (rest[i])[1];
-        }
-
-        first14.sort(function (a, b) { //Sort ascending by text
-            var a1 = (a[0].split(' - '))[1], b1 = (b[0].split(' - '))[1];
-            if (a1 == b1) return 0;
-            return a1 > b1 ? 1 : -1;
-        });
-
-        first14.push(createGraphPoint(sum + ' - ' + OTHER, sum));
-        groupData = first14;
+function createCountCharts() {
+    var charts = $('div.countChart');
+    for (var i = 0; i < charts.length; i++) {
+        createCountChart($(charts[i]));
     }
+}
 
-    return groupData;
+function createCountAggregate(container) {
+    var groupByfields = $(container).attr('groupByfields');
+
+    var status = {};
+    status.GroupByFields = groupByfields;
+    status.Functions = [];
+    status.Functions.push({ Function: 'COUNT', FieldName: '*' });
+
+    return status;
 }
 
 function createGraphPoint(desc, value) {
@@ -461,59 +329,149 @@ function createGraphPoint(desc, value) {
     return val;
 }
 
-function filterData(data, filterBy, filterVal, filterType) {
-    var range, dateFrom, dateTo, dateMin, dateMax;
-    if (filterType == FILTERTYPE.DATERANGE) {
-        range = filterVal.split('_');
-        dateFrom = range[0];
-        dateTo = range[1];
+function getChartMax(maxVal) {
+    return Math.max(maxVal, 10) + 16;
+}
 
-        dateMin = dateFrom.substring(6, 10) + dateFrom.substring(0, 2) + dateFrom.substring(3, 5);
-        dateMax = dateTo.substring(6, 10) + dateTo.substring(0, 2) + dateTo.substring(3, 5);
-    }
+/***** Bar Chart ****/
 
-    var filteredData = jQuery.grep(data, function (prj, i) {
-        if (filterType == FILTERTYPE.EQUALS) {
-            return (prj[filterBy] == filterVal);
-        } else if (filterType == FILTERTYPE.NOTEQUALS) {
-            return (prj[filterBy] != filterVal);
-        } else if (filterType == FILTERTYPE.DATERANGE) {
-            var value = prj[filterBy];
-            if (dateFrom == '' && dateTo == '') return true;
+function createBarChart(opts) {
+    hideLoading();
+    initBarChart(opts);
 
-            var date = value.substring(6, 10) + value.substring(0, 2) + value.substring(3, 5);
-            return filterByDate(date, dateMin, dateMax);
-        }
+    var objJqplot = $.jqplot(opts.target, [opts.series], {
+        title: opts.title, axesDefaults: getBarChartAxesDefaults(opts),
+        seriesColors: opts.seriesColors, seriesDefaults: getBarChartSeriesDefaults(opts),
+        axes: getBarChartAxes(opts), highlighter: opts.highlighter,
+        //canvasOverlay: { show: true, objects: getOverlayLines() },
+        grid: getDefaultGrid()
     });
 
-    return filteredData;
+    attachBarChartEventHandlers(opts);
+    createBarChartTotalSection(opts);
+    createBarChartScrollButtons(opts);
 }
 
-function filterByDate(date, dateMin, dateMax) {
-    // run through cases
-    if (dateMin == "" && date <= dateMax) {
-        return true;
-    }
-    else if (dateMin == "" && date <= dateMax) {
-        return true;
-    }
-    else if (dateMin <= date && "" == dateMax) {
-        return true;
-    }
-    else if (dateMin <= date && date <= dateMax) {
-        return true;
-    }
-    // all failed
-    return false;
+function getBarChartAxesDefaults(opts) {
+    return { tickopts: { formatString: '%.2f' } };
 }
 
-function right(str, n) {
-    if (n <= 0)
-        return "";
-    else if (n > String(str).length)
-        return str;
-    else {
-        var iLen = String(str).length;
-        return String(str).substring(iLen, iLen - n);
+function getBarChartAxes(opts) {
+    return {
+        xaxis: {
+            renderer: $.jqplot.CategoryAxisRenderer,
+            ticks: opts.ticks, label: opts.xAxisLabel
+        },
+        yaxis: { label: opts.yAxisLabel, min: 0, max: getChartMax(opts.maxVal) }
+    };
+}
+
+function getBarChartSeriesDefaults(opts) {
+    return {
+        renderer: $.jqplot.BarRenderer, pointLabels: { show: true },
+        rendererOptions: { varyBarColor: true }, shadow: false, showLine: true
+    };
+}
+
+function attachBarChartEventHandlers(opts) {
+    $('#' + opts.target).unbind('jqplotDataClick');
+    $('#' + opts.target).bind('jqplotDataClick',
+        function (ev, seriesIndex, pointIndex, graphdata) {
+            _displayDetail(pointIndex, graphdata, opts);
+        }
+    );
+}
+
+function initBarChart(opts) {
+    $('#totals', $('#' + opts.target).parent()).remove();
+    $('#' + opts.target).html('');
+
+    opts.showTotals = opts.showTotals || false;
+    opts.start = opts.start || 0;
+    opts.ticks = [], opts.series = [];
+    opts.length = opts.data.length;
+    opts.maxVal = 0.0, opts.total = 0.0;
+    opts.maxBars = opts.maxBars || opts.length
+    setBarChartSeries(opts);
+    opts.avg = (opts.total / opts.length);
+    opts.seriesColors = opts.seriesColors || getSeriesColors();
+    opts.highlighter = opts.highlighter || getDefaultBarChartHiglighter(opts);
+}
+
+function setBarChartSeries(opts) {
+    for (var i = 0; i < opts.length ; i++) {
+        var sFieldName = opts.yAxisFieldName, tickFieldName = opts.xAxisFieldName;
+        var sVal = parseFloat(opts.data[i][sFieldName]), tickVal = opts.data[i][tickFieldName];
+
+        if ((i >= opts.start) && (i < opts.length && i < (opts.maxBars + opts.start))) {
+            opts.series.push(sVal);
+            opts.ticks.push(tickVal);
+        }
+
+        opts.maxVal = Math.max(opts.maxVal, sVal);
+        opts.total += sVal;
+    }
+}
+
+function createBarChartTotalSection(opts) {
+    if (opts.showTotals) {
+        $('#totals', $('#' + opts.target).parent()).remove();
+        $('#' + opts.target).parent().append('<table id="totals" cellpadding="2" cellspacing="2"><tr><td>Total:</td><td><b>' + opts.total.toFixed(2) + '</b></td><td>Avg:</td><td><b>' + opts.avg.toFixed(2) + '</b></td></tr></table>');
+    }
+}
+
+function createBarChartScrollButtons(opts) {
+    if (!(opts.length > opts.maxBars)) return;
+
+    createBarChartNextButton(opts);
+    createBarChartPrevButton(opts);
+}
+
+function createBarChartNextButton(opts) {
+    if ((opts.start + opts.maxBars) < opts.length) {
+        var _start = opts.start + opts.maxBars;
+        var display = getBarChartNextButtonDisplay(opts);
+
+        $('#' + opts.target).append('<div id="nextRecords" style="position:absolute;top:200px;left:1090px;"><button class="graph-buttons" title="Show ' + display + '"></button></div>');
+        $('#nextRecords button', $('#' + opts.target)).button({ text: false, icons: { primary: 'ui-icon-triangle-1-e' } }).click(function (event) {
+            opts.start = _start;
+            createBarChart(opts);
+        });
+    }
+}
+
+function getBarChartNextButtonDisplay(opts) {
+    var _start = opts.start + opts.maxBars;
+    var display = (opts.length - _start) < opts.maxBars ? (opts.length - _start) : opts.maxBars;
+    if (display == 1) {
+        //TODO: remove the last s
+        display = 'last ' + opts.xAxisLabel;
+    } else if (display < opts.maxBars) {
+        display = 'last ' + display + ' ' + opts.xAxisLabel;
+    } else {
+        display = 'next ' + display + ' ' + opts.xAxisLabel;
+    }
+
+    return display;
+}
+
+function createBarChartPrevButton(opts) {
+    if (opts.start > 0) {
+        $('#' + opts.target).append('<div id="prevRecords" style="position:absolute;top:200px;left:0px;"><button class="graph-buttons" title="Show previous ' + opts.maxBars + ' ' + opts.xAxisLabel + '"></button></div>');
+        $('#prevRecords button', $('#' + opts.target)).button({ text: false, icons: { primary: 'ui-icon-triangle-1-w' } }).click(function (event) {
+            opts.start = opts.start - opts.maxBars;
+            createBarChart(opts);
+        });
+    }
+}
+
+function getDefaultBarChartHiglighter(opts) {
+    return {
+        show: true, sizeAdjust: -9, lineWidthAdjust: 2.5,
+        tooltipLocation: 'n', tooltipOffset: 18,
+        tooltipContentEditor: function (str, seriesIndex, pointIndex, plot) {
+            var text = opts.data[opts.start + pointIndex][opts.xAxisFieldName];
+            return '<span style="padding:5px;font-size:13px;"><b>' + text + '</b></span>';
+        }
     }
 }

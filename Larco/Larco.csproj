@@ -149,6 +149,7 @@
     <Content Include="Scripts\app\dias_vencido.js" />
     <Content Include="Scripts\app\materiales.js" />
     <Content Include="Scripts\app\productos.js" />
+    <Content Include="Scripts\app\tareas.js" />
     <Content Include="Scripts\app\urgentes_vencidas_empleado.js" />
     <Content Include="Scripts\app\ventas.js" />
     <Content Include="Scripts\common.js" />

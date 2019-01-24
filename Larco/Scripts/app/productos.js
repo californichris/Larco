@@ -79,7 +79,7 @@ function editEntity(oTable, options) {
 }
 
 function deleteEntity(oTable, options) {
-    if (confirm('Estas seguro que quieres borrar este Producto?') == false)
+    if (confirm('Estas seguro que quieres borrar este producto?') == false)
         return false;
 
     var entity = getSelectedRowData(oTable);
@@ -162,7 +162,7 @@ function handleSaveResponse(json) {
         $(TABLE_SEL).Catalog('reloadTable');
         $(TABLE_SEL + '_wrapper button.disable').button('disable');
     } else {
-        showError($(DIALOG_SEL + ' p.validateTips'), json.ErrorMsg);
+        showError($(DIALOG_SEL + ' p.validateTips'), 'No fue posible grabar el producto.');
     }
 }
 
