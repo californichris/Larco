@@ -155,7 +155,9 @@
     <Content Include="Reportes\ScrapPorcentaje.aspx" />
     <Content Include="Scripts\app\dias_vencido.js" />
     <Content Include="Scripts\app\materiales.js" />
+    <Content Include="Scripts\app\planos.js" />
     <Content Include="Scripts\app\productos.js" />
+    <Content Include="Scripts\app\stock.js" />
     <Content Include="Scripts\app\tareas.js" />
     <Content Include="Scripts\app\urgentes_vencidas_empleado.js" />
     <Content Include="Scripts\app\ventas.js" />
@@ -215,6 +217,12 @@
     <Content Include="Scripts\tinymce\themes\modern\theme.min.js" />
     <Content Include="Scripts\tinymce\tinymce.min.js" />
     <Content Include="Sistema\Usuarios.aspx" />
+    <Content Include="Stock\Planos.aspx" />
+    <Content Include="Stock\ReporteEntradasSalidasPlano.aspx" />
+    <Content Include="Stock\ReporteEntradasSalidasStock.aspx" />
+    <Content Include="Stock\ReportePiezasStock.aspx" />
+    <Content Include="Stock\ReporteTotalPiezasStock.aspx" />
+    <Content Include="Stock\Stock.aspx" />
     <Content Include="Styles\app.css" />
     <Content Include="Styles\blitzer\dataTables.jqueryui.css" />
     <Content Include="Styles\blitzer\images\ui-bg_diagonals-thick_75_f3d8d8_40x40.png" />
@@ -586,6 +594,48 @@
     <Compile Include="Site.Master.designer.cs">
       <DependentUpon>Site.Master</DependentUpon>
     </Compile>
+    <Compile Include="Stock\Planos.aspx.cs">
+      <DependentUpon>Planos.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Stock\Planos.aspx.designer.cs">
+      <DependentUpon>Planos.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Stock\ReporteEntradasSalidasPlano.aspx.cs">
+      <DependentUpon>ReporteEntradasSalidasPlano.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Stock\ReporteEntradasSalidasPlano.aspx.designer.cs">
+      <DependentUpon>ReporteEntradasSalidasPlano.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Stock\ReporteEntradasSalidasStock.aspx.cs">
+      <DependentUpon>ReporteEntradasSalidasStock.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Stock\ReporteEntradasSalidasStock.aspx.designer.cs">
+      <DependentUpon>ReporteEntradasSalidasStock.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Stock\ReportePiezasStock.aspx.cs">
+      <DependentUpon>ReportePiezasStock.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Stock\ReportePiezasStock.aspx.designer.cs">
+      <DependentUpon>ReportePiezasStock.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Stock\ReporteTotalPiezasStock.aspx.cs">
+      <DependentUpon>ReporteTotalPiezasStock.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Stock\ReporteTotalPiezasStock.aspx.designer.cs">
+      <DependentUpon>ReporteTotalPiezasStock.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Stock\Stock.aspx.cs">
+      <DependentUpon>Stock.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Stock\Stock.aspx.designer.cs">
+      <DependentUpon>Stock.aspx</DependentUpon>
+    </Compile>
     <Compile Include="UnderConstruction.aspx.cs">
       <DependentUpon>UnderConstruction.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -607,7 +657,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Facturacion\" />
-    <Folder Include="Stock\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Handlers\AjaxDownloadHandler.ashx" />

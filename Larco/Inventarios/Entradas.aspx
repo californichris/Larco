@@ -31,24 +31,27 @@
             onLoadComplete: function (config) {
                 $('h2').text(config.Title);
                 document.title = config.Title;
-                initializeCatalog(config);
-
-                tinymce.init({
-                    selector: '#' + TINYMCE_ELE,
-                    height: 275,
-                    plugins: [
-                                'link image anchor code preview table contextmenu textcolor print'
-                    ],
-                    menubar: false,
-                    toolbar_items_size: 'small',
-                    toolbar1: 'bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | styleselect formatselect fontselect fontsizeselect | cut copy paste | bullist numlist',
-                    toolbar2: 'undo redo | link unlink image code preview | forecolor backcolor | table | print'
-                });
+                initCatalog(config);
+                initEditor();
             }
         });
     });
 
-    function initializeCatalog(config) {
+    function initEditor() {
+        tinymce.init({
+            selector: '#' + TINYMCE_ELE,
+            height: 275,
+            plugins: [
+                        'link image anchor code preview table contextmenu textcolor print'
+            ],
+            menubar: false,
+            toolbar_items_size: 'small',
+            toolbar1: 'bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | styleselect formatselect fontselect fontsizeselect | cut copy paste | bullist numlist',
+            toolbar2: 'undo redo | link unlink image code preview | forecolor backcolor | table | print'
+        });
+    }
+
+    function initCatalog(config) {
         $(TABLE_SELECTOR).Catalog({
             pageConfig: config,
             serverSide: true,
@@ -237,6 +240,7 @@
                     initCompleteCallBack: detalleInitComplete,
                     newEntityCallBack: function (oTable, options) {
                         $('#MAT_ID').ComboBox('enable');
+                        //$('#MAT_ID').selectmenu('enable');
                         $(DETALLE_TABLE_SELECTOR).Catalog('newEntity', oTable, options);
                         $(DETALLE_DIALOG_SELECTOR + ' #ENT_ID').val($(DIALOG_SELECTOR + ' #ENT_ID').val());
                     },
@@ -255,6 +259,12 @@
                     },
                     saveEntityCallBack: function (oTable, options) {
                         var data = getObject(DETALLE_DIALOG_SELECTOR);
+
+                        var _material = getMaterialData(data);
+                        if (!isTrue(_material.Activo)) {
+                            alert('Este material esta inactivo no se pueden registrar entradas.');
+                            return;
+                        }
 
                         $.when(getExistencia(data)).done(function (json) {
                             if (json.ErrorMsg) {

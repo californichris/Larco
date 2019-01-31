@@ -357,16 +357,14 @@ function checkAlpha(tips, field, fieldDesc) {
 }
 
 function checkRequired(tips, field, fieldDesc) {
-    field.removeClass("ui-state-error").off('.validation');
+    removeErrorClass(field).off('.validation');
     field.val($.trim(field.val()));
     if (_isNullOrEmpty(field.val())) {
-        field.addClass("ui-state-error");
-        tips.text(fieldDesc + " is required.").addClass("ui-state-highlight");
-        field.on('blur.validation', function () {
+        tips.text(fieldDesc + ' is required.').addClass('ui-state-highlight');
+        addErrorClass(field).on('blur.validation', function () {
             if (checkRequired(tips, field, fieldDesc)) {
-                tips.text("").removeClass("ui-state-highlight");
-                field.removeClass("ui-state-error");
-                field.off('.validation');
+                tips.text('').removeClass('ui-state-highlight');
+                removeErrorClass(field).off('.validation');
             }
         });
 
@@ -376,9 +374,28 @@ function checkRequired(tips, field, fieldDesc) {
     }
 }
 
+function addErrorClass(field) {
+    if (field.hasClass('selectMenu')) {
+        var widget = field.selectmenu('widget');
+        return widget.addClass('ui-selectmenu-state-error');
+    }
+
+    return field.addClass('ui-state-error');
+}
+
+function removeErrorClass(field) {
+    if (field.hasClass('selectMenu')) {
+        var widget = field.selectmenu('widget');
+        return widget.removeClass('ui-selectmenu-state-error');
+    }
+
+    return field.removeClass('ui-state-error');
+}
+
 function checkEmpty(field) {
-    field.removeClass("ui-state-error").off('.validation');
+    field.removeClass('ui-state-error').off('.validation');
     field.val($.trim(field.val()));
+
     return field.val() == '';
 }
 

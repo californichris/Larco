@@ -246,6 +246,17 @@ function getTemplate(templateName) {
     });
 }
 
+function maskITENombre(selector, options) {
+    var year = Date.today().toString('yy');
+    var maskOpts = { placeholder: year + '-___-___-__', selectOnFocus: true };
+
+    if (options.onChange) {
+        maskOpts.onChange = options.onChange;
+    }
+
+    $(selector).mask('99-999-999-99', maskOpts);
+}
+
 /****************** Top Records ***********************************/
 function getTopRecords(config, top, order, where) {
     return $.ajax({

@@ -69,6 +69,14 @@ namespace BS.Common
             var tasksJSBundle = new ScriptBundle(BaseBundleConfig.ScriptsPath + "tareas_js")
                 .Include(ScriptsPath + "app/tareas.js");
             bundles.Add(tasksJSBundle);
+
+            var planosJSBundle = new ScriptBundle(BaseBundleConfig.ScriptsPath + "planos_js")
+                .Include(ScriptsPath + "app/planos.js");
+            bundles.Add(planosJSBundle);
+
+            var stockJSBundle = new ScriptBundle(BaseBundleConfig.ScriptsPath + "stock_js")
+                .Include(ScriptsPath + "app/stock.js");
+            bundles.Add(stockJSBundle);
         }
     }
 }
