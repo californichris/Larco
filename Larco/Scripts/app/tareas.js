@@ -14,12 +14,12 @@ $(document).ready(function () {
         onLoadComplete: function (config) {
             $('h2').text(config.Title);
             document.title = config.Title;
-            initializeCatalog(config);
+            initCatalog(config);
         }
     });
 });
 
-function initializeCatalog(config) {
+function initCatalog(config) {
     $(TABLE_SEL).Catalog({
         pageConfig: config, showExport: true, dialogWidth: 600,
         viewOnly: !EDIT_ACCESS, showEdit: true,
@@ -48,8 +48,9 @@ function _rowCallback(nRow, aData, iDisplayIndex, config) {
 
 function newEntity(oTable, options) {
     $(TABLE_SEL).Catalog('newEntity', oTable, options);
-    var list = getSortedList(oTable);
+    $('#Activo').prop('checked', true);
 
+    var list = getSortedList(oTable);
     if (list.length > 0) {
         $('#TaskOrder').val(parseInt(list[list.length - 1].TaskOrder) + 1);
     } else {
@@ -87,20 +88,7 @@ function saveNewTask() {
     var entities = [];
     entities.push(addSaveOperationAttrs(entity, 'Tareas_VW')); //Using the view so field Id is translated to TaskId
     entities.push(addSaveOperationAttrs(monitor, MONITOR_PAGE));
-    $.when(getProds()).done(function (json) {
-        var prods = json.aaData;
-        for (var i = 0; i < prods.length; i++) {
-            entities.push(getSaveAggreValEntity(entity, prods[i].ProdId));
-        }
-
-        //Find another way to insert all products to aggregate table because when more products are added to the system 
-        // the limit parameters will be reach only supports a maximum of 2100 parameters.
-        $.when(executeTransaction(entities)).done(handleSaveResponse);
-    });
-}
-
-function getSaveAggreValEntity(entity, prodId) {
-    return { ProdTaskId: '', ProdId: prodId, TaskId: entity.TaskId, Value: 1, OperationType: 'Save', PageName: AGGRE_VAL_PAGE };
+    $.when(executeTransaction(entities)).done(handleSaveResponse);
 }
 
 function editTask() {
@@ -124,21 +112,6 @@ function handleSaveResponse(json) {
     } else {
         showError($(DIALOG_SEL + ' p.validateTips'), 'No fue posible grabar la tarea.');
     }
-}
-
-function getNewTaskEntities(entity) {
-    var optType = OPERATION_TYPES.DELETE_ENTITIES;
-    var routing = { TaskId: entity.TaskId, OperationType: optType, PageName: ROUTING_PAGE };
-    var monitor = { MName: entity.Nombre, OperationType: optType, PageName: MONITOR_PAGE };
-    var aggre = { TaskId: entity.TaskId, OperationType: optType, PageName: AGGRE_VAL_PAGE };
-
-    var entities = [];
-    entities.push(routing);
-    entities.push(monitor);
-    entities.push(aggre);
-    entities.push(addDeleteOperationAttrs(entity, PAGE_NAME));
-
-    return entities;
 }
 
 function getDeleteEntities(entity) {

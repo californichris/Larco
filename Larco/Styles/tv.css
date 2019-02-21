@@ -1,0 +1,232 @@
+﻿html, body {
+    height: 100%;
+}
+
+#main-body {
+    width:100%;
+    display:flex;
+    flex-wrap:wrap;
+    height:100%;  
+}
+
+#task-selector {
+    width:25%;
+    /*border: 1px solid #0000FF;*/
+    min-width: 225px;
+    padding: 2px;
+    margin: 1em;
+    height: auto;
+}
+
+#task-selector .ui-dialog {
+    position: relative;
+    width: 99%;
+    height: 100%;
+}
+
+#task-selector .ui-dialog .ui-dialog-titlebar {
+    position: relative;
+    width: 99%;
+}
+
+#task-selector .ui-dialog .ui-dialog-content {
+    height:88%;
+}
+
+#task-selector .ui-dialog .button-section {
+   height:7%;
+   min-height: 55px;
+}
+
+#task-selector #TaskId {
+    height: 80%;
+    min-height: 300px;
+}
+
+div.button-section {
+    border: 1px solid #dddddd;
+    border-width: 1px 0 0 0;
+    margin-top: 2px;
+    padding: 8px 1px 5px 1px;
+}
+
+#task-display {
+    width:100%;
+    min-width: 585px;
+    /*border: 1px solid #FF0000;*/
+    min-width: 500px;
+    padding: .25em;
+    margin: .25em;
+    height: auto;
+}
+
+#task-display .ui-dialog-titlebar {
+    text-align: center;
+}
+
+#task-display #returnToSelector {
+    margin:5px;
+    float: left;
+    margin: 1em;
+}
+
+#task-display .ui-dialog-title {
+    margin-top:1em;
+    font-size:3em;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#task-display #larcoLogo {
+    float:right;
+    height: 45px;
+    width: 45px;
+    margin: .25em;
+}
+
+#task-display .ui-dialog-titlebar, #task-display .task-display-content {
+    width: 100%;
+}
+
+#task-display .task-display-content .fg-toolbar {
+    display:none;
+}
+
+#task-display table.display {
+    font-size:1em;
+    color:#004276;
+    font-weight: bold;
+
+    width:100%!important;
+    /*background-color:blue;*/
+}
+
+#task-display table.totals {
+    font-size:1em;
+    color:#004276;
+}
+
+#task-display table.display .DataTables_sort_icon {
+    display:none;
+}
+
+
+#task-display table.dataTable tbody th, table.dataTable tbody td {
+    padding: 4px;
+}
+
+#task-display table.dataTable > thead > tr > th:nth-child(4),
+#task-display table.dataTable > tbody > tr > td:nth-child(4) {
+    width:30%!important;
+    max-width:125px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+div.task-totals {
+    border-bottom: 1px solid #004276;
+    margin-bottom: 10px;
+}
+
+@media screen and (min-width: 770px) {
+    #task-display  {
+        /*background-color:black;*/
+    }
+
+    #task-display table.display {
+        font-size:1.5em;
+    }    
+
+    #task-display table.totals {
+        font-size:1.25em;
+    }
+
+    #task-display table.dataTable > thead > tr > th:nth-child(4),
+    #task-display table.dataTable > tbody > tr > td:nth-child(4) {
+        max-width:200px;
+    }
+
+}
+
+
+@media screen and (min-width: 970px) {
+    #task-display  {
+        /*background-color:red;*/
+    }
+
+    #task-display table.display {
+        font-size:2em;
+    }    
+
+    #task-display table.totals {
+        font-size:1.75em;
+    }
+
+    #task-display table.dataTable > thead > tr > th:nth-child(4),
+    #task-display table.dataTable > tbody > tr > td:nth-child(4) {
+        max-width:250px;
+    }
+
+}
+
+@media screen and (min-width: 1180px) {
+    #task-display  {
+        /*background-color:blue;*/
+    }
+
+    #task-display table.display {
+        font-size:2.5em;
+    }    
+
+    #task-display table.totals {
+        font-size:2.25em;
+    }
+
+    #task-display table.dataTable > thead > tr > th:nth-child(4),
+    #task-display table.dataTable > tbody > tr > td:nth-child(4) {
+        max-width:300px;
+    }
+
+}
+
+@media screen and (min-width: 1390px) {
+    #task-display  {
+        /*background-color:gray;*/
+    }
+
+    #task-display table.display {
+        font-size:3em;
+    }    
+
+    #task-display table.totals {
+        font-size:2.75em;
+    }
+
+    #task-display table.dataTable > thead > tr > th:nth-child(4),
+    #task-display table.dataTable > tbody > tr > td:nth-child(4) {
+        max-width:350px;
+    }
+
+}
+
+@media screen and (min-width: 1490px) {
+    #task-display  {
+        /*background-color:green;*/
+    }
+
+    #task-display table.display {
+        font-size:3.25em;
+    }    
+
+    #task-display table.totals {
+        font-size:3em;
+    } 
+
+    #task-display table.dataTable > thead > tr > th:nth-child(4),
+    #task-display table.dataTable > tbody > tr > td:nth-child(4) {
+        max-width:400px;
+    }
+
+}
+

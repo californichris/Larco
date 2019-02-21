@@ -8,3 +8,11 @@
 tr.bold {
     font-weight: bold;
 }
+
+.dataTables_processing {
+    color:#004276!important;
+}
+
+.urgent {
+    color:#DC3545;
+}

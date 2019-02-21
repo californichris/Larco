@@ -36,13 +36,14 @@ namespace BS.Common
             bundles.Add(jqplotBundle);
 
             var jqplotJSBundle = new ScriptBundle(ScriptsPath + "jqplot_js")
-                .Include(ScriptsPath + "dashboard_common.js")
-                .Include(ScriptsPath + "jqplot/jquery.jqplot.js")
-                .Include(ScriptsPath + "jqplot/jqplot.pieRenderer.js")
-                .Include(ScriptsPath + "jqplot/jqplot.barRenderer.js")
-                .Include(ScriptsPath + "jqplot/jqplot.categoryAxisRenderer.js")
-                .Include(ScriptsPath + "jqplot/jqplot.pointLabels.js")
-                .Include(ScriptsPath + "jqplot/jqplot.canvasOverlay.js");
+                .Include(BaseBundleConfig.ScriptsPath + "dashboard_common.js")
+                .Include(BaseBundleConfig.ScriptsPath + "jqplot/jquery.jqplot.js")
+                .Include(BaseBundleConfig.ScriptsPath + "jqplot/jqplot.pieRenderer.js")
+                .Include(BaseBundleConfig.ScriptsPath + "jqplot/jqplot.barRenderer.js")
+                .Include(BaseBundleConfig.ScriptsPath + "jqplot/jqplot.categoryAxisRenderer.js")
+                .Include(BaseBundleConfig.ScriptsPath + "jqplot/jqplot.pointLabels.js")
+                .Include(BaseBundleConfig.ScriptsPath + "jqplot/jqplot.highlighter.js")
+                .Include(BaseBundleConfig.ScriptsPath + "jqplot/jqplot.canvasOverlay.js");
             bundles.Add(jqplotJSBundle);
             /*****************************/
 
@@ -77,6 +78,18 @@ namespace BS.Common
             var stockJSBundle = new ScriptBundle(BaseBundleConfig.ScriptsPath + "stock_js")
                 .Include(ScriptsPath + "app/stock.js");
             bundles.Add(stockJSBundle);
+
+            var defaultJSBundle = new ScriptBundle(BaseBundleConfig.ScriptsPath + "default_js")
+                .Include(ScriptsPath + "app/default.js");
+            bundles.Add(defaultJSBundle);
+
+            var motivosJSBundle = new ScriptBundle(BaseBundleConfig.ScriptsPath + "motivos_js")
+                .Include(ScriptsPath + "app/motivos.js");
+            bundles.Add(motivosJSBundle);
+
+            var jqplotcssBundle = new StyleBundle(BaseBundleConfig.StylesPath + "jqplot_css")
+                .Include(BaseBundleConfig.StylesPath + "jquery.jqplot.css");
+            bundles.Add(jqplotcssBundle);
         }
     }
 }

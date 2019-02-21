@@ -103,6 +103,7 @@
     <Content Include="Catalogos\Empleados.aspx" />
     <Content Include="Catalogos\Materiales.aspx" />
     <Content Include="Catalogos\MenuEditor.aspx" />
+    <Content Include="Catalogos\Motivos.aspx" />
     <Content Include="Catalogos\Paises.aspx" />
     <Content Include="Catalogos\Productos.aspx" />
     <Content Include="Catalogos\ProductosTerminados.aspx" />
@@ -150,15 +151,19 @@
     <Content Include="Reportes\OrdenesUrgentesVencidasPorEmpleado.aspx" />
     <Content Include="Reportes\RelacionFechaEntrega.aspx" />
     <Content Include="Reportes\RelacionOrdenCompra.aspx" />
+    <Content Include="Reportes\ReportePuntosPorEmpleado.aspx" />
     <Content Include="Reportes\SalidasAlmacen.aspx" />
     <Content Include="Reportes\ScrapDinero.aspx" />
     <Content Include="Reportes\ScrapPorcentaje.aspx" />
+    <Content Include="Scripts\app\default.js" />
     <Content Include="Scripts\app\dias_vencido.js" />
     <Content Include="Scripts\app\materiales.js" />
+    <Content Include="Scripts\app\motivos.js" />
     <Content Include="Scripts\app\planos.js" />
     <Content Include="Scripts\app\productos.js" />
     <Content Include="Scripts\app\stock.js" />
     <Content Include="Scripts\app\tareas.js" />
+    <Content Include="Scripts\app\tv.js" />
     <Content Include="Scripts\app\urgentes_vencidas_empleado.js" />
     <Content Include="Scripts\app\ventas.js" />
     <Content Include="Scripts\common.js" />
@@ -166,13 +171,9 @@
     <Content Include="Scripts\date.js" />
     <Content Include="Scripts\flip.js" />
     <Content Include="Scripts\jqplot\jqplot.barRenderer.js" />
-    <Content Include="Scripts\jqplot\jqplot.canvasAxisLabelRenderer.js" />
-    <Content Include="Scripts\jqplot\jqplot.canvasAxisTickRenderer.js" />
     <Content Include="Scripts\jqplot\jqplot.canvasOverlay.js" />
-    <Content Include="Scripts\jqplot\jqplot.canvasTextRenderer.js" />
     <Content Include="Scripts\jqplot\jqplot.categoryAxisRenderer.js" />
-    <Content Include="Scripts\jqplot\jqplot.dateAxisRenderer.js" />
-    <Content Include="Scripts\jqplot\jqplot.logAxisRenderer.js" />
+    <Content Include="Scripts\jqplot\jqplot.highlighter.js" />
     <Content Include="Scripts\jqplot\jqplot.pieRenderer.js" />
     <Content Include="Scripts\jqplot\jqplot.pointLabels.js" />
     <Content Include="Scripts\jqplot\jquery.jqplot.js" />
@@ -190,6 +191,7 @@
     <Content Include="Scripts\jquery.multiselect.filter.js" />
     <Content Include="Scripts\jquery.multiselect.js" />
     <Content Include="Scripts\larco_common.js" />
+    <Content Include="Scripts\main_menu.js" />
     <Content Include="Scripts\pageconfig.js" />
     <Content Include="Scripts\prism.js" />
     <Content Include="Scripts\spin.js" />
@@ -264,6 +266,8 @@
     <Content Include="Styles\pageconfig.css" />
     <Content Include="Styles\prism.css" />
     <Content Include="Styles\Site.css" />
+    <Content Include="Styles\tv.css" />
+    <Content Include="TV\Screen.aspx" />
     <Content Include="UnderConstruction.aspx" />
     <Content Include="Web.config">
       <SubType>Designer</SubType>
@@ -349,6 +353,13 @@
     </Compile>
     <Compile Include="Catalogos\MenuEditor.aspx.designer.cs">
       <DependentUpon>MenuEditor.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Catalogos\Motivos.aspx.cs">
+      <DependentUpon>Motivos.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Catalogos\Motivos.aspx.designer.cs">
+      <DependentUpon>Motivos.aspx</DependentUpon>
     </Compile>
     <Compile Include="Catalogos\Paises.aspx.cs">
       <DependentUpon>Paises.aspx</DependentUpon>
@@ -559,6 +570,13 @@
     <Compile Include="Reportes\RelacionOrdenCompra.aspx.designer.cs">
       <DependentUpon>RelacionOrdenCompra.aspx</DependentUpon>
     </Compile>
+    <Compile Include="Reportes\ReportePuntosPorEmpleado.aspx.cs">
+      <DependentUpon>ReportePuntosPorEmpleado.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Reportes\ReportePuntosPorEmpleado.aspx.designer.cs">
+      <DependentUpon>ReportePuntosPorEmpleado.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Reportes\SalidasAlmacen.aspx.cs">
       <DependentUpon>SalidasAlmacen.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -635,6 +653,13 @@
     </Compile>
     <Compile Include="Stock\Stock.aspx.designer.cs">
       <DependentUpon>Stock.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="TV\Screen.aspx.cs">
+      <DependentUpon>Screen.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="TV\Screen.aspx.designer.cs">
+      <DependentUpon>Screen.aspx</DependentUpon>
     </Compile>
     <Compile Include="UnderConstruction.aspx.cs">
       <DependentUpon>UnderConstruction.aspx</DependentUpon>

@@ -59,6 +59,7 @@ function _rowCallback(nRow, aData, iDisplayIndex, config) {
 
 function newEntity(oTable, options) {
     $(TABLE_SEL).Catalog('newEntity', oTable, options);
+    $('#Activo').prop('checked', true);
     $(TASK_PRODS_TABLE).css('width', '100%').DataTable().columns.adjust().draw();
     $(TASK_PRODS_TABLE + ' input[type=checkbox]').prop('checked', false);
 }
@@ -121,9 +122,7 @@ function saveNewProduct() {
     var entities = [];
     entities.push(addSaveOperationAttrs(entity, 'Productos_VW'));
     appendRoutesEntities(entities, entity);
-    appendAggreValEntities(entities, entity);
-
-    log(entities);
+    //appendAggreValEntities(entities, entity);
 
     $.when(executeTransaction(entities)).done(handleSaveResponse);
 }
@@ -151,7 +150,7 @@ function editProduct() {
     entities.push(addSaveOperationAttrs(entity, 'Productos_VW'));
     appendRoutesEntities(entities, entity);
 
-    log(entities);
+    //log(entities);
 
     $.when(executeTransaction(entities)).done(handleSaveResponse);
 }
@@ -174,16 +173,24 @@ function getProdEntity() {
 }
 
 function appendRoutesEntities(entities, entity) {
-    if (entity.ProdId) {
+    if (entity.ProdId) {//its an edit
         var deleteEntity = { ProdId: entity.ProdId };
         entities.push(addDeleteEntitiesOperationAttrs(deleteEntity, ROUTING_PAGE));
     }
 
     var checks = $(TASK_PRODS_TABLE + ' input[type=checkbox]:checked');
+    var taskIds = [];
     for (var i = 0; i < checks.length; i++) {
         if (i < (checks.length - 1)) {
             entities.push(getSaveRoutingEntity(entity, $(checks[i]).attr('TaskId'), $(checks[i + 1]).attr('TaskId')));
         }
+        taskIds.push($(checks[i]).attr('TaskId'));
+    }
+
+    if (entity.ProdId) { //its an edit
+        var aggEntity = { ProdId: entity.ProdId }
+        aggEntity.TaskId = 'NOT_LIST_' + taskIds.join(',');
+        entities.push(addDeleteEntitiesOperationAttrs(aggEntity, AGGRE_VAL_PAGE));
     }
 }
 

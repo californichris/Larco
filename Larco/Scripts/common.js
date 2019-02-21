@@ -287,24 +287,28 @@ function exists(selector) {
     return false;
 }
 
-function updateTips(tips, msg, removed) {
-    tips.text(msg).addClass("ui-state-highlight");
-    setTimeout(function () {
-        tips.removeClass("ui-state-highlight");
-        if (typeof removed != 'undefined' && removed != null && removed == true) {
-            tips.text('');
-        }
-    }, 1500);
+function getTips(selector) {
+    return $(selector + ' p.validateTips');
 }
 
-function showSuccess(tips, msg, removed) {
-    tips.text(msg).addClass("ui-state-success");
-    setTimeout(function () {
-        tips.removeClass("ui-state-success");
-        if (typeof removed != 'undefined' && removed != null && removed == true) {
+function updateTips(tips, msg, removed, time) {
+    tips.text(msg).addClass('ui-state-highlight');
+    if (isTrue(removed)) {
+        setTimeout(function () {
+            tips.removeClass('ui-state-highlight');
             tips.text('');
-        }
-    }, 1500);
+        }, time || 1500);
+    }
+}
+
+function showSuccess(tips, msg, removed, time) {
+    tips.text(msg).addClass('ui-state-success');
+    if (isTrue(removed)) {
+        setTimeout(function () {
+            tips.removeClass('ui-state-success');
+            tips.text('');
+        }, time || 1500);
+    }
 }
 
 function showError(tips, msg, removed) {
@@ -731,15 +735,17 @@ function validateDialog(config, tips, dialog) {
 }
 
 function isTrue(value) {
-    if(!value) return false;
+    if (value === true) return true;
+    if (!value) return false; //is null or empty or undefined
 
     return value == '1' || value.toLowerCase() == 'true' || value.toUpperCase() == 'YES';
 }
 
 function isFalse(value) {
-    if (!value) return false;
+    if (value === false) return true;
+    if (!value) return false; //is null or empty or undefined
 
-    return value == '0' || value.toLowerCase() == 'false' || value.toUpperCase() == 'FALSE';
+    return value == '0' || value.toLowerCase() == 'false' || value.toUpperCase() == 'NO';
 }
 
 function populateDialog(data, selector) {
@@ -1481,6 +1487,10 @@ $.widget("epe.Catalog", {
         return this._getExportRequest(options);
     },
 
+    getExportFilterInfo: function (options) {
+        return this._getFilterInfo(options);
+    },
+
     _getExportRequest: function (options) {
         var _url = options.exportRequest;
         var filterInfo = this._getFilterInfo(options);
@@ -1888,7 +1898,7 @@ $.widget("epe.Catalog", {
         var _field = $('#' + field.FieldName, this._dialog);
 
         if (field.ControlType == 'selectmenu' && $('#' + field.FieldName).hasClass('selectMenu')) {
-            _field.val(_value).selectmenu('refresh');           
+            _field.selectmenu('setValue', _value);           
         } else if (field.ControlType == 'dropdownlist') {
             _field.ComboBox('value', _value);
         } else if (field.ControlType == 'checkbox') {
@@ -3294,12 +3304,12 @@ $.page.initSelectMenu = function (selector) {
 }
 
 $.page.initMultiselect = function (element, ddInfo) {
-    var _header = (ddInfo.header && ddInfo.header == true) ? true : false;
+    var _header = isTrue(ddInfo.header);
 
     element.addClass('multiselect').attr('load-complete', 'false').empty();
     element.append($('<option></option>').attr('value', '').text('Loading..'));
 
-    if (ddInfo.filter && ddInfo.filter == true) {
+    if (isTrue(ddInfo.filter)) {
         element.multiselect({ header: _header }).multiselectfilter();
     } else {
         element.multiselect({ header: _header });
@@ -3378,7 +3388,7 @@ $.page.createSelectMenuOptions = function (element, json, ddInfo) {
         $.page.createSelectOptions(element, json, ddInfo);
 
         //adding empty option at the begining of the list
-        if (ddInfo.addEmptyOption) {
+        if (isTrue(ddInfo.addEmptyOption)) {
             var firstOptionValue = '';
             if (ddInfo.firstOptionVal) {
                 firstOptionValue = ddInfo.firstOptionVal;

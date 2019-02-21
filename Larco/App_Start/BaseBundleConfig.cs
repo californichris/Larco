@@ -28,6 +28,7 @@ namespace EPE.Common
                 .Include(ScriptsPath + "common.js")
                 .Include(ScriptsPath + "date.js")
                 .Include(ScriptsPath + "jquery.fileDownload.js")
+                .Include(ScriptsPath + "main_menu.js")
                 .Include(ScriptsPath + "spin.js");
             bundles.Add(siteMasterBundle);
 
@@ -41,13 +42,14 @@ namespace EPE.Common
                  .Include(ScriptsPath + "prism.js");
             bundles.Add(queryHelperBundle);
 
-            var multiSelectJSBundle = new ScriptBundle(ExtraWidgetsJsVirtualPath)
-                .Include(ScriptsPath + "jquery.multiselect.js")                
+            var extraJSBundle = new ScriptBundle(ExtraWidgetsJsVirtualPath)
+                .Include(ScriptsPath + "jquery.multiselect.js")
                 .Include(ScriptsPath + "jquery.multiselect.filter.js")
                 .Include(ScriptsPath + "jquery-ui-timepicker-addon.js")
                 .Include(ScriptsPath + "jquery.hotkeys.js")
+                .Include(ScriptsPath + "jquery.maskedinput.js")
                 .Include(ScriptsPath + "jquery.maskMoney.js");
-            bundles.Add(multiSelectJSBundle);
+            bundles.Add(extraJSBundle);
 
             var cssBundle = new StyleBundle(SiteMasterCSSVirtualPath)
                 .Include(StylesPath + "Site.css");
@@ -60,6 +62,7 @@ namespace EPE.Common
             bundles.Add(styleBundle);
 
             var extraWidgetsCSSBundle = new StyleBundle(ExtraWidgetsCssVirtualPath)
+                .Include(StylesPath + "jquery-ui-timepicker-addon.css")
                 .Include(StylesPath + "jquery.multiselect.css")
                 .Include(StylesPath + "jquery.multiselect.filter.css");
             bundles.Add(extraWidgetsCSSBundle);

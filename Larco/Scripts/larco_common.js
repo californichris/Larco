@@ -75,9 +75,9 @@ function getItemsEntity(data) {
 
 function executeTransaction(entities) {
     return $.ajax({
-        type: "POST",
+        type: 'POST',
         url: AJAX + '/PageInfo/ExecuteTransaction',
-        data: "entities=" + encodeURIComponent($.toJSON(entities))
+        data: 'entities=' + encodeURIComponent($.toJSON(entities))
     });
 }
 

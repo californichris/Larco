@@ -23,13 +23,7 @@
 	            validate: function (tips) {
 	                return validateDialog(config, tips);
 	            },
-	            saveEntityCallBack: function (oTable, options) {
-                    //TODO: removed this code when the Nombre column is deleted from table
-	                var entity = getObject(options.dialogSelector);
-	                entity.Nombre = $('#ProdId option:selected').text();
-
-	                $(TABLE_SEL).Catalog('saveEntity', oTable, options, entity);
-	            }
+	            saveEntityCallBack: saveEntity
 	        });
 	    }
 	</script>

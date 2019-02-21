@@ -164,7 +164,9 @@ function initializeCatalog(config) {
             deleteOrden(getSelectedRowData(oTable));
         },
         saveEntityCallBack: function (oTable, options) {
-            saveOrden(getOrdenEntity());
+            alert('Not Implemented yet!!');
+            return;
+            //saveOrden(getOrdenEntity());
         },
         sorting: [[getArrayIndexForKey(config.GridFields, 'ColumnName', 'Recibido') || 0, 'desc'],
                   [getArrayIndexForKey(config.GridFields, 'ColumnName', 'OrdenId') || 0, 'desc']

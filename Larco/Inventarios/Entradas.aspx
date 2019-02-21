@@ -240,7 +240,6 @@
                     initCompleteCallBack: detalleInitComplete,
                     newEntityCallBack: function (oTable, options) {
                         $('#MAT_ID').ComboBox('enable');
-                        //$('#MAT_ID').selectmenu('enable');
                         $(DETALLE_TABLE_SELECTOR).Catalog('newEntity', oTable, options);
                         $(DETALLE_DIALOG_SELECTOR + ' #ENT_ID').val($(DIALOG_SELECTOR + ' #ENT_ID').val());
                     },

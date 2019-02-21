@@ -2,12 +2,13 @@
 const TABLE_SEL = '#' + PAGE_NAME + '_table';
 const DIALOG_SEL = '#' + PAGE_NAME + '_dialog';
 
-const AGG_VAL_PAGE = 'AggregateValue';
+const AGG_VAL_PAGE = 'AggregateVal_VW';
 
 $(document).ready(function () {
     $('div.catalog').Page({
         source: AJAX + '/PageInfo/GetPageConfig?pageName=' + PAGE_NAME,
         dialogStyle: 'table',
+        onBeforeCreateFilter: beforeCreateFilter,
         onLoadComplete: function (config) {
             $('h2').text(config.Title);
             document.title = config.Title;
@@ -16,15 +17,21 @@ $(document).ready(function () {
     });
 });
 
+function beforeCreateFilter(config) {
+    var hash = config.FilterFielNameMap;
+    if (hash['ProdIdFilter']) hash['ProdIdFilter'].ControlType = 'multiselect';
+    if (hash['TaskIdFilter']) hash['TaskIdFilter'].ControlType = 'multiselect';
+}
+
 function initializeCatalog(config) {
     $(TABLE_SEL).Catalog({
         pageConfig: config, serverSide: true, showExport: true,
         viewOnly: !EDIT_ACCESS, showEdit: true,
+        showNew: false, showDelete: false, displayLength: 50,
         columns: getColumns(config), sorting: getSorting(config),
         saveRequest: AJAX + '/PageInfo/SavePageEntity?pageName=' + AGG_VAL_PAGE,
         rowCallback: _rowCallback,
         editEntityCallBack: editEntity,
-        deleteEntityCallBack: deleteEntity,
         saveEntityCallBack: saveEntity,
         initCompleteCallBack: initComplete,
         validate: validateEntity
@@ -67,11 +74,11 @@ function createCheck(aData) {
 }
 
 function editEntity(oTable, options) {
-    log('editing entity');
     var entities = getSelectedEntities();
     if (entities.length <= 0) return;
+
+    disableNonMultiEditFields(options); //Always disable non-multi edit fields(prod, task)
     if (entities.length == 1) { //editing one record
-        enableDialog(options.dialogSelector);
         $(options.dialogSelector).attr('multiple', 'false'); //TODO: check if this is necesary I can decide from the field if if contains LIST_
         $(TABLE_SEL).Catalog('editEntity', oTable, options, entities[0]);
     } else { //editing multiple records
@@ -79,54 +86,37 @@ function editEntity(oTable, options) {
     }
 }
 
-function deleteEntity(oTable, options) {
-    log('delete Entity');
-    var entities = getSelectedEntities();
-    if (entities.length <= 0) return;
-    if (entities.length == 1) { //deleting one record
-        if (confirm('Are you sure you want to delete this ' + $(options.dialogSelector).attr('originalTitle') + '?') == false)
-            return false;
-
-        $(TABLE_SEL).Catalog('deleteEntity', oTable, options, entities[0]);
-    } else { //editing multiple records
-        if (confirm('Are you sure you want to delete the selected records(s)?') == false)
-            return false;
-
-        deleteMultipleEntities(oTable, options, entities);
-    }
-}
-
 function saveEntity(oTable, options) {
-    var fieldId = options.pageConfig.FieldId;
-    var isMultiEdit = startsWith($('#' + fieldId).val(), 'LIST_');
-
-    if (isMultiEdit) {
-        var entities = getSelectedEntities();
-        var whereEntity = encodeURIComponent($.toJSON(getWhereEntity(entities, options)));
-        var entity = encodeURIComponent($.toJSON(getMultiEditEntity(options)));
-
-        log(whereEntity);
-        log(entity);
-
-        $.ajax({
-            type: 'POST',
-            url: AJAX + '/PageInfo/UpdatePageEntity?pageName=' + AGG_VAL_PAGE + '&entity=' + entity + '&whereEntity=' + whereEntity
-        }).done(handleSaveResponse);
-
-    } else {
-        $(TABLE_SEL).Catalog('saveEntity', oTable, options, getObject(DIALOG_SEL));
+    if (!isMultiEdit()) {
+        defaultSaveEntity(oTable, options);
+        return false;
     }
+
+    var entities = getSelectedEntities();
+    var entity = getObject(DIALOG_SEL);
+    for (var i = 0; i < entities.length; i++) {
+        var _entity = addSaveOperationAttrs(entities[i], AGG_VAL_PAGE);
+        //TODO: use multi-edit attribute to do it for any fields
+        _entity.DiasVencido = entity.DiasVencido || _entity.DiasVencido;
+        _entity.Puntos = entity.Puntos || _entity.Puntos;
+        _entity.PuntosExtras = entity.PuntosExtras || _entity.PuntosExtras;
+    }
+
+    $.when(executeTransaction(entities)).done(handleSaveResponse);
 }
 
 function handleSaveResponse(json) {
-    var options = $(TABLE_SEL).Catalog('getCatalogOptions');
     if (json.ErrorMsg == SUCCESS) {
         $(DIALOG_SEL).dialog('close');
         $(TABLE_SEL + '_wrapper button.disable').button('disable');
         $(TABLE_SEL).DataTable().ajax.reload(null, false);
     } else {
-        showError($(DIALOG_SEL + ' p.validateTips'), json.ErrorMsg);
+        showError(getTips(DIALOG_SEL), json.ErrorMsg);
     }
+}
+
+function defaultSaveEntity(oTable, options) {
+    $(TABLE_SEL).Catalog('saveEntity', oTable, options);
 }
 
 function getMultiEditEntity(options) {
@@ -153,10 +143,11 @@ function getWhereEntity(entities, options) {
 
 function editMultipleEntities(oTable, options, entities) {
     if (entities.length <= 1) return;// only for more that one entities
-    log(options);
+    //log(options);
+
     clearDialog(options.dialogSelector);
     populateMultipleDialog(entities, options);
-    //this._setDefaultValues(options.pageConfig);
+
     var _dialog = $(options.dialogSelector).dialog();
     _dialog.dialog('option', 'title', _dialog.attr('originalTitle') + ' [Multiple Edit]').dialog('open');
     _dialog.attr('multiple', 'true');
@@ -165,31 +156,6 @@ function editMultipleEntities(oTable, options, entities) {
 
     //if (this.options.viewOnly) disableDialog('#' + this._dialog.attr('id'));
     //if (options.appendNextPrevButtons) this._toggleNextPrevButtons('enable');            
-}
-
-function deleteMultipleEntities(oTable, options, entities) {
-    if (entities.length <= 1) return;// only multiple entities can be deleted
-
-    var entities = getSelectedEntities();
-    var entity = encodeURIComponent($.toJSON(getWhereEntity(entities, options)));
-    //var entity = encodeURIComponent($.toJSON(getMultiEditEntity(options)));
-
-    //log(whereEntity);
-    log(entity);
-
-    $.ajax({
-        type: 'POST',
-        url: AJAX + '/PageInfo/DeletePageEntities?pageName=' + AGG_VAL_PAGE + '&entity=' + entity
-    }).done(handleDeleteResponse);
-}
-
-function handleDeleteResponse(json) {
-    if (json.ErrorMsg == SUCCESS) {
-        $(TABLE_SEL).Catalog('reloadTable');
-        $(TABLE_SEL + '_wrapper button.disable').button('disable');
-    } else {
-        alert(json.ErrorMsg);
-    }
 }
 
 function setFocusOnFirstDialogElement(options) {
@@ -221,37 +187,28 @@ function populateMultipleDialog(entities, options) {
     var fieldId = options.pageConfig.FieldId;
     $('#' + fieldId).val('LIST_' + getEntitiesIds(entities, options));
 
-    var nonMulti = disableNonMultiEditFields(options);
-    log(nonMulti);
+    var elments = $('input[type=text], select, textarea', $(DIALOG_SEL));
     for (var i = 0; i < entities.length; i++) {
-        for (var e = 0; e < nonMulti.length; e++) {
-            var ele = nonMulti[e];
+        for (var e = 0; e < elments.length; e++) {
+            var ele = $(elments[e]);
 
             var fieldName = ele.attr('name') || ele.attr('id');
             var val = entities[i][fieldName];
-            log(fieldName);
-            log(val);
+
             if (ele.val() == val) continue;
-
-
-            log('i = [' + i + ']');
-            log(entities[i][fieldName]);
             if (i > 0 && ele.val() != val) {
-                log('is diff setting val to empty');
                 setElementVal(ele, '');
                 continue;
             }
 
-            log('is first setting val');
+            // is first setting val
             setElementVal(ele, val);
         }
     }
-    log(nonMulti);
 }
 
 function setElementVal(ele, value) {
     var fieldName = ele.attr('name') || ele.attr('id');
-    log('set element val [' + fieldName + '] = [' + value + ']');
     if (ele.hasClass('selectMenu')) {
         ele.selectmenu('setValue', value);
     } else {
@@ -260,20 +217,17 @@ function setElementVal(ele, value) {
 }
 
 function disableNonMultiEditFields(options) {
-    log('starting disableNonMultiEditFields');
     var dialog = $(options.dialogSelector);
     var elements = $('input:visible,select,textarea', dialog);
     var _nonMulti = [];
     for (var i = 0; i < elements.length; i++) {
         var ele = $(elements[i]);
-        log(ele);
         if (ele.prop('edit-type') != 'multi') {
             _nonMulti.push(ele);
             disableElements('#' + ele.attr('id'), dialog);
         }
     }
 
-    log('end disableNonMultiEditFields');
     return _nonMulti;
 }
 
@@ -293,7 +247,6 @@ function getEntitiesIds(entities, options) {
 
 function initComplete() {
     attachEventHandlers();
-    //appendButtons();
 }
 
 function attachEventHandlers() {
@@ -344,8 +297,7 @@ function checkClick() {
 
     var selected = getSelectedEntities();
     log(selected);
-    $('#editDiasVencido_table,#deleteDiasVencido_table').button(selected.length > 0 ? 'enable' : 'disable');
-
+    $('#editDiasVencido_table').button(selected.length > 0 ? 'enable' : 'disable');
 }
 
 function getSelectedEntities() {
@@ -378,16 +330,39 @@ function _getFieldId(tableSel) {
 }
 
 function validateEntity(tips) {
-    var options = $(TABLE_SEL).Catalog('getCatalogOptions');
-    var fieldId = options.pageConfig.FieldId;
-    var isMultiEdit = startsWith($('#' + fieldId).val(), 'LIST_');
     var valid = true;
+    if (isMultiEdit()) {
+        if (!$('#DiasVencido').val() && !$('#Puntos').val() && !$('#PuntosExtras').val()) {
+            updateTips(tips, 'Al menos uno es requerido (Dias de Vencido, Puntos o Puntos Extras).');
+            valid = false;
+        }
 
-    if (isMultiEdit) {
-        //TODO: validate multiple fields only
+        valid = valid && checkInt(tips, $('#DiasVencido'), 'Dias de Vencido');
+        valid = valid && checkFloat(tips, $('#Puntos'), 'Puntos');
+        valid = valid && checkFloat(tips, $('#PuntosExtras'), 'Puntos Extras');
+
     } else {
-        valid = validateDialog(options.pageConfig, tips);
+        valid = validateDialog(getCtlgConfig(), tips);
     }
 
     return valid;
+}
+
+function getCtlgConfig(_selector) {
+    var selector = _selector || TABLE_SEL;
+
+    return getCtlgOpts(selector).pageConfig;
+}
+
+function getCtlgOpts(_selector) {
+    var selector = _selector || TABLE_SEL;
+
+    return $(selector).Catalog('getCatalogOptions');
+}
+
+function isMultiEdit() {
+    var config = getCtlgConfig();
+    var fieldId = config.FieldId;
+
+    return startsWith($('#' + fieldId).val(), 'LIST_');
 }

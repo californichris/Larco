@@ -2,48 +2,93 @@
 var detailTable = null;
 var OTHER = 'Other*';
 var FILTERTYPE = { EQUALS: 'EQUALS', NOTEQUALS: 'NOTEQUALS', DATERANGE: 'DATERANGE' };
-const DETAIL_PAGE = '#PageApp_container';
+var CHART_TYPE = { BAR: 'BAR', PIE: 'PIE' };
+const DETAIL_PAGE = '#Training_container';
 const DETAIL_DIALOG = '#detail_dialog';
 
+var DATE_FORMAT = 'MM/dd/yyyy';
+
 var DEFAULT_DETAIL_DIALOG_OPTS = {
-    autoOpen: false,
-    height: 630,
-    width: 1020,
-    modal: true,
-    show: {
-        effect: 'clip'
-    },
-    hide: {
-        effect: 'clip'
-    }
+    autoOpen: false, height: 630, width: 1020,
+    modal: true, show: { effect: 'clip' },
+    hide: { effect: 'clip' }
 }
 
-function getAggreateData(pageName, aggregate) {
-    return $.ajax({
-        url: AJAX_CONTROLER_URL + '/PageInfo/GetAggreateEntities?pageName=' + pageName + '&aggregateInfo=' + $.toJSON(aggregate),
-        dataType: 'json'
-    });
+function getAggreateData(pageName, aggregate, entity) {
+    var _url = AJAX_CONTROLER_URL + '/PageInfo/GetAggreateEntities?pageName=' + pageName + '&aggregateInfo=' + $.toJSON(aggregate);
+    if (entity) _url = _url + '&searchType=AND&entity=' + $.toJSON(entity)
+
+    return $.ajax({ url: _url, dataType: 'json', cache:false });
 }
 
-function convertToGraphArray(json, aggregate) {
-    var aggregateField = aggregate.Functions[0].Alias || 'Aggregate';
-    var fieldName = aggregate.GroupByFields.split(',')[0];
-    var list = getSortedList(json, fieldName);
-   
-    var array = [];
+function convertToGraphArray(opts) {    
+    var aggregateField = getAggregateField(opts), fieldName = getAggregateGroupField(opts);    
+    var array = [], list = opts.slices;
+
     for (var i = 0; i < list.length; i++) {
         var obj = list[i];
-
-        obj[fieldName] = obj[fieldName] == '' ? 'None' : obj[fieldName];
-        array.push(createGraphPoint(obj[fieldName] + ' - ' + obj[aggregateField], parseInt(obj[aggregateField])));
+        obj[fieldName] = (obj[fieldName] == '') ? 'None' : obj[fieldName];
+        array.push(createGraphPoint(obj[fieldName] + ' - ' + obj[aggregateField], parseInt(obj[aggregateField])));        
     }
 
     return array;
 }
 
-function getSortedList(json, fieldName) {
+function getAggregateField(opts) {
+    var aggregate = opts.aggregate;
+    return aggregate.Functions[0].Alias || 'Aggregate';
+}
+
+function getAggregateGroupField(opts) {
+    var aggregate = opts.aggregate;
+    return aggregate.GroupByFields.split(',')[0];
+}
+
+function createDataSlices(opts) {
+    opts.slices = $.isArray(opts.data) ? opts.data : opts.data.aaData; //default
+    if (opts.maxSlices && opts.slices.length > parseInt(opts.maxSlices)) {
+        opts.maxSlices = parseInt(opts.maxSlices);
+        var fieldName = getAggregateGroupField(opts), aggregateField = getAggregateField(opts);                
+        var list = getSortedList(opts.slices, { sortBy: aggregateField, sortType: 'INT', sortDir: 'DESC' }); //sort by aggregate val desc       
+        var removed = list.splice(opts.maxSlices - 1); //split array in 2       
+        var total = calculateTotalFromOther(removed, opts); //calculate total of removed
+        list = getSortedList(list, { sortBy: fieldName }); //sort by group field again so we can put other at the end
+        list.push(createOtherObject(fieldName, aggregateField, total));
+
+        opts.slices = list;
+    } else {
+        createDefaultSlices(opts);
+    }
+}
+
+function calculateTotalFromOther(removed, opts) {
+    var aggregateField = getAggregateField(opts);
+    var total = 0;
+    for (var i = 0; i < removed.length; i++) {
+        total += parseInt(removed[i][aggregateField]);
+    }
+
+    return total;
+}
+
+function createOtherObject(fieldName, aggregateField, total) {
+    var other = {};
+    other[fieldName] = 'Other';
+    other[aggregateField] = '' + total + '';
+
+    return other;
+}
+
+function createDefaultSlices(opts) {
+    var fieldName = getAggregateGroupField(opts);
+    opts.slices = $.isArray(opts.data) ? opts.data : opts.data.aaData; //default
+    opts.slices = clone(opts.slices);
+    opts.slices = getSortedList(opts.slices, { sortBy: fieldName });
+}
+
+function getSortedList(json, sortOpts) {
     var list = $.isArray(json) ? json : json.aaData;
-    sortListBy(list, fieldName);
+    $.page.sortList(list, sortOpts);
 
     return list;
 }
@@ -57,11 +102,11 @@ function sortListBy(list, fieldName) {
 }
 
 function createLoading() {
-    var loading = $('<div id="loading" style="height:500px;">Loading, please wait...</div>');    
+    var loading = $('<div id="loading" style="height:500px;">Loading, please wait...</div>');
     $('h2').after(loading);
     var target = document.getElementById('loading');
     var spinner = new Spinner(spinOpts).spin(target);
-    
+
     return loading;
 }
 
@@ -69,76 +114,67 @@ function createDetailDialog() {
     $(DETAIL_DIALOG).dialog(DEFAULT_DETAIL_DIALOG_OPTS);
 }
 
-function createDetailTable() {
-    $(DETAIL_PAGE).Page({
-        source: AJAX + '/PageInfo/GetPageConfig?pageName=' + PAGE_NAME,
+function createDetailTable(opts) {
+    var pageName = opts.pageName;
+    if (exists('#' + pageName + '_container')) return;
+
+    var container = $(DETAIL_DIALOG).append('<div class="detail-container" id="' + pageName + '_container"></div>');
+    var tableSel = '#' + pageName + '_table';
+    var _source = opts.detailSource || '';
+    var beforeLoadingTable = opts.beforeLoadingTable || null;
+    var beforeServerData = opts.beforeServerDataCall || _beforeServerDataCall;
+
+    $('#' + pageName + '_container').Page({
+        source: AJAX + '/PageInfo/GetPageConfig?pageName=' + pageName,
         createPageFilter: false, createPageDialog: false,
         onLoadComplete: function (config) {
-            $(TABLE_SEL).Catalog({
-                pageConfig: config, source: [], showNew: false,
-                showEdit: false, showDelete: false,
+            opts.pageConfig = config;
+            $(tableSel).Catalog({
+                source: _source, pageConfig: config, serverSide: true, showNew: false,
+                showEdit: false, showDelete: false, iDeferLoading: 0,
+                beforeServerDataCall: function (data) { beforeServerData(opts, data) },
+                beforeLoadingTableCallBack: beforeLoadingTable
             });
         }
     });
 }
 
-function getDetailEntity(current, target, _data) {
-    var groupByfields = $('#' + target).attr('groupByfields');
-    var value = current.split(' - ')[0];
-
-    var entity = {};
-    entity[groupByfields] = value;
-
-    return entity;
+//default beforeServercall functionality
+function _beforeServerDataCall(opts, data) {
+    for (var i = 0; i < data.columns.length; i++) {
+        data.columns[i].searchtype = 'equals'; //set search type to equals
+    }
 }
 
-function getYearRange() {
-    var from = Date.today().moveToFirstDayOfMonth();
-    var to = Date.today().moveToLastDayOfMonth();
-    if (Date.today().getMonth() != 0) {
-        from = Date.today().moveToMonth(0, -1).moveToFirstDayOfMonth();
-    }
+function createPieChart(opts) {
+    $(opts.container).html('');
+    createDataSlices(opts);
+    opts.series = convertToGraphArray(opts);
+    if (isFunction(opts.beforeCreateChart)) opts.beforeCreateChart(opts); //trigger callback
 
-    if (Date.today().getMonth() != 11) {
-        to = Date.today().moveToMonth(11, +1).moveToLastDayOfMonth();
-    }
-
-    return from.toString('MM/dd/yyyy') + '_' + to.toString('MM/dd/yyyy');
-}
-
-function getMonthRange() {
-    var from = Date.today().moveToFirstDayOfMonth();
-    var to = Date.today().moveToLastDayOfMonth();
-    return from.toString('MM/dd/yyyy') + '_' + to.toString('MM/dd/yyyy');
-}
-
-function getWeekRange() {
-    var from = Date.today();
-    var to = Date.today();
-    if (Date.today().getDay() != 1) {
-        from = Date.today().moveToDayOfWeek(1, -1);
-    }
-
-    if (Date.today().getDay() != 0) {
-        to = Date.today().moveToDayOfWeek(0, +1);
-    }
-
-    return from.toString('MM/dd/yyyy') + '_' + to.toString('MM/dd/yyyy');
-}
-
-function createPieChart(target, data, options) {
-    var _data = data;
-    var plot = jQuery.jqplot(target, [data], {
-        title: options.title,
+    opts.plot = jQuery.jqplot(opts.target, [opts.series], {
+        title: opts.title,
         seriesColors: getSeriesColors(),
         seriesDefaults: { shadow: false, showLine: true, renderer: jQuery.jqplot.PieRenderer, rendererOptions: { showDataLabels: true } },
         legend: { show: true, location: 'e' },
         grid: getDefaultGrid()
     });
 
+    resizePieChartLegendTable(opts);
+    attachPieChartEventHandlers(opts);
+    if (isFunction(opts.onComplete)) opts.onComplete(opts); //trigger callback
+}
+
+function resizePieChartLegendTable(opts) {
+    var target = opts.target;
     var curWidth = $('#' + target + ' table.jqplot-table-legend').width();
     $('#' + target + ' table.jqplot-table-legend').width(curWidth + 7);
     $('#' + target + ' table.jqplot-table-legend tr').width(curWidth + 2);
+}
+
+function attachPieChartEventHandlers(opts) {
+    var _data = opts.data;
+    var target = opts.target;
 
     $('#' + target).bind('jqplotDataHighlight',
         function (ev, seriesIndex, pointIndex, data) {
@@ -156,22 +192,15 @@ function createPieChart(target, data, options) {
         }
     );
 
-    $('#' + target).bind('jqplotDataUnhighlight',
-        function (ev) {
+    $('#' + target).bind('jqplotDataUnhighlight', function (ev) {
             $('#' + target + ' table.jqplot-table-legend tr.ui-state-focus').removeClass('ui-state-focus');
-        }
-    );
+    });
 
-    $('#' + target).bind('jqplotDataClick',
-        function (ev, seriesIndex, pointIndex, data) {
-            var current = data[0];          
-            if (options.reloadCallback == null) {
-                reloadDetailTable(current, target, _data);
-            } else {
-                options.reloadCallback(current, target, _data)
-            }
-        }
-    );
+    $('#' + target).bind('jqplotDataClick', function (ev, seriesIndex, pointIndex, data) {
+        opts.current = data[0];
+        opts.pointIndex = pointIndex;
+        displayChartDetail(opts);
+    });
 
     // update z-index of the chart legend table and canvas, so the legend table is in front of the canvas
     $('#' + target + ' .jqplot-event-canvas').css('z-index', 80);
@@ -181,17 +210,13 @@ function createPieChart(target, data, options) {
     $('#' + target + ' table.jqplot-table-legend tbody').click(function (event) {
         event.stopPropagation();
         var targetEle = event.target || event.srcElement;
-
         var tr = $(targetEle).parentsUntil('table.jqplot-table-legend', 'tr.jqplot-table-legend');
         var current = $('td:last', tr).text();
         var parent = $(tr).parentsUntil('div.catalog', 'div.jqplot-target');
         var target = parent.attr('id');
 
-        if (options.reloadCallback == null) {
-            reloadDetailTable(current, target, _data);
-        } else {
-            options.reloadCallback(current, target, _data)
-        }
+        opts.current = current;
+        displayChartDetail(opts);
     });
 
     // Bind the mouseover/mouseout events to the pie chart legend table
@@ -206,7 +231,7 @@ function createPieChart(target, data, options) {
         $(parent).addClass('ui-state-hover');
         var current = $('td:last', parent).text();
 
-        highlightSlice(plot, current);
+        highlightSlice(opts.plot, current);
     }).mouseout(function (event) {
         $('tbody tr.ui-state-hover', $('#' + target + ' table.jqplot-table-legend')).removeClass('ui-state-hover');
     });
@@ -237,7 +262,7 @@ function getDefaultGrid() {
         gridLineColor: '#E5E5E5',   // CSS color spec of the grid lines.
         background: '#ffffff',      // CSS color spec for background color of grid.
         borderColor: '#CFCFCF',     // CSS color spec for border around grid.
-        borderWidth: 2.0,           // pixel width of border around grid.
+        borderWidth: 1.0,           // pixel width of border around grid.
         shadow: false               // draw a shadow for grid.
     };
 }
@@ -263,44 +288,150 @@ function highlightSlice(plot, current) {
     s.renderer.drawSlice.call(s, canvas._ctx, s._sliceAngles[pidx][0], s._sliceAngles[pidx][1], s.highlightColorGenerator.get(pidx), false);
 }
 
-function displayDetail(current, target, _data) {
+function displayChartDetail(opts) {
     $(DETAIL_DIALOG + ' div.detail-container').hide();
-    $(DETAIL_PAGE).show();
-    
-    //TODO: change this to use the more generic method _displayDetail in default.js
-    var entity = getDetailEntity(current, target, _data);
+    $('#' + opts.pageName + '_container').show();
 
-    $(TABLE_SEL).Catalog('clearTable');
-    $.when(getDetailData(entity)).done(function (json) {
-        $(TABLE_SEL).Catalog('addDataToTable', json.aaData);
-        $(DETAIL_DIALOG).dialog('open');
+    var entity = {};
+    if (opts.chartType == CHART_TYPE.PIE) {
+        entity = getPieDetailEntity(opts);
+    } else {
+        var entity = getAggregateFilter('#' + opts.target) || {};
+        var val = opts.data[opts.start + opts.pointIndex][opts.xAxisFieldName];
+        entity[opts.xAxisFieldName] = val;
+    }
+    
+    var tableSel = '#' + opts.pageName + '_table';
+    var config = $(tableSel).Catalog('getCatalogOptions').pageConfig;
+
+    var oTable = $(tableSel).DataTable();
+    resetDetailTableFilter(oTable, config);
+    $.each(entity, function (key, val) {
+        if (config.ColIdxs[key] != 'undefined' && config.ColIdxs[key] >= 0) {
+            oTable.columns(config.ColIdxs[key]).search(val);
+        }        
+    });
+
+    oTable.draw();
+
+    $(DETAIL_DIALOG).dialog('open');
+}
+
+function resetDetailTableFilter(oTable, config) {
+    $.each(config.ColIdxs, function (key, val) {
+        oTable.columns(val).search('');
     });
 }
 
-function getDetailData(entity) {
-    return $.getData(AJAX + '/PageInfo/GetPageEntityList?pageName=' + PAGE_NAME + '&entity=' + encodeURIComponent($.toJSON(entity)));
+function getPieDetailEntity(opts) {
+    var groupByfields = $('#' + opts.target).attr('groupByfields');
+    var value = opts.current.split(' - ')[0];
+
+    var entity = getAggregateFilter('#' + opts.target) || {};
+    if (isOther(value)) {
+        value = getOtherValue(opts);
+    }
+    entity[groupByfields] = value;
+
+    return entity;
 }
 
-function createCountChart(container) {
-    $(container).html('');
-    var aggregateInfo = createCountAggregate(container);
-    var pageName = $(container).attr('pageName') || PAGE_NAME;
+function getOtherValue(opts) {
+    var list = [];
+    var fieldName = getAggregateGroupField(opts);
+    for (var i = 0; i < opts.slices.length; i++) {
+        var slice = opts.slices[i];
+        if (!isOther(slice[fieldName])) {
+            list.push(slice[fieldName]);
+        }
+    }
 
-    $.when(getAggreateData(pageName, aggregateInfo)).done(function (json) {
+    return 'NOT_LIST_' + list.join(',');
+}
+
+function isOther(value) {
+    return value.toUpperCase() == 'OTHER';
+}
+
+function createCountChart(opts) {
+    if (!jQuery.isPlainObject(opts)) {
+        //argument opts is not an object, must be a string(selector e.g. #elementid) or a jquery element
+        var _container = $(opts);
+        opts = createDefaultPieChartOps(_container);
+        opts.aggregate = createCountAggregate(opts);
+    }
+
+    _createPieChart(opts);
+}
+
+function createSumChart(opts) {
+    if (!jQuery.isPlainObject(opts)) {
+        //argument opts is not an object, must be a string(selector e.g. #elementid) or a jquery element
+        var _container = $(opts);
+        opts = createDefaultPieChartOps(_container);
+        opts.aggregate = createSumAggregate(opts);
+    }
+
+    _createPieChart(opts);
+}
+
+function createDefaultPieChartOps(_container) {
+    var opts = {
+        container: _container, target: $(_container).attr('id'), title: $(_container).attr('title'),
+        groupByfields: $(_container).attr('groupByfields'), sumField: $(_container).attr('sumField'),
+        maxSlices: $(_container).attr('maxSlices')
+    };
+
+    opts.pageName = $(_container).attr('pageName') || PAGE_NAME;
+    opts.entity = getAggregateFilter(_container);
+
+    return opts;
+}
+
+function _createPieChart(opts) {
+    $.when(getAggreateData(opts.pageName, opts.aggregate, opts.entity)).done(function (json) {
         hideLoading();
 
         if (!json.aaData || json.aaData.length <= 0) return;
-        createPieChart($(container).attr('id'), convertToGraphArray(json, aggregateInfo), {
-            title: $(container).attr('title'), reloadCallback: function (current, target, _data) {
-                displayDetail(current, target, _data);
-            }
-        });
+
+        opts.data = json;
+        opts.chartType = opts.chartType || CHART_TYPE.PIE;
+        opts.title = opts.title || $(opts.container).attr('title');
+        opts.target = opts.target || $(opts.container).attr('id');
+
+        createPieChart(opts);
+        createDetailTable(opts);
     });
+}
+
+function getAggregateFilter(container) {
+    var entity = null;
+    var filterFunc = $(container).attr('filterFunc');
+    if (filterFunc) {
+        var fn = getFunction(filterFunc);
+        return fn(container);
+    }
+
+    return entity;
+}
+
+function getFunction(functionName) {
+    var fn = window[functionName];
+    if (typeof fn === 'function') {
+        return fn;
+    }
+    
+    return null;
 }
 
 function hideLoading() {
     if (loading) loading.remove();
     $('div.catalog').show();
+}
+
+function createPieCharts() {
+    createCountCharts();
+    createSumCharts();
 }
 
 function createCountCharts() {
@@ -310,15 +441,29 @@ function createCountCharts() {
     }
 }
 
-function createCountAggregate(container) {
-    var groupByfields = $(container).attr('groupByfields');
+function createSumCharts() {
+    var charts = $('div.sumChart');
+    for (var i = 0; i < charts.length; i++) {
+        createSumChart($(charts[i]));
+    }
+}
 
-    var status = {};
-    status.GroupByFields = groupByfields;
-    status.Functions = [];
-    status.Functions.push({ Function: 'COUNT', FieldName: '*' });
+function createCountAggregate(opts) {
+    var aggregate = {};
+    aggregate.GroupByFields = opts.groupByfields;
+    aggregate.Functions = [];
+    aggregate.Functions.push({ Function: 'COUNT', FieldName: '*' });
 
-    return status;
+    return aggregate;
+}
+
+function createSumAggregate(opts) {   
+    var aggregate = {};
+    aggregate.GroupByFields = opts.groupByfields;
+    aggregate.Functions = [];
+    aggregate.Functions.push({ Function: 'SUM', FieldName: opts.sumField });
+
+    return aggregate;
 }
 
 function createGraphPoint(desc, value) {
@@ -330,7 +475,44 @@ function createGraphPoint(desc, value) {
 }
 
 function getChartMax(maxVal) {
-    return Math.max(maxVal, 10) + 16;
+    var max = Math.max(maxVal, 10) + 16;
+    return max.toFixed(2);
+}
+
+/**** Date Range Functions ****/
+
+function getYearRange() {
+    var from = Date.today().moveToFirstDayOfMonth();
+    var to = Date.today().moveToLastDayOfMonth();
+    if (Date.today().getMonth() != 0) {
+        from = Date.today().moveToMonth(0, -1).moveToFirstDayOfMonth();
+    }
+
+    if (Date.today().getMonth() != 11) {
+        to = Date.today().moveToMonth(11, +1).moveToLastDayOfMonth();
+    }
+
+    return from.toString(DATE_FORMAT) + '_' + to.toString(DATE_FORMAT);
+}
+
+function getMonthRange() {
+    var from = Date.today().moveToFirstDayOfMonth();
+    var to = Date.today().moveToLastDayOfMonth();
+    return from.toString(DATE_FORMAT) + '_' + to.toString(DATE_FORMAT);
+}
+
+function getWeekRange() {
+    var from = Date.today();
+    var to = Date.today();
+    if (Date.today().getDay() != 1) {
+        from = Date.today().moveToDayOfWeek(1, -1);
+    }
+
+    if (Date.today().getDay() != 0) {
+        to = Date.today().moveToDayOfWeek(0, +1);
+    }
+
+    return from.toString(DATE_FORMAT) + '_' + to.toString(DATE_FORMAT);
 }
 
 /***** Bar Chart ****/
@@ -338,18 +520,39 @@ function getChartMax(maxVal) {
 function createBarChart(opts) {
     hideLoading();
     initBarChart(opts);
+    if (!validateBarChartData(opts)) return;
+    if (isFunction(opts.beforeCreateChart)) opts.beforeCreateChart(opts); //trigger callback
 
-    var objJqplot = $.jqplot(opts.target, [opts.series], {
-        title: opts.title, axesDefaults: getBarChartAxesDefaults(opts),
-        seriesColors: opts.seriesColors, seriesDefaults: getBarChartSeriesDefaults(opts),
-        axes: getBarChartAxes(opts), highlighter: opts.highlighter,
-        //canvasOverlay: { show: true, objects: getOverlayLines() },
-        grid: getDefaultGrid()
-    });
+    _createBarChart(opts);
 
     attachBarChartEventHandlers(opts);
     createBarChartTotalSection(opts);
     createBarChartScrollButtons(opts);
+    if (isFunction(opts.onComplete)) opts.onComplete(opts); //trigger callback
+}
+
+function _createBarChart(opts) {
+    var overlayLines = opts.overlayLines ? true : false;
+    opts.plot = $.jqplot(opts.target, [opts.series], {
+        title: opts.title, axesDefaults: getBarChartAxesDefaults(opts),
+        seriesColors: opts.seriesColors, seriesDefaults: getBarChartSeriesDefaults(opts),
+        axes: getBarChartAxes(opts), highlighter: opts.highlighter,
+        canvasOverlay: { show: overlayLines, objects: opts.overlayLines },
+        grid: getDefaultGrid()
+    });
+}
+
+function validateBarChartData(opts) {
+    if (opts.data.length <= 0) {
+        $('#' + opts.target).html('No data found.');
+        return false;
+    }
+
+    return true;
+}
+
+function isFunction(func) {
+    return func && typeof func === 'function';
 }
 
 function getBarChartAxesDefaults(opts) {
@@ -362,7 +565,10 @@ function getBarChartAxes(opts) {
             renderer: $.jqplot.CategoryAxisRenderer,
             ticks: opts.ticks, label: opts.xAxisLabel
         },
-        yaxis: { label: opts.yAxisLabel, min: 0, max: getChartMax(opts.maxVal) }
+        yaxis: {
+            label: opts.yAxisLabel, min: 0, max: getChartMax(opts.maxVal),
+            tickOptions: { formatString: '%.2f' }
+        }
     };
 }
 
@@ -377,7 +583,9 @@ function attachBarChartEventHandlers(opts) {
     $('#' + opts.target).unbind('jqplotDataClick');
     $('#' + opts.target).bind('jqplotDataClick',
         function (ev, seriesIndex, pointIndex, graphdata) {
-            _displayDetail(pointIndex, graphdata, opts);
+            opts.pointIndex = pointIndex;
+            opts.graphdata = graphdata;
+            displayChartDetail(opts);
         }
     );
 }
@@ -396,6 +604,7 @@ function initBarChart(opts) {
     opts.avg = (opts.total / opts.length);
     opts.seriesColors = opts.seriesColors || getSeriesColors();
     opts.highlighter = opts.highlighter || getDefaultBarChartHiglighter(opts);
+    opts.tooltipFieldName = opts.tooltipFieldName || opts.xAxisFieldName;
 }
 
 function setBarChartSeries(opts) {
@@ -404,7 +613,7 @@ function setBarChartSeries(opts) {
         var sVal = parseFloat(opts.data[i][sFieldName]), tickVal = opts.data[i][tickFieldName];
 
         if ((i >= opts.start) && (i < opts.length && i < (opts.maxBars + opts.start))) {
-            opts.series.push(sVal);
+            opts.series.push(sVal.toFixed(2));
             opts.ticks.push(tickVal);
         }
 
@@ -432,7 +641,8 @@ function createBarChartNextButton(opts) {
         var _start = opts.start + opts.maxBars;
         var display = getBarChartNextButtonDisplay(opts);
 
-        $('#' + opts.target).append('<div id="nextRecords" style="position:absolute;top:200px;left:1090px;"><button class="graph-buttons" title="Show ' + display + '"></button></div>');
+        var width = $('#' + opts.target).css('width');
+        $('#' + opts.target).append('<div id="nextRecords" style="position:absolute;top:200px;left:' + width + '"><button class="graph-buttons" title="Show ' + display + '"></button></div>');
         $('#nextRecords button', $('#' + opts.target)).button({ text: false, icons: { primary: 'ui-icon-triangle-1-e' } }).click(function (event) {
             opts.start = _start;
             createBarChart(opts);
@@ -470,7 +680,7 @@ function getDefaultBarChartHiglighter(opts) {
         show: true, sizeAdjust: -9, lineWidthAdjust: 2.5,
         tooltipLocation: 'n', tooltipOffset: 18,
         tooltipContentEditor: function (str, seriesIndex, pointIndex, plot) {
-            var text = opts.data[opts.start + pointIndex][opts.xAxisFieldName];
+            var text = opts.data[opts.start + pointIndex][opts.tooltipFieldName];
             return '<span style="padding:5px;font-size:13px;"><b>' + text + '</b></span>';
         }
     }
