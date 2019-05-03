@@ -87,6 +87,18 @@ namespace BS.Common
                 .Include(ScriptsPath + "app/motivos.js");
             bundles.Add(motivosJSBundle);
 
+            var ediOrdenesJSBundle = new ScriptBundle(BaseBundleConfig.ScriptsPath + "editor_ordenes_js")
+                .Include(ScriptsPath + "app/editor_ordenes.js");
+            bundles.Add(ediOrdenesJSBundle);
+
+            var ediScrapJSBundle = new ScriptBundle(BaseBundleConfig.ScriptsPath + "editor_scrap_js")
+                .Include(ScriptsPath + "app/editor_scrap.js");
+            bundles.Add(ediScrapJSBundle);
+
+            var ediRetrabajoJSBundle = new ScriptBundle(BaseBundleConfig.ScriptsPath + "editor_retrabajo_js")
+                .Include(ScriptsPath + "app/editor_retrabajo.js");
+            bundles.Add(ediRetrabajoJSBundle);
+
             var jqplotcssBundle = new StyleBundle(BaseBundleConfig.StylesPath + "jqplot_css")
                 .Include(BaseBundleConfig.StylesPath + "jquery.jqplot.css");
             bundles.Add(jqplotcssBundle);

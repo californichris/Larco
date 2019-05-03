@@ -257,6 +257,18 @@ function maskITENombre(selector, options) {
     $(selector).mask('99-999-999-99', maskOpts);
 }
 
+function getCtlgConfig(_selector) {
+    var selector = _selector || TABLE_SEL;
+
+    return getCtlgOpts(selector).pageConfig;
+}
+
+function getCtlgOpts(_selector) {
+    var selector = _selector || TABLE_SEL;
+
+    return $(selector).Catalog('getCatalogOptions');
+}
+
 /****************** Top Records ***********************************/
 function getTopRecords(config, top, order, where) {
     return $.ajax({

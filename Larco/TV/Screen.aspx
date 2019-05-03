@@ -1,6 +1,4 @@
 ﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="Screen.aspx.cs" Inherits="BS.Larco.TV.Screen" %>
-
-<%@ Import Namespace="System.Web.Optimization" %>
 <!DOCTYPE html>
 <html lang="en">
 <head runat="server">
@@ -9,9 +7,22 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <title>Larco TV Screens</title>
     <link href="<%= Page.ResolveUrl("~/Images/favicon.ico") %>" type="image/x-icon" rel="shortcut icon" />
-    <%: Styles.Render("~/Styles/site_master_css", "~/Styles/blitzer/jquery_css") %>
+    <link href="/Larco/Styles/Site.css" type="text/css" rel="stylesheet" />
+    <link href="/Larco/Styles/app.css" type="text/css" rel="stylesheet" />
+    <link href="/Larco/Styles/blitzer/jquery-ui.css" type="text/css" rel="stylesheet" />
+    <link href="/Larco/Styles/blitzer/jquery-horizontal-menu.css" type="text/css" rel="stylesheet" />
+    <link href="/Larco/Styles/blitzer/dataTables.jqueryui.css" type="text/css" rel="stylesheet" />
     <link href="/Larco/Styles/tv.css" type="text/css" rel="stylesheet" />
-    <%: Scripts.Render("~/Scripts/site_master_js") %>
+    
+    <script src="/Larco/Scripts/jquery.js"></script>
+    <script src="/Larco/Scripts/jquery-ui.js"></script>
+    <script src="/Larco/Scripts/jquery.dataTables.js"></script>
+    <script src="/Larco/Scripts/jquery.json-2.4.js"></script>
+    <script src="/Larco/Scripts/common.js"></script>
+    <script src="/Larco/Scripts/date.js"></script>
+    <script src="/Larco/Scripts/jquery.fileDownload.js"></script>
+    <script src="/Larco/Scripts/main_menu.js"></script>
+    <script src="/Larco/Scripts/spin.js"></script>
     <script type="text/javascript">
         const AJAX_CONTROLER_URL = '<%= ResolveUrl("~/AjaxController.ashx") %>';
         const AJAX = AJAX_CONTROLER_URL;

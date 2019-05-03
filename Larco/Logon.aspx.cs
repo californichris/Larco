@@ -27,6 +27,9 @@ namespace BS.Larco
             entity.SetProperty("USE_Login", userName);
             entity.SetProperty("USE_Password", passWord);
 
+            if (string.IsNullOrEmpty(userName)) return false;
+            if (string.IsNullOrEmpty(passWord)) return false;
+
             IList<Entity> list = DAOFactory.Instance.GetCatalogDAO().FindEntities(entity, FilterInfo.SearchType.AND);
             if (list.Count == 1)
             {

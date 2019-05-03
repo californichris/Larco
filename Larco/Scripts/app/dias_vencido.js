@@ -348,18 +348,6 @@ function validateEntity(tips) {
     return valid;
 }
 
-function getCtlgConfig(_selector) {
-    var selector = _selector || TABLE_SEL;
-
-    return getCtlgOpts(selector).pageConfig;
-}
-
-function getCtlgOpts(_selector) {
-    var selector = _selector || TABLE_SEL;
-
-    return $(selector).Catalog('getCatalogOptions');
-}
-
 function isMultiEdit() {
     var config = getCtlgConfig();
     var fieldId = config.FieldId;

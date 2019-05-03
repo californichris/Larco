@@ -50,6 +50,9 @@
     <Reference Include="Antlr3.Runtime">
       <HintPath>..\packages\Antlr.3.4.1.9004\lib\Antlr3.Runtime.dll</HintPath>
     </Reference>
+    <Reference Include="EPEFramework">
+      <HintPath>..\packages\EPEFramework.4.0.2\lib\EPEFramework.dll</HintPath>
+    </Reference>
     <Reference Include="itextsharp, Version=5.5.13.0, Culture=neutral, PublicKeyToken=8354ae6d2174ddca, processorArchitecture=MSIL">
       <HintPath>..\packages\iTextSharp.5.5.13\lib\itextsharp.dll</HintPath>
     </Reference>
@@ -157,6 +160,9 @@
     <Content Include="Reportes\ScrapPorcentaje.aspx" />
     <Content Include="Scripts\app\default.js" />
     <Content Include="Scripts\app\dias_vencido.js" />
+    <Content Include="Scripts\app\editor_ordenes.js" />
+    <Content Include="Scripts\app\editor_retrabajo.js" />
+    <Content Include="Scripts\app\editor_scrap.js" />
     <Content Include="Scripts\app\materiales.js" />
     <Content Include="Scripts\app\motivos.js" />
     <Content Include="Scripts\app\planos.js" />
@@ -692,12 +698,6 @@
     <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce.eot" />
     <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce.ttf" />
     <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce.woff" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\..\Dyonyx\Code\Libraries\dotNet\EPEFramework\EPEFramework.csproj">
-      <Project>{d0b8bc3a-75ea-4dca-8874-c2a2cc9f092c}</Project>
-      <Name>EPEFramework</Name>
-    </ProjectReference>
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
