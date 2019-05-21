@@ -269,6 +269,10 @@ function getCtlgOpts(_selector) {
     return $(selector).Catalog('getCatalogOptions');
 }
 
+function normalizeResponse(json) {
+    return $.isArray(json) ? json[0].aaData : json.aaData;
+}
+
 /****************** Top Records ***********************************/
 function getTopRecords(config, top, order, where) {
     return $.ajax({

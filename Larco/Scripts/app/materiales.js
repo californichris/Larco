@@ -16,7 +16,7 @@ $(document).ready(function () {
 });
 
 function beforeCreateFilter(config) {
-    var field = config.FilterFielNameMap['ActivoFilter'];
+    var field = config.FilterFieldNameMap['ActivoFilter'];
     if (field) {
         field.ControlType = 'selectmenu';
         field.DropDownInfo = getCheckFlagJSON();
@@ -51,6 +51,6 @@ function newEntity(oTable, options) {
 
 function getNextMaterialId() {
     return $.ajax({
-        url: AJAX + '/PageInfo/GetPageEntityList?pageName=NextMaterialId'
+        url: AJAX + '/PageInfo/GetPageEntityList?pageName=NextMaterialId', cache:false
     });
 }

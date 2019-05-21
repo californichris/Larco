@@ -19,7 +19,7 @@ function initPage() {
 }
 
 function beforeCreateFilter(config) {
-    var from = config.FilterFielNameMap['ITS_DTStopFromFilter'];
+    var from = config.FilterFieldNameMap['ITS_DTStopFromFilter'];
     var controlProps = $.evalJSON(from.ControlProps);
 
     var today = Date.today();
@@ -36,7 +36,7 @@ function beforeCreateFilter(config) {
     controlProps.value = fromDate.toString('MM/dd/yyyy');
     from.ControlProps = $.toJSON(controlProps);
 
-    var to = config.FilterFielNameMap['ITS_DTStopToFilter'];
+    var to = config.FilterFieldNameMap['ITS_DTStopToFilter'];
     var controlProps = $.evalJSON(to.ControlProps);
     controlProps.value = toDate.toString('MM/dd/yyyy') + ' 23:59:59';
     to.ControlProps = $.toJSON(controlProps);

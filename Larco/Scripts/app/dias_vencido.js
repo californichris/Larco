@@ -18,7 +18,7 @@ $(document).ready(function () {
 });
 
 function beforeCreateFilter(config) {
-    var hash = config.FilterFielNameMap;
+    var hash = config.FilterFieldNameMap;
     if (hash['ProdIdFilter']) hash['ProdIdFilter'].ControlType = 'multiselect';
     if (hash['TaskIdFilter']) hash['TaskIdFilter'].ControlType = 'multiselect';
 }

@@ -387,6 +387,11 @@ function addErrorClass(field) {
     return field.addClass('ui-state-error');
 }
 
+function removeErrorClasses(selector) {
+    var fields = $(selector);
+    $.map(fields, function (field) { removeErrorClass($(field)); });
+}
+
 function removeErrorClass(field) {
     if (field.hasClass('selectMenu')) {
         var widget = field.selectmenu('widget');
@@ -734,6 +739,10 @@ function validateDialog(config, tips, dialog) {
     return valid;
 }
 
+function isUndefined(value) {
+    return typeof value == 'undefined';
+}
+
 function isTrue(value) {
     if (value === true) return true;
     if (!value) return false; //is null or empty or undefined
@@ -854,9 +863,10 @@ function enableDialog(selector) {
 }
 
 function clearDialog(selector) {
-    $(selector + " input, " + selector + " select, " + selector + " textarea").val("").removeClass("ui-state-error");
-    $(selector + " input[type=checkbox]").prop('checked', false);
-    $(selector + " p.validateTips").text("").removeClass('ui-state-highlight').removeClass('ui-state-error');
+    $(selector + ' input, ' + selector + ' select, ' + selector + ' textarea').val('').removeClass('ui-state-error');
+    removeErrorClasses(selector + ' input, ' + selector + ' select, ' + selector + ' textarea');
+    $(selector + ' input[type=checkbox]').prop('checked', false);
+    $(selector + ' p.validateTips').text('').removeClass('ui-state-highlight').removeClass('ui-state-error');
     $(selector).parent().children('.ui-dialog-buttonpane').find('button').button('enable');
     $(selector + ' input, select').off('.validation');
     $(selector + ' span .ui-selectmenu-text').text('');
@@ -1813,11 +1823,13 @@ $.widget("epe.Catalog", {
         var that = this;
         var tableSel = this.options.tableSelector;
 
+        $('div.ui-dialog-buttonset #button-save', $(options.dialogSelector).parent()).button('disable');
         return $.ajax({
             type: 'POST',
             url: options.saveRequest,
             data: 'entity=' + encodeURIComponent($.toJSON(entity))
         }).done(function (json) {
+            $('div.ui-dialog-buttonset #button-save', $(options.dialogSelector).parent()).button('enable');
             if (json.ErrorMsg == SUCCESS) {
                 if (typeof that.options.afterSaveEntityCallBack === 'function') {
                     that.options.afterSaveEntityCallBack(oTable, options, json, entity);
@@ -1830,6 +1842,7 @@ $.widget("epe.Catalog", {
                 showError($(options.dialogSelector + ' p.validateTips'), json.ErrorMsg);
             }
         }).always(function (json) {
+            $('div.ui-dialog-buttonset #button-save', $(options.dialogSelector).parent()).button('enable');
             if (json.ErrorMsg == SESSION_EXPIRED) {
                 window.location.href = LOGIN_PAGE;
                 return;
@@ -2679,7 +2692,7 @@ $.widget('epe.Page', {
 
     _getFilterFields : function(config) {
         if (this.options.debug) console.time('_getFilterFields');
-        var fields = [], filterFielNameMap = {};
+        var fields = [], filterFieldNameMap = {};
         
         if (config.Filter && config.Filter.Fields && config.Filter.Fields.length > 0) {
             var length = config.Filter.Fields.length;
@@ -2724,7 +2737,7 @@ $.widget('epe.Page', {
                         from.FieldData.FieldName = from.FieldData.FieldName + 'FromFilter'
                         from.FieldData.Label = from.FieldData.Label + ' From:';
                         fields.push(from);
-                        filterFielNameMap[from.FieldData.FieldName.replace(' ', '')] = from.FieldData;
+                        filterFieldNameMap[from.FieldData.FieldName.replace(' ', '')] = from.FieldData;
 
                         field.GridData.ColumnName = field.GridData.ColumnName + 'To';
                         field.FieldData.FieldName = field.FieldData.FieldName + 'To';
@@ -2738,11 +2751,11 @@ $.widget('epe.Page', {
 
                 fields.push(field);
 
-                filterFielNameMap[field.FieldData.FieldName.replace(' ', '')] = field.FieldData;
+                filterFieldNameMap[field.FieldData.FieldName.replace(' ', '')] = field.FieldData;
             }
         }
 
-        config.FilterFielNameMap = filterFielNameMap;
+        config.FilterFieldNameMap = filterFieldNameMap;
         if (this.options.debug) console.timeEnd('_getFilterFields');
         return fields;
     },
@@ -3939,6 +3952,41 @@ $.widget('ui.selectmenu', $.ui.selectmenu, {
         ulHTML.append('</li>');
     }
 });
+
+// overriding get functionality, so the value of a disabled select options is returned
+$.valHooks['select'].get = function (elem) {
+    var value, option,
+        options = elem.options,
+        index = elem.selectedIndex,
+        one = elem.type === "select-one" || index < 0,
+        values = one ? null : [],
+        max = one ? index + 1 : options.length,
+        i = index < 0 ?
+        max :
+            one ? index : 0;
+
+    // Loop through all the selected options
+    for (; i < max; i++) {
+        option = options[i];
+
+        // oldIE doesn't update selected after form reset (#2551)
+        if ((option.selected || i === index)) {
+
+            // Get the specific value for the option
+            value = jQuery(option).val();
+
+            // We don't need an array for one selects
+            if (one) {
+                return value;
+            }
+
+            // Multi-Selects return an array
+            values.push(value);
+        }
+    }
+
+    return values;
+}
 
 function getSelectmenuId(_selecmenu, _text) {
     var _items = $(_selecmenu).selectmenu('getData');
