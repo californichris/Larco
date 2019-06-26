@@ -18,7 +18,7 @@
 	    });
 
 	    function beforeCreateFilter(config) {
-	        var field = config.FilterFielNameMap['ITS_StatusFilter'];
+	        var field = config.FilterFieldNameMap['ITS_StatusFilter'];
 	        if (field) {
 	            field.Label = '';
 	        }

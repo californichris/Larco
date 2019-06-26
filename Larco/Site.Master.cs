@@ -32,6 +32,28 @@ namespace Larco
                     Response.Redirect(Request.ApplicationPath + "/InvalidAccess.aspx");
                 }
 
+                string ipAdd = Request.ServerVariables["HTTP_X_FORWARDED_FOR"];
+
+                if (string.IsNullOrEmpty(ipAdd))
+                {
+                    ipAdd = Request.ServerVariables["REMOTE_ADDR"];
+                }
+
+                ipAdd = Request.UserHostAddress;
+                if (Request.UserHostAddress != null)
+                {
+                    Int64 macinfo = new Int64();
+                    string macSrc = macinfo.ToString("X");
+                    if (macSrc == "0")
+                    {
+                        if (ipAdd == "127.0.0.1")
+                        {
+                            Response.Write("visited Localhost!");
+                        }                        
+                    }
+                }
+
+                
                 Entity user = GetUser(loginName);
                 if (user != null)
                 {
@@ -46,6 +68,7 @@ namespace Larco
                     AuthorizationUtils.AppendModulesInfo(menuGlobals);
 
                     menuGlobals.Append("const LOGIN_NAME = '").Append(loginName).Append("';\n");
+                    menuGlobals.Append("const MACHINE_IP = '").Append(ipAdd).Append("';\n");
                     if (user != null)
                     {
 

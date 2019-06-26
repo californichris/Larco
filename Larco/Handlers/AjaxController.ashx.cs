@@ -29,7 +29,7 @@ namespace EPE.Common.handler
         /// <param name="context">the request HTTPContext</param>
         public void ProcessRequest(HttpContext context)
         {
-            using (new TraceManager(Logger.Writer).StartTrace("Ajax"))
+            using (new TraceManager(LoggerHelper.LogWriter).StartTrace("Ajax"))
             {
                 LoggerHelper.Info("Start");
                 string response = HandleAjaxRequest(context.Request);
